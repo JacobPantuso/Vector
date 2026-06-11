@@ -23,14 +23,12 @@
 /* Begin PBXCopyFilesBuildPhase section */
 		000000000000000150000000 /* Embed Watch Content */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
 			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
-			dstSubfolderSpec = 16;
+			dstSubfolder = Product;
 			files = (
 				000000000000000150000001 /* VectorWatch.app in Embed Watch Content */,
 			);
 			name = "Embed Watch Content";
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
@@ -335,12 +333,16 @@
 		000000000000000111000000 /* Debug configuration for PBXNativeTarget "Vector" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Vector/Vector.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = UN939ZPX52;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Vector reads your health data to provide personalized recovery scores, exertion tracking, sleep analysis, and AI-powered health insights.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Vector may save computed health scores and insights to your Health data.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -355,6 +357,9 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "devplaceholder.$(PROJECT_UNIQUE_VALUE:identifier).$(PRODUCT_NAME:identifier)";
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.jacobpantuso.Vector;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]" = com.jacobpantuso.Vector;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=xros*]" = com.jacobpantuso.Vector;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -372,12 +377,16 @@
 		000000000000000112000000 /* Release configuration for PBXNativeTarget "Vector" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Vector/Vector.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = UN939ZPX52;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Vector reads your health data to provide personalized recovery scores, exertion tracking, sleep analysis, and AI-powered health insights.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Vector may save computed health scores and insights to your Health data.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -392,6 +401,9 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "devplaceholder.$(PROJECT_UNIQUE_VALUE:identifier).$(PRODUCT_NAME:identifier)";
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.jacobpantuso.Vector;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]" = com.jacobpantuso.Vector;
+				"PRODUCT_BUNDLE_IDENTIFIER[sdk=xros*]" = com.jacobpantuso.Vector;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -419,9 +431,9 @@
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.jacobpantuso.Vector;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "devplaceholder.$(PROJECT_UNIQUE_VALUE:identifier).$(PRODUCT_NAME:identifier)";
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=watchos*]" = com.jacobpantuso.Vector.watchkitapp;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=watchsimulator*]" = com.jacobpantuso.Vector.watchkitapp;
-				PRODUCT_BUNDLE_IDENTIFIER = "devplaceholder.$(PROJECT_UNIQUE_VALUE:identifier).$(PRODUCT_NAME:identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -450,9 +462,9 @@
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.jacobpantuso.Vector;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "devplaceholder.$(PROJECT_UNIQUE_VALUE:identifier).$(PRODUCT_NAME:identifier)";
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=watchos*]" = com.jacobpantuso.Vector.watchkitapp;
 				"PRODUCT_BUNDLE_IDENTIFIER[sdk=watchsimulator*]" = com.jacobpantuso.Vector.watchkitapp;
-				PRODUCT_BUNDLE_IDENTIFIER = "devplaceholder.$(PROJECT_UNIQUE_VALUE:identifier).$(PRODUCT_NAME:identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;

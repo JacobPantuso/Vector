@@ -10,30 +10,30 @@ struct WatchVitalsView: View {
                     VitalTile(
                         icon: "heart.fill",
                         label: "Heart Rate",
-                        value: healthStore.heartRate.map { String(format: "%.0f", $0) } ?? "--",
+                        value: healthStore.heartRate > 0 ? String(format: "%.0f", healthStore.heartRate) : "--",
                         unit: "bpm",
                         color: .red
                     )
                     VitalTile(
                         icon: "waveform.path.ecg",
                         label: "HRV",
-                        value: healthStore.hrv.map { String(format: "%.0f", $0) } ?? "--",
+                        value: healthStore.hrv > 0 ? String(format: "%.0f", healthStore.hrv) : "--",
                         unit: "ms",
                         color: .cyan
                     )
                     VitalTile(
-                        icon: "figure.walk",
-                        label: "Steps",
-                        value: healthStore.todaySteps > 0 ? String(Int(healthStore.todaySteps)) : "--",
-                        unit: "steps",
-                        color: .green
+                        icon: "moon.fill",
+                        label: "Sleep",
+                        value: healthStore.sleepHours > 0 ? String(format: "%.1f", healthStore.sleepHours) : "--",
+                        unit: "hrs",
+                        color: .indigo
                     )
                     VitalTile(
-                        icon: "flame.fill",
-                        label: "Calories",
-                        value: healthStore.activeCalories > 0 ? String(Int(healthStore.activeCalories)) : "--",
-                        unit: "kcal",
-                        color: .orange
+                        icon: "figure.run",
+                        label: "Recovery",
+                        value: healthStore.recoveryScore > 0 ? "\(healthStore.recoveryScore)" : "--",
+                        unit: "score",
+                        color: .green
                     )
                 }
             }
@@ -41,7 +41,7 @@ struct WatchVitalsView: View {
         }
         .navigationTitle("Vitals")
         .task {
-            await healthStore.fetchTodayStats()
+            await healthStore.fetchAll()
         }
     }
 }

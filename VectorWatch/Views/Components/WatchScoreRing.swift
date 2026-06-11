@@ -35,10 +35,10 @@ struct WatchScoreRing: View {
 #Preview {
 	VStack {
 		HStack {
-			WatchScoreRing(progress: 0.75, score: 75, label: "Recovery", color: .green)
-			WatchScoreRing(progress: 0.42, score: 42, label: "Exertion", color: .orange)
+			WatchScoreRing(progress: 0.75, score: 75, label: "Recovery", color: .green, size: 80)
+			WatchScoreRing(progress: 0.42, score: 42, label: "Exertion", color: .orange, size: 80)
 		}
-		WatchScoreRing(progress: 0.6, score: 60, label: "Sleep", color: .blue)
+		WatchScoreRing(progress: 0.6, score: 60, label: "Sleep", color: .blue, size: 80)
 	}
 	.padding()
 }

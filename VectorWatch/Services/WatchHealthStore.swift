@@ -1,55 +1,50 @@
 import Foundation
 import HealthKit
-import Observation
 
 @Observable
 final class WatchHealthStore {
-	var heartRate: Double?
-	var todaySteps: Double = 0
-	var activeCalories: Double = 0
-	var restingHR: Double?
-	var hrv: Double?
-
 	private let healthStore = HKHealthStore()
-	private let readTypes: Set<HKObjectType> = [
-		HKQuantityType.quantityType(forIdentifier: .heartRate)!,
-		HKQuantityType.quantityType(forIdentifier: .stepCount)!,
-		HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned)!,
-		HKQuantityType.quantityType(forIdentifier: .restingHeartRate)!,
-		HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN)!
-	]
+
+	var heartRate: Double = 0
+	var hrv: Double = 0
+	var recoveryScore: Int = 0
+	var exertionScore: Int = 0
+	var sleepHours: Double = 0
+	var isAuthorized = false
 
 	func requestAuthorization() async {
+		guard HKHealthStore.isHealthDataAvailable() else { return }
+
+		let readTypes: Set<HKObjectType> = [
+			HKQuantityType.quantityType(forIdentifier: .heartRate)!,
+			HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN)!,
+			HKCategoryType.categoryType(forIdentifier: .sleepAnalysis)!,
+		]
+
 		do {
 			try await healthStore.requestAuthorization(toShare: [], read: readTypes)
-			await startHeartRateQuery()
-			await fetchTodayStats()
+			isAuthorized = true
+			await fetchAll()
 		} catch {
-			print("HealthKit authorization failed: \(error)")
+			isAuthorized = false
 		}
 	}
 
-	func startHeartRateQuery() async {
-		guard let hrType = HKQuantityType.quantityType(forIdentifier: .heartRate) else { return }
-
-		let query = HKObserverQuery(sampleType: hrType, predicate: nil) { [weak self] _, _, error in
-			if error == nil {
-				self?.fetchLatestHeartRate()
-			}
-		}
-
-		healthStore.execute(query)
+	func fetchAll() async {
+		await fetchHeartRate()
+		await fetchHRV()
+		await fetchSleep()
 	}
 
-	private func fetchLatestHeartRate() {
+	private func fetchHeartRate() async {
 		guard let hrType = HKQuantityType.quantityType(forIdentifier: .heartRate) else { return }
 
 		let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
 		let query = HKSampleQuery(sampleType: hrType, predicate: nil, limit: 1, sortDescriptors: [sortDescriptor]) { [weak self] _, samples, _ in
 			if let sample = samples?.first as? HKQuantitySample {
-				let hr = sample.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+				let bpm = sample.quantity.doubleValue(for: HKUnit.count().unitDivided(by: HKUnit.minute()))
 				DispatchQueue.main.async {
-					self?.heartRate = hr
+					self?.heartRate = bpm
 				}
 			}
 		}
@@ -57,65 +52,27 @@ final class WatchHealthStore {
 		healthStore.execute(query)
 	}
 
-	func fetchTodayStats() async {
-		let now = Date()
-		let startOfDay = Calendar.current.startOfDay(for: now)
-		let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: now)
+	private func fetchSleep() async {
+		guard let sleepType = HKCategoryType.categoryType(forIdentifier: .sleepAnalysis) else { return }
 
-		await fetchSteps(predicate: predicate)
-		await fetchActiveCalories(predicate: predicate)
-		await fetchRestingHeartRate()
-		await fetchHRV()
-	}
-
-	private func fetchSteps(predicate: NSPredicate) async {
-		guard let stepsType = HKQuantityType.quantityType(forIdentifier: .stepCount) else { return }
-
-		let query = HKStatisticsQuery(
-			quantityType: stepsType,
-			quantitySamplePredicate: predicate,
-			options: .cumulativeSum
-		) { [weak self] _, result, _ in
-			if let sum = result?.sumQuantity() {
-				let steps = sum.doubleValue(for: HKUnit.count())
-				DispatchQueue.main.async {
-					self?.todaySteps = steps
-				}
-			}
-		}
-
-		healthStore.execute(query)
-	}
-
-	private func fetchActiveCalories(predicate: NSPredicate) async {
-		guard let caloriesType = HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned) else { return }
-
-		let query = HKStatisticsQuery(
-			quantityType: caloriesType,
-			quantitySamplePredicate: predicate,
-			options: .cumulativeSum
-		) { [weak self] _, result, _ in
-			if let sum = result?.sumQuantity() {
-				let calories = sum.doubleValue(for: HKUnit.kilocalorie())
-				DispatchQueue.main.async {
-					self?.activeCalories = calories
-				}
-			}
-		}
-
-		healthStore.execute(query)
-	}
-
-	private func fetchRestingHeartRate() async {
-		guard let restingHRType = HKQuantityType.quantityType(forIdentifier: .restingHeartRate) else { return }
-
+		let calendar = Calendar.current
+		let start = calendar.startOfDay(for: Date())
+		let predicate = HKQuery.predicateForSamples(withStart: start, end: Date(), options: .strictStartDate)
 		let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
-		let query = HKSampleQuery(sampleType: restingHRType, predicate: nil, limit: 1, sortDescriptors: [sortDescriptor]) { [weak self] _, samples, _ in
-			if let sample = samples?.first as? HKQuantitySample {
-				let rhr = sample.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
-				DispatchQueue.main.async {
-					self?.restingHR = rhr
+
+		let query = HKSampleQuery(sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { [weak self] _, samples, _ in
+			let totalMinutes = samples?.reduce(0.0) { acc, sample in
+				guard let categorySample = sample as? HKCategorySample else { return acc }
+				if categorySample.value == HKCategoryValueSleepAnalysis.asleepCore.rawValue ||
+				   categorySample.value == HKCategoryValueSleepAnalysis.asleepDeep.rawValue ||
+				   categorySample.value == HKCategoryValueSleepAnalysis.asleepREM.rawValue {
+					return acc + sample.endDate.timeIntervalSince(sample.startDate) / 60
 				}
+				return acc
+			} ?? 0
+
+			DispatchQueue.main.async {
+				self?.sleepHours = totalMinutes / 60
 			}
 		}
 
@@ -128,7 +85,7 @@ final class WatchHealthStore {
 		let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
 		let query = HKSampleQuery(sampleType: hrvType, predicate: nil, limit: 1, sortDescriptors: [sortDescriptor]) { [weak self] _, samples, _ in
 			if let sample = samples?.first as? HKQuantitySample {
-				let hrv = sample.quantity.doubleValue(for: HKUnit.millisecond())
+				let hrv = sample.quantity.doubleValue(for: HKUnit(from: "ms"))
 				DispatchQueue.main.async {
 					self?.hrv = hrv
 				}
