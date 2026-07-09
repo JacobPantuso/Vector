@@ -1,0 +1,2072 @@
+{
+  "exercises": [
+    {
+      "id": "bw_001",
+      "name": "Push-Up",
+      "aliases": ["Standard Push-up"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Horizontal Push",
+      "primary_muscle": "Chest",
+      "secondary_muscles": ["Triceps", "Anterior Deltoids", "Core"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "steps": [
+        "Start in a high plank position with your hands slightly wider than shoulder-width apart.",
+        "Keep your core engaged, back flat, and body in a straight line from head to heels.",
+        "Lower your body by bending your elbows until your chest is just above the floor.",
+        "Push through your hands to extend your arms and return to the starting position."
+      ]
+    },
+    {
+      "id": "bw_002",
+      "name": "Pull-Up",
+      "aliases": ["Overhand Pull-up", "Strict Pull-up"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Vertical Pull",
+      "primary_muscle": "Lats",
+      "secondary_muscles": ["Biceps", "Rhomboids", "Lower Traps"],
+      "mechanics": "Compound",
+      "force": "Pull",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Grip the pull-up bar with an overhand grip slightly wider than shoulder-width.",
+        "Hang freely with your arms fully extended and your core engaged.",
+        "Pull your body upward by driving your elbows down and back toward the floor.",
+        "Continue pulling until your chin clears the bar.",
+        "Lower yourself back down with control to the starting position."
+      ]
+    },
+    {
+      "id": "bw_003",
+      "name": "Chin-Up",
+      "aliases": ["Underhand Pull-up"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Vertical Pull",
+      "primary_muscle": "Lats",
+      "secondary_muscles": ["Biceps", "Brachialis", "Rhomboids"],
+      "mechanics": "Compound",
+      "force": "Pull",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Grip the bar with an underhand grip (palms facing you), spaced shoulder-width apart.",
+        "Hang freely with your arms extended.",
+        "Pull yourself up by driving your elbows down while squeezing your shoulder blades together.",
+        "Pause when your chin is above the bar.",
+        "Slowly lower yourself back to a full hang."
+      ]
+    },
+    {
+      "id": "bw_004",
+      "name": "Dips",
+      "aliases": ["Parallel Bar Dips", "Chest Dips"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Vertical Push",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": ["Chest", "Anterior Deltoids"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Grip the parallel bars and jump up to a support position with your arms fully extended.",
+        "Lean your torso slightly forward to target the chest, or stay upright to target the triceps.",
+        "Bend your elbows to lower your body until your shoulders are below your elbows.",
+        "Push back up to the starting position by straightening your arms."
+      ]
+    },
+    {
+      "id": "bw_005",
+      "name": "Bodyweight Squat",
+      "aliases": ["Air Squat"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Squat",
+      "primary_muscle": "Quadriceps",
+      "secondary_muscles": ["Glutes", "Hamstrings", "Core"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "steps": [
+        "Stand with your feet shoulder-width apart and your toes pointed slightly outward.",
+        "Keep your chest up and your core braced.",
+        "Push your hips back and bend your knees to lower your body as if sitting in a chair.",
+        "Descend until your thighs are at least parallel to the floor.",
+        "Drive through your heels to stand back up to the starting position."
+      ]
+    },
+    {
+      "id": "bw_006",
+      "name": "Bulgarian Split Squat",
+      "aliases": ["Rear Foot Elevated Split Squat"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Lunge",
+      "primary_muscle": "Quadriceps",
+      "secondary_muscles": ["Glutes", "Hamstrings"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Stand a couple of feet in front of a bench or chair, facing away from it.",
+        "Place the top of one foot on the bench behind you.",
+        "Keep your torso upright and lower your hips until your front thigh is parallel to the floor.",
+        "Ensure your front knee does not collapse inward.",
+        "Push through your front heel to return to the starting position."
+      ]
+    },
+    {
+      "id": "bw_007",
+      "name": "Plank",
+      "aliases": ["Forearm Plank", "Hover"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Core",
+      "movement_pattern": "Core Isometric",
+      "primary_muscle": "Abs",
+      "secondary_muscles": ["Obliques", "Lower Back", "Shoulders"],
+      "mechanics": "Isolation",
+      "force": "Static",
+      "difficulty": "Beginner",
+      "steps": [
+        "Place your forearms on the floor with your elbows aligned below your shoulders.",
+        "Extend your legs straight behind you, resting on your toes.",
+        "Squeeze your glutes and brace your core.",
+        "Hold your body in a straight line from your head to your heels without letting your hips sag."
+      ]
+    },
+    {
+      "id": "bw_008",
+      "name": "Glute Bridge",
+      "aliases": ["Hip Bridge"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Hinge",
+      "primary_muscle": "Glutes",
+      "secondary_muscles": ["Hamstrings", "Lower Back"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "steps": [
+        "Lie on your back with your knees bent and feet flat on the floor, hip-width apart.",
+        "Place your arms at your sides with palms facing down.",
+        "Squeeze your glutes and push through your heels to raise your hips toward the ceiling.",
+        "Pause at the top when your body forms a straight line from your knees to your shoulders.",
+        "Slowly lower your hips back to the floor."
+      ]
+    },
+    {
+      "id": "bw_009",
+      "name": "Walking Lunge",
+      "aliases": ["Bodyweight Lunges"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Lunge",
+      "primary_muscle": "Quadriceps",
+      "secondary_muscles": ["Glutes", "Hamstrings", "Calves"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "steps": [
+        "Stand tall with feet together and hands on your hips.",
+        "Take a large step forward with your right leg.",
+        "Drop your back knee straight down until it almost touches the floor, keeping your front shin vertical.",
+        "Push off your right foot to bring your feet back together.",
+        "Repeat by stepping forward with your left leg."
+      ]
+    },
+    {
+      "id": "bw_010",
+      "name": "Pike Push-Up",
+      "aliases": ["Shoulder Push-up"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Vertical Push",
+      "primary_muscle": "Shoulders",
+      "secondary_muscles": ["Triceps", "Upper Chest"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Start in a downward dog position, with hips high in the air and hands shoulder-width apart.",
+        "Keep your legs straight and shift your weight forward onto your hands.",
+        "Bend your elbows to lower your head toward the floor between your hands.",
+        "Push back up to the starting inverted-V position."
+      ]
+    },
+    {
+      "id": "fw_001",
+      "name": "Barbell Bench Press",
+      "aliases": ["Flat Bench Press"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Horizontal Push",
+      "primary_muscle": "Chest",
+      "secondary_muscles": ["Triceps", "Anterior Deltoids"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Lie flat on the bench with your feet firmly planted on the floor.",
+        "Grip the barbell slightly wider than shoulder-width apart.",
+        "Unrack the bar and hold it straight over your chest with arms fully extended.",
+        "Inhale and lower the bar slowly until it lightly touches your mid-chest.",
+        "Exhale and press the bar forcefully back to the starting position."
+      ]
+    },
+    {
+      "id": "fw_002",
+      "name": "Incline Dumbbell Press",
+      "aliases": ["Incline DB Press"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Horizontal Push",
+      "primary_muscle": "Upper Chest",
+      "secondary_muscles": ["Anterior Deltoids", "Triceps"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Set an adjustable bench to an incline of 30 to 45 degrees.",
+        "Sit on the bench with a dumbbell in each hand resting on your thighs.",
+        "Kick the weights up to your shoulders and lean back.",
+        "Press the dumbbells upward until your arms are fully extended.",
+        "Lower the dumbbells under control back to shoulder level."
+      ]
+    },
+    {
+      "id": "fw_003",
+      "name": "Barbell Overhead Press",
+      "aliases": ["Military Press", "Strict Press"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Vertical Push",
+      "primary_muscle": "Shoulders",
+      "secondary_muscles": ["Triceps", "Upper Traps", "Core"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Stand with your feet shoulder-width apart and grip the barbell just outside your shoulders.",
+        "Unrack the bar and rest it across your upper chest/collarbone.",
+        "Brace your core and squeeze your glutes.",
+        "Press the bar straight up overhead until your arms are locked out.",
+        "Slowly lower the bar back to your upper chest."
+      ]
+    },
+    {
+      "id": "fw_004",
+      "name": "Dumbbell Lateral Raise",
+      "aliases": ["Side Raises"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Lateral Deltoids",
+      "secondary_muscles": ["Upper Traps"],
+      "mechanics": "Isolation",
+      "force": "Pull",
+      "difficulty": "Beginner",
+      "steps": [
+        "Stand tall holding a dumbbell in each hand by your sides, palms facing inward.",
+        "Keep a slight bend in your elbows and brace your core.",
+        "Raise your arms straight out to the sides until the dumbbells are at shoulder height.",
+        "Pause for a moment at the top.",
+        "Slowly lower the dumbbells back to your sides."
+      ]
+    },
+    {
+      "id": "fw_005",
+      "name": "Barbell Bent-Over Row",
+      "aliases": ["Barbell Row"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Horizontal Pull",
+      "primary_muscle": "Lats",
+      "secondary_muscles": ["Rhomboids", "Biceps", "Lower Back"],
+      "mechanics": "Compound",
+      "force": "Pull",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Stand with your feet shoulder-width apart, holding a barbell with an overhand grip.",
+        "Hinge at your hips and push your glutes back until your torso is nearly parallel to the floor.",
+        "Keep your back straight and let the bar hang below your shoulders.",
+        "Pull the bar toward your lower ribs by driving your elbows up and back.",
+        "Lower the bar slowly to the starting position."
+      ]
+    },
+    {
+      "id": "fw_006",
+      "name": "Dumbbell Single Arm Row",
+      "aliases": ["Lawnmower Pull"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Horizontal Pull",
+      "primary_muscle": "Lats",
+      "secondary_muscles": ["Rhomboids", "Biceps", "Rear Deltoids"],
+      "mechanics": "Compound",
+      "force": "Pull",
+      "difficulty": "Beginner",
+      "steps": [
+        "Place your left knee and left hand on a flat bench to support your body.",
+        "Hold a dumbbell in your right hand with your arm extended toward the floor.",
+        "Pull the dumbbell up toward your hip, keeping your elbow tucked close to your body.",
+        "Squeeze your back muscles at the top.",
+        "Lower the dumbbell slowly to the starting position and repeat."
+      ]
+    },
+    {
+      "id": "fw_007",
+      "name": "Barbell Back Squat",
+      "aliases": ["Squat"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Squat",
+      "primary_muscle": "Quadriceps",
+      "secondary_muscles": ["Glutes", "Hamstrings", "Lower Back", "Core"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Step under the barbell in a squat rack, resting it across your upper back.",
+        "Unrack the bar and take a step back, positioning your feet shoulder-width apart.",
+        "Take a deep breath, brace your core, and push your hips back to initiate the squat.",
+        "Lower yourself until your hip crease is below your knees.",
+        "Drive forcefully through your legs to stand back up, exhaling at the top."
+      ]
+    },
+    {
+      "id": "fw_008",
+      "name": "Barbell Front Squat",
+      "aliases": ["Front Squat"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Squat",
+      "primary_muscle": "Quadriceps",
+      "secondary_muscles": ["Core", "Glutes", "Upper Back"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Advanced",
+      "steps": [
+        "Rest the barbell across your front deltoids and clavicle, supporting it with your fingers or crossed arms.",
+        "Keep your elbows high and chest up.",
+        "Squat down by breaking at the hips and knees until your thighs are parallel to the floor.",
+        "Drive up through your heels to return to the starting position."
+      ]
+    },
+    {
+      "id": "fw_009",
+      "name": "Goblet Squat",
+      "aliases": ["Dumbbell Goblet Squat"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Squat",
+      "primary_muscle": "Quadriceps",
+      "secondary_muscles": ["Glutes", "Core"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "steps": [
+        "Hold a single dumbbell or kettlebell vertically against your chest with both hands.",
+        "Stand with your feet slightly wider than shoulder-width apart.",
+        "Squat down, pushing your knees out, keeping your chest up and the weight close to your body.",
+        "Go down until your elbows touch your inner knees.",
+        "Push through your feet to stand back up."
+      ]
+    },
+    {
+      "id": "fw_010",
+      "name": "Barbell Deadlift",
+      "aliases": ["Conventional Deadlift"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Full Body",
+      "movement_pattern": "Hinge",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": ["Glutes", "Lower Back", "Lats", "Traps", "Forearms"],
+      "mechanics": "Compound",
+      "force": "Pull",
+      "difficulty": "Advanced",
+      "steps": [
+        "Stand with your mid-foot under the barbell, feet hip-width apart.",
+        "Bend at the hips and knees to grab the bar with a grip just outside your legs.",
+        "Flatten your back, lift your chest, and engage your lats.",
+        "Drive through your feet and pull the bar up along your legs by extending your hips and knees simultaneously.",
+        "Stand tall at the top, then lower the bar by pushing your hips back and bending your knees once the bar passes them."
+      ]
+    },
+    {
+      "id": "fw_011",
+      "name": "Sumo Deadlift",
+      "aliases": ["Wide Stance Deadlift"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Hinge",
+      "primary_muscle": "Glutes",
+      "secondary_muscles": ["Quadriceps", "Hamstrings", "Adductors", "Lower Back"],
+      "mechanics": "Compound",
+      "force": "Pull",
+      "difficulty": "Advanced",
+      "steps": [
+        "Take a very wide stance with your toes pointed outward.",
+        "Drop your hips and grip the bar with your hands inside your legs.",
+        "Keep your chest up and back flat.",
+        "Drive through your feet, extending your hips and knees to lift the bar.",
+        "Lock out at the top, then carefully reverse the movement to lower the weight."
+      ]
+    },
+    {
+      "id": "fw_012",
+      "name": "Romanian Deadlift (RDL)",
+      "aliases": ["Stiff-Legged Deadlift", "RDLs"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Hinge",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": ["Glutes", "Lower Back"],
+      "mechanics": "Compound",
+      "force": "Pull",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Stand tall holding a barbell or dumbbells at hip level with an overhand grip.",
+        "Keep your legs mostly straight with only a slight bend in the knees.",
+        "Push your hips back and hinge forward, lowering the weight straight down your legs.",
+        "Go down until you feel a deep stretch in your hamstrings (usually just below the knees).",
+        "Squeeze your glutes and thrust your hips forward to return to the standing position."
+      ]
+    },
+    {
+      "id": "fw_013",
+      "name": "Dumbbell Lunge",
+      "aliases": ["DB Lunges"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Lunge",
+      "primary_muscle": "Quadriceps",
+      "secondary_muscles": ["Glutes", "Hamstrings"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "steps": [
+        "Stand tall holding a dumbbell in each hand by your sides.",
+        "Take a large step forward with one leg and lower your hips until both knees are bent at a 90-degree angle.",
+        "Keep your torso upright and ensure your front knee does not track far over your toes.",
+        "Push off your front foot to return to the starting position.",
+        "Alternate legs with each rep."
+      ]
+    },
+    {
+      "id": "fw_014",
+      "name": "Barbell Hip Thrust",
+      "aliases": ["Hip Thrusts"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Hinge",
+      "primary_muscle": "Glutes",
+      "secondary_muscles": ["Hamstrings", "Core"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Sit on the floor with your upper back resting against a flat bench and a padded barbell over your hips.",
+        "Plant your feet flat on the floor, about hip-width apart.",
+        "Drive through your heels and thrust your hips upward until your body forms a straight line from your shoulders to your knees.",
+        "Squeeze your glutes hard at the top.",
+        "Lower your hips back down under control."
+      ]
+    },
+    {
+      "id": "fw_015",
+      "name": "Dumbbell Bicep Curl",
+      "aliases": ["DB Curls"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": ["Brachialis", "Forearms"],
+      "mechanics": "Isolation",
+      "force": "Pull",
+      "difficulty": "Beginner",
+      "steps": [
+        "Stand tall holding a dumbbell in each hand at your sides, palms facing forward.",
+        "Keep your upper arms pinned to your sides and your shoulders back.",
+        "Curl the dumbbells upward toward your shoulders by flexing your elbows.",
+        "Squeeze your biceps at the top of the movement.",
+        "Lower the weights slowly back to the starting position."
+      ]
+    },
+    {
+      "id": "fw_016",
+      "name": "Dumbbell Hammer Curl",
+      "aliases": ["Neutral Grip Curl"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Brachioradialis",
+      "secondary_muscles": ["Biceps", "Brachialis"],
+      "mechanics": "Isolation",
+      "force": "Pull",
+      "difficulty": "Beginner",
+      "steps": [
+        "Stand holding a dumbbell in each hand at your sides with a neutral grip (palms facing your legs).",
+        "Keep your elbows tucked into your sides.",
+        "Curl the dumbbells up toward your shoulders, maintaining the neutral grip.",
+        "Pause and squeeze at the top.",
+        "Lower the dumbbells under control to the starting position."
+      ]
+    },
+    {
+      "id": "fw_017",
+      "name": "EZ-Bar Curl",
+      "aliases": ["Barbell Curl"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": ["Forearms"],
+      "mechanics": "Isolation",
+      "force": "Pull",
+      "difficulty": "Beginner",
+      "steps": [
+        "Stand holding an EZ-curl bar with an underhand grip.",
+        "Keep your elbows locked at your sides.",
+        "Curl the bar up toward your chest, contracting your biceps.",
+        "Slowly lower the bar back to the starting position."
+      ]
+    },
+    {
+      "id": "fw_018",
+      "name": "Dumbbell Overhead Tricep Extension",
+      "aliases": ["Seated Tricep Extension"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [],
+      "mechanics": "Isolation",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "steps": [
+        "Sit or stand holding one dumbbell with both hands, extending your arms straight up over your head.",
+        "Keep your elbows pointed upward and close to your head.",
+        "Bend your elbows to lower the dumbbell behind your head until you feel a stretch in your triceps.",
+        "Extend your arms back to the top position."
+      ]
+    },
+    {
+      "id": "fw_019",
+      "name": "Lying Triceps Extension",
+      "aliases": ["Skullcrushers"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [],
+      "mechanics": "Isolation",
+      "force": "Push",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Lie on a flat bench holding an EZ-bar or dumbbells directly above your chest with arms extended.",
+        "Keep your upper arms stationary.",
+        "Bend your elbows to lower the weight down toward your forehead.",
+        "Extend your elbows to press the weight back to the starting position."
+      ]
+    },
+    {
+      "id": "fw_020",
+      "name": "Dumbbell Shrugs",
+      "aliases": ["Shoulder Shrugs"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Upper Traps",
+      "secondary_muscles": ["Forearms"],
+      "mechanics": "Isolation",
+      "force": "Pull",
+      "difficulty": "Beginner",
+      "steps": [
+        "Stand holding a dumbbell in each hand by your sides.",
+        "Keep your arms straight and elevate your shoulders toward your ears in a shrugging motion.",
+        "Hold the contraction at the top for a second.",
+        "Slowly lower your shoulders back to the neutral position."
+      ]
+    },
+    {
+      "id": "cb_001",
+      "name": "Cable Tricep Pushdown",
+      "aliases": ["Rope Pushdown", "Tricep Extension"],
+      "equipment": "Cable",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [],
+      "mechanics": "Isolation",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "steps": [
+        "Attach a rope or straight bar to a high cable pulley.",
+        "Grip the attachment and stand with your feet shoulder-width apart, bracing your core.",
+        "Keep your elbows tucked securely against your sides.",
+        "Push the attachment down until your arms are fully extended.",
+        "Control the weight as it returns to chest height."
+      ]
+    },
+    {
+      "id": "cb_002",
+      "name": "Overhead Cable Tricep Extension",
+      "aliases": ["Cable Overhead Extension"],
+      "equipment": "Cable",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [],
+      "mechanics": "Isolation",
+      "force": "Push",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Attach a rope to a high or medium pulley.",
+        "Turn your back to the machine, grabbing the rope behind your head.",
+        "Step forward to create tension, leaning slightly forward.",
+        "Extend your arms out and up until they are straight.",
+        "Slowly return your hands behind your head."
+      ]
+    },
+    {
+      "id": "cb_003",
+      "name": "Cable Face Pull",
+      "aliases": ["Face Pulls"],
+      "equipment": "Cable",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Horizontal Pull",
+      "primary_muscle": "Rear Deltoids",
+      "secondary_muscles": ["Rhomboids", "Rotator Cuff", "Upper Traps"],
+      "mechanics": "Compound",
+      "force": "Pull",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Set a cable pulley to upper-chest or face height and attach a rope.",
+        "Grip the rope with both hands and step back to create tension.",
+        "Pull the rope directly toward your face, letting your elbows flare outward and upward.",
+        "Squeeze your shoulder blades together as the rope splits past your ears.",
+        "Slowly return to the starting position with arms extended."
+      ]
+    },
+    {
+      "id": "cb_004",
+      "name": "Seated Cable Row",
+      "aliases": ["Low Row"],
+      "equipment": "Cable",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Horizontal Pull",
+      "primary_muscle": "Lats",
+      "secondary_muscles": ["Rhomboids", "Biceps", "Rear Deltoids"],
+      "mechanics": "Compound",
+      "force": "Pull",
+      "difficulty": "Beginner",
+      "steps": [
+        "Sit at a low cable row station and place your feet on the platforms, keeping a slight bend in your knees.",
+        "Grip the V-handle attachment and sit up tall with your back straight.",
+        "Pull the handle toward your stomach by driving your elbows straight back.",
+        "Squeeze your shoulder blades together at the peak of the contraction.",
+        "Slowly extend your arms to return the weight, getting a good stretch in your lats."
+      ]
+    },
+    {
+      "id": "cb_005",
+      "name": "Cable Crossover",
+      "aliases": ["Cable Flys"],
+      "equipment": "Cable",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Horizontal Push",
+      "primary_muscle": "Chest",
+      "secondary_muscles": ["Anterior Deltoids"],
+      "mechanics": "Isolation",
+      "force": "Push",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Set two pulleys at a high position facing each other.",
+        "Grab a handle in each hand and step forward into a staggered stance.",
+        "Keep a slight bend in your elbows and your chest up.",
+        "Bring your hands together in a downward arc in front of your chest.",
+        "Slowly open your arms back to the starting position, feeling a stretch in your chest."
+      ]
+    },
+    {
+      "id": "cb_006",
+      "name": "Cable Woodchopper",
+      "aliases": ["High-to-Low Chop"],
+      "equipment": "Cable",
+      "target_muscle_group": "Core",
+      "movement_pattern": "Rotational",
+      "primary_muscle": "Obliques",
+      "secondary_muscles": ["Abs", "Shoulders"],
+      "mechanics": "Compound",
+      "force": "Pull",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Set a cable pulley to the highest position and attach a single D-handle.",
+        "Stand sideways to the machine with your feet shoulder-width apart and grip the handle with both hands.",
+        "Rotate your torso and pull the handle diagonally down and across your body toward your opposite hip.",
+        "Keep your arms relatively straight throughout the movement.",
+        "Slowly return to the starting position, controlling the rotational pull of the cable."
+      ]
+    },
+    {
+      "id": "cb_007",
+      "name": "Cable Lateral Raise",
+      "aliases": ["Single-Arm Cable Raise"],
+      "equipment": "Cable",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Lateral Deltoids",
+      "secondary_muscles": ["Upper Traps"],
+      "mechanics": "Isolation",
+      "force": "Pull",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Set a cable pulley to the lowest position and attach a single D-handle.",
+        "Stand sideways to the machine and grab the handle with your outside hand.",
+        "Keeping your arm slightly bent, raise it outward and upward until it is parallel to the floor.",
+        "Lower the handle slowly back down to your side."
+      ]
+    },
+    {
+      "id": "cb_008",
+      "name": "Cable Bicep Curl",
+      "aliases": ["Standing Cable Curl"],
+      "equipment": "Cable",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": ["Forearms"],
+      "mechanics": "Isolation",
+      "force": "Pull",
+      "difficulty": "Beginner",
+      "steps": [
+        "Attach a straight bar or rope to a low pulley.",
+        "Stand facing the machine, holding the attachment with an underhand grip.",
+        "Keep your elbows pinned to your sides.",
+        "Curl the weight up to your upper chest.",
+        "Lower the weight back down slowly."
+      ]
+    },
+    {
+      "id": "cb_009",
+      "name": "Straight Arm Pulldown",
+      "aliases": ["Lat Pushdown"],
+      "equipment": "Cable",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Lats",
+      "secondary_muscles": ["Triceps", "Core"],
+      "mechanics": "Isolation",
+      "force": "Pull",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Attach a straight bar or rope to a high pulley.",
+        "Stand facing the machine, step back slightly, and grab the bar with straight arms.",
+        "Hinge forward slightly at the hips.",
+        "Keeping your arms straight, push the bar down in an arc until it hits your thighs.",
+        "Slowly let the bar rise back to face level."
+      ]
+    },
+    {
+      "id": "cb_010",
+      "name": "Cable Pull-Through",
+      "aliases": ["Glute Pull-Through"],
+      "equipment": "Cable",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Hinge",
+      "primary_muscle": "Glutes",
+      "secondary_muscles": ["Hamstrings", "Lower Back"],
+      "mechanics": "Compound",
+      "force": "Pull",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Attach a rope to a low pulley. Stand facing away from the machine, straddling the cable.",
+        "Bend at the hips and reach between your legs to grab the rope.",
+        "Walk forward a few steps to create tension.",
+        "Keeping your back straight, hinge at the hips to let the cable pull your hands through your legs.",
+        "Squeeze your glutes and push your hips forward to stand back up straight."
+      ]
+    },
+    {
+      "id": "mc_001",
+      "name": "Leg Press",
+      "aliases": ["Machine Leg Press", "45-Degree Leg Press"],
+      "equipment": "Machine",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Squat",
+      "primary_muscle": "Quadriceps",
+      "secondary_muscles": ["Glutes", "Hamstrings"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "steps": [
+        "Sit down in the leg press machine and place your feet on the sled at shoulder-width.",
+        "Release the safety catches and press the sled up until your legs are extended (do not lock out your knees).",
+        "Lower the sled slowly by bending your knees until they form a 90-degree angle.",
+        "Press forcefully through your heels to return the sled to the top."
+      ]
+    },
+    {
+      "id": "mc_002",
+      "name": "Leg Extension",
+      "aliases": ["Machine Leg Extension"],
+      "equipment": "Machine",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Quadriceps",
+      "secondary_muscles": [],
+      "mechanics": "Isolation",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "steps": [
+        "Sit in the leg extension machine with your back flat against the pad.",
+        "Position the padded roller so it rests just above your ankles.",
+        "Grip the handles by your sides to keep your body anchored.",
+        "Extend your legs fully to lift the weight, squeezing your quadriceps at the top.",
+        "Lower the weight slowly back to the starting position."
+      ]
+    },
+    {
+      "id": "mc_003",
+      "name": "Seated Leg Curl",
+      "aliases": ["Hamstring Curl Machine"],
+      "equipment": "Machine",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": ["Calves"],
+      "mechanics": "Isolation",
+      "force": "Pull",
+      "difficulty": "Beginner",
+      "steps": [
+        "Adjust the machine so that the pivot point aligns with your knees and the pad rests behind your lower calves.",
+        "Lower the lap pad so it securely holds your thighs in place.",
+        "Curl the padded lever backward and downward by flexing your hamstrings.",
+        "Pull as far as you can comfortably go.",
+        "Control the weight as you slowly extend your legs back to the start."
+      ]
+    },
+    {
+      "id": "mc_004",
+      "name": "Lying Leg Curl",
+      "aliases": ["Prone Leg Curl"],
+      "equipment": "Machine",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": ["Calves"],
+      "mechanics": "Isolation",
+      "force": "Pull",
+      "difficulty": "Beginner",
+      "steps": [
+        "Lie face down on the leg curl machine with the roller pad resting on the back of your ankles.",
+        "Grip the handles under the bench for stability.",
+        "Curl your legs upward, bringing your heels as close to your glutes as possible.",
+        "Squeeze your hamstrings at the top, then slowly lower the weight back down."
+      ]
+    },
+    {
+      "id": "mc_005",
+      "name": "Lat Pulldown",
+      "aliases": ["Machine Lat Pulldown"],
+      "equipment": "Machine",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Vertical Pull",
+      "primary_muscle": "Lats",
+      "secondary_muscles": ["Biceps", "Rhomboids", "Rear Deltoids"],
+      "mechanics": "Compound",
+      "force": "Pull",
+      "difficulty": "Beginner",
+      "steps": [
+        "Sit at a lat pulldown machine and secure your knees under the thigh pads.",
+        "Grip the wide bar with an overhand grip outside shoulder-width.",
+        "Lean back slightly and pull the bar down toward your upper chest.",
+        "Squeeze your lats and shoulder blades together at the bottom of the movement.",
+        "Slowly let the bar back up until your arms are fully extended."
+      ]
+    },
+    {
+      "id": "mc_006",
+      "name": "Machine Chest Fly",
+      "aliases": ["Pec Deck", "Pec Fly"],
+      "equipment": "Machine",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Horizontal Push",
+      "primary_muscle": "Chest",
+      "secondary_muscles": ["Anterior Deltoids"],
+      "mechanics": "Isolation",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "steps": [
+        "Adjust the seat height so the handles are at chest level.",
+        "Sit back against the pad, grip the handles, and keep a slight bend in your elbows.",
+        "Pull the handles together in front of your chest in a smooth, hugging motion.",
+        "Squeeze your chest muscles hard at the center.",
+        "Slowly open your arms wide to return to the starting position."
+      ]
+    },
+    {
+      "id": "mc_007",
+      "name": "Machine Reverse Fly",
+      "aliases": ["Rear Delt Deck"],
+      "equipment": "Machine",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Horizontal Pull",
+      "primary_muscle": "Rear Deltoids",
+      "secondary_muscles": ["Rhomboids", "Upper Traps"],
+      "mechanics": "Isolation",
+      "force": "Pull",
+      "difficulty": "Beginner",
+      "steps": [
+        "Sit facing the pad of the pec deck machine (reverse of the chest fly).",
+        "Grip the horizontal handles with your arms slightly bent.",
+        "Pull the handles backward by squeezing your rear delts and upper back.",
+        "Bring the handles as far back as comfortable, then return to the start."
+      ]
+    },
+    {
+      "id": "mc_008",
+      "name": "Smith Machine Squat",
+      "aliases": ["Smith Squat"],
+      "equipment": "Machine",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Squat",
+      "primary_muscle": "Quadriceps",
+      "secondary_muscles": ["Glutes", "Hamstrings"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "steps": [
+        "Position the Smith machine bar across your upper back and shoulders.",
+        "Unlatch the bar and step your feet slightly forward compared to a traditional barbell squat.",
+        "Lower your hips down and back until your thighs are parallel to the floor.",
+        "Push through your feet to stand back up.",
+        "Re-rack the bar securely when finished."
+      ]
+    },
+    {
+      "id": "mc_009",
+      "name": "Hack Squat",
+      "aliases": ["Machine Hack Squat"],
+      "equipment": "Machine",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Squat",
+      "primary_muscle": "Quadriceps",
+      "secondary_muscles": ["Glutes", "Hamstrings", "Calves"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Step into the hack squat machine, placing your shoulders under the pads and your back against the rest.",
+        "Place your feet shoulder-width apart on the platform.",
+        "Release the safety handles and lower your body by bending your knees to 90 degrees.",
+        "Push through your heels to return to the starting position."
+      ]
+    },
+    {
+      "id": "mc_010",
+      "name": "Machine Chest Press",
+      "aliases": ["Seated Chest Press"],
+      "equipment": "Machine",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Horizontal Push",
+      "primary_muscle": "Chest",
+      "secondary_muscles": ["Triceps", "Anterior Deltoids"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "steps": [
+        "Sit in the chest press machine with your back flat against the pad.",
+        "Grip the handles at chest level.",
+        "Press the handles forward until your arms are fully extended.",
+        "Slowly let the handles return to the starting position."
+      ]
+    },
+    {
+      "id": "mc_011",
+      "name": "Machine Shoulder Press",
+      "aliases": ["Seated Overhead Press Machine"],
+      "equipment": "Machine",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Vertical Push",
+      "primary_muscle": "Shoulders",
+      "secondary_muscles": ["Triceps", "Upper Traps"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "steps": [
+        "Adjust the seat so the handles align with your shoulders.",
+        "Sit with your back straight against the pad and grip the handles.",
+        "Press the weight straight up over your head until your arms are fully extended.",
+        "Slowly lower the handles back to shoulder level."
+      ]
+    },
+    {
+      "id": "mc_012",
+      "name": "Seated Calf Raise",
+      "aliases": ["Machine Calf Raise"],
+      "equipment": "Machine",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Calves (Soleus)",
+      "secondary_muscles": [],
+      "mechanics": "Isolation",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "steps": [
+        "Sit on the machine, placing the balls of your feet on the footplate.",
+        "Adjust the thigh pads so they rest snugly just above your knees.",
+        "Lift the weight slightly and disengage the safety lever.",
+        "Lower your heels as far as possible to stretch the calves, then push up onto your toes as high as you can.",
+        "Squeeze at the top, then slowly lower back down."
+      ]
+    },
+    {
+      "id": "mc_013",
+      "name": "Standing Calf Raise",
+      "aliases": ["Smith Machine Calf Raise"],
+      "equipment": "Machine",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Calves (Gastrocnemius)",
+      "secondary_muscles": [],
+      "mechanics": "Isolation",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "steps": [
+        "Stand with your shoulders under the machine pads and the balls of your feet on the elevated block.",
+        "Drop your heels down toward the floor to stretch the calves.",
+        "Press up onto your toes as high as possible.",
+        "Pause and squeeze your calves, then lower back down slowly."
+      ]
+    },
+    {
+      "id": "mc_014",
+      "name": "Hip Abductor Machine",
+      "aliases": ["Outer Thigh Machine"],
+      "equipment": "Machine",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Gluteus Medius",
+      "secondary_muscles": ["Tensor Fasciae Latae (TFL)"],
+      "mechanics": "Isolation",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "steps": [
+        "Sit in the machine with your legs inside the padded levers.",
+        "Select your weight and sit back against the pad.",
+        "Push your legs outward against the pads as far as you comfortably can.",
+        "Slowly control the return to the starting position."
+      ]
+    },
+    {
+      "id": "mc_015",
+      "name": "Hip Adductor Machine",
+      "aliases": ["Inner Thigh Machine"],
+      "equipment": "Machine",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Adductors",
+      "secondary_muscles": ["Pectineus", "Gracilis"],
+      "mechanics": "Isolation",
+      "force": "Pull",
+      "difficulty": "Beginner",
+      "steps": [
+        "Sit in the machine and place your legs outside the padded levers.",
+        "Adjust the machine so your legs are spread wide to start.",
+        "Squeeze your thighs together against the resistance until the pads meet in the middle.",
+        "Slowly let your legs spread back apart to the starting position."
+      ]
+    },
+    {
+      "id": "cd_001",
+      "name": "Treadmill Run",
+      "aliases": ["Treadmill Sprint", "Treadmill Jog"],
+      "equipment": "Cardio",
+      "target_muscle_group": "Cardio",
+      "movement_pattern": "Conditioning",
+      "primary_muscle": "Cardiovascular System",
+      "secondary_muscles": ["Quadriceps", "Hamstrings", "Glutes", "Calves"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "steps": [
+        "Step onto the treadmill and set a desired speed and incline.",
+        "Begin running or jogging at a steady pace, maintaining an upright posture.",
+        "Keep your arms relaxed and pumping naturally at your sides.",
+        "Monitor your heart rate and breath, maintaining a sustainable pace for your fitness level."
+      ]
+    },
+    {
+      "id": "cd_002",
+      "name": "Stationary Bike",
+      "aliases": ["Stationary Cycling", "Recumbent Bike"],
+      "equipment": "Cardio",
+      "target_muscle_group": "Cardio",
+      "movement_pattern": "Conditioning",
+      "primary_muscle": "Cardiovascular System",
+      "secondary_muscles": ["Quadriceps", "Hamstrings", "Glutes", "Calves"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "steps": [
+        "Adjust the seat height so your knees are slightly bent when pedaling at the bottom.",
+        "Set a resistance level that challenges you without compromising form.",
+        "Begin pedaling at a steady, controlled pace, keeping your core engaged.",
+        "Maintain consistent breathing and monitor your heart rate throughout the duration."
+      ]
+    },
+    {
+      "id": "cd_003",
+      "name": "Rowing Erg",
+      "aliases": ["Rowing Machine", "Ergo Rower"],
+      "equipment": "Cardio",
+      "target_muscle_group": "Full Body",
+      "movement_pattern": "Conditioning",
+      "primary_muscle": "Cardiovascular System",
+      "secondary_muscles": ["Lats", "Hamstrings", "Glutes", "Back", "Arms"],
+      "mechanics": "Compound",
+      "force": "Pull",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Adjust the foot straps and damper setting to your preference, then sit on the seat.",
+        "Grasp the handle with both hands and keep your arms extended with a slight knee bend.",
+        "Drive your legs while pulling the handle toward your torso, then extend your legs again.",
+        "Maintain a rhythmic pace with consistent breathing throughout your workout."
+      ]
+    },
+    {
+      "id": "cd_004",
+      "name": "Elliptical",
+      "aliases": ["Elliptical Trainer", "Cross-Trainer"],
+      "equipment": "Cardio",
+      "target_muscle_group": "Cardio",
+      "movement_pattern": "Conditioning",
+      "primary_muscle": "Cardiovascular System",
+      "secondary_muscles": ["Quadriceps", "Hamstrings", "Glutes", "Chest", "Back"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "steps": [
+        "Step onto the elliptical and grip the stationary or moving handles.",
+        "Set your desired resistance and incline level.",
+        "Move your legs in a smooth, elliptical motion while coordinating your arm movement.",
+        "Maintain an upright posture and steady cadence for the duration of your session."
+      ]
+    },
+    {
+      "id": "cd_005",
+      "name": "Stair Climber",
+      "aliases": ["StairMaster", "Stairmill"],
+      "equipment": "Cardio",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Conditioning",
+      "primary_muscle": "Cardiovascular System",
+      "secondary_muscles": ["Quadriceps", "Glutes", "Hamstrings", "Calves"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Stand on the stair climber with your hands lightly gripping the handrails.",
+        "Set a desired speed and difficulty level.",
+        "Climb the stairs at a steady pace, focusing on pushing through your heels.",
+        "Maintain an upright posture and control your breathing throughout."
+      ]
+    },
+    {
+      "id": "cd_006",
+      "name": "Jump Rope",
+      "aliases": ["Skipping", "Double Unders"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Cardio",
+      "movement_pattern": "Conditioning",
+      "primary_muscle": "Cardiovascular System",
+      "secondary_muscles": ["Calves", "Quadriceps", "Shoulders", "Forearms"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Hold the rope handles at hip height with your elbows bent at about 90 degrees.",
+        "Jump on the balls of your feet, turning the rope overhead in one smooth motion.",
+        "Keep your torso upright and maintain a steady rhythm.",
+        "Continue jumping at a pace that matches the rope speed, breathing steadily throughout."
+      ]
+    },
+    {
+      "id": "cd_007",
+      "name": "Burpees",
+      "aliases": ["Burpee", "Squat Thrust"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Full Body",
+      "movement_pattern": "Conditioning",
+      "primary_muscle": "Cardiovascular System",
+      "secondary_muscles": ["Chest", "Shoulders", "Triceps", "Quadriceps", "Hamstrings", "Glutes", "Core"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Advanced",
+      "steps": [
+        "Start standing with your feet hip-width apart.",
+        "Squat down, place your hands on the floor, and jump or step your feet back into a plank position.",
+        "Perform a push-up, then jump or step your feet back toward your hands.",
+        "Explode upward, jumping into the air with your arms overhead, then return to the starting position."
+      ]
+    },
+    {
+      "id": "cd_008",
+      "name": "Mountain Climbers",
+      "aliases": ["Running in Place", "Climbers"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Full Body",
+      "movement_pattern": "Conditioning",
+      "primary_muscle": "Cardiovascular System",
+      "secondary_muscles": ["Core", "Shoulders", "Chest", "Quadriceps", "Hamstrings"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Start in a high plank position with your hands shoulder-width apart.",
+        "Drive one knee toward your chest while keeping the other leg extended.",
+        "Quickly switch leg positions in a running motion, maintaining a steady pace.",
+        "Keep your core engaged and hips level throughout the movement."
+      ]
+    },
+    {
+      "id": "cd_009",
+      "name": "High Knees",
+      "aliases": ["High Knee Run", "Running in Place"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Cardio",
+      "movement_pattern": "Conditioning",
+      "primary_muscle": "Cardiovascular System",
+      "secondary_muscles": ["Quadriceps", "Hamstrings", "Hip Flexors", "Calves"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Stand tall with your feet hip-width apart.",
+        "Run in place while driving your knees up toward chest height.",
+        "Pump your arms in rhythm with your leg movement.",
+        "Maintain a quick, steady pace and control your breathing."
+      ]
+    },
+    {
+      "id": "cd_010",
+      "name": "Jumping Jacks",
+      "aliases": ["Jumping Jacks Cardio"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Full Body",
+      "movement_pattern": "Conditioning",
+      "primary_muscle": "Cardiovascular System",
+      "secondary_muscles": ["Quadriceps", "Calves", "Shoulders", "Abs"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "steps": [
+        "Stand with your feet together and arms at your sides.",
+        "Jump upward while spreading your feet and raising your arms overhead.",
+        "Land softly on the balls of your feet with your feet shoulder-width apart.",
+        "Jump again to return to the starting position and repeat in a continuous motion."
+      ]
+    },
+    {
+      "id": "kb_001",
+      "name": "Kettlebell Swing",
+      "aliases": ["KB Swing", "Two-Handed Swing"],
+      "equipment": "Kettlebell",
+      "target_muscle_group": "Full Body",
+      "movement_pattern": "Hinge",
+      "primary_muscle": "Glutes",
+      "secondary_muscles": ["Hamstrings", "Lower Back", "Core", "Shoulders"],
+      "mechanics": "Compound",
+      "force": "Pull",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Stand with your feet shoulder-width apart, a kettlebell on the floor in front of you.",
+        "Hinge at the hips and grab the kettlebell with both hands, keeping your chest up.",
+        "Drive your hips forward explosively to swing the kettlebell up to about chest height.",
+        "Let gravity bring the kettlebell back down through your legs, repeating the hip drive in a continuous motion."
+      ]
+    },
+    {
+      "id": "kb_002",
+      "name": "Goblet Squat (KB)",
+      "aliases": ["Kettlebell Goblet Squat"],
+      "equipment": "Kettlebell",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Squat",
+      "primary_muscle": "Quadriceps",
+      "secondary_muscles": ["Glutes", "Core", "Upper Back"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Hold a kettlebell vertically against your chest with both hands, elbows bent.",
+        "Stand with your feet slightly wider than shoulder-width apart.",
+        "Squat down by pushing your hips back, keeping your chest up and weight in your heels.",
+        "Drive through your feet to stand back up, keeping the kettlebell close to your body."
+      ]
+    },
+    {
+      "id": "kb_003",
+      "name": "Kettlebell Clean",
+      "aliases": ["KB Clean", "Single-Arm Clean"],
+      "equipment": "Kettlebell",
+      "target_muscle_group": "Full Body",
+      "movement_pattern": "Hinge",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": ["Glutes", "Back", "Shoulders", "Trapezius"],
+      "mechanics": "Compound",
+      "force": "Pull",
+      "difficulty": "Advanced",
+      "steps": [
+        "Place the kettlebell on the floor between your feet.",
+        "Hinge at the hips and swing the kettlebell up with one arm, loading your hips.",
+        "As the bell rises, punch your fist upward and rotate your elbow under the handle.",
+        "Catch the bell in the racked position at shoulder height, then set it down and repeat on the other side."
+      ]
+    },
+    {
+      "id": "kb_004",
+      "name": "Kettlebell Snatch",
+      "aliases": ["KB Snatch"],
+      "equipment": "Kettlebell",
+      "target_muscle_group": "Full Body",
+      "movement_pattern": "Hinge",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": ["Glutes", "Shoulders", "Back", "Trapezius", "Core"],
+      "mechanics": "Compound",
+      "force": "Pull",
+      "difficulty": "Advanced",
+      "steps": [
+        "Stand with the kettlebell on the floor slightly in front of one foot.",
+        "Swing the kettlebell up with power, driving your hips forward as you pull with your arm.",
+        "As the kettlebell reaches chest height, rotate your elbow under and punch the bell overhead in one fluid motion.",
+        "Lock out your arm with the kettlebell overhead, then lower it back down following the same path."
+      ]
+    },
+    {
+      "id": "kb_005",
+      "name": "Turkish Get-Up",
+      "aliases": ["TGU", "Kettlebell Get-Up"],
+      "equipment": "Kettlebell",
+      "target_muscle_group": "Full Body",
+      "movement_pattern": "Core Isometric",
+      "primary_muscle": "Core",
+      "secondary_muscles": ["Shoulders", "Glutes", "Hamstrings", "Stability"],
+      "mechanics": "Compound",
+      "force": "Static",
+      "difficulty": "Advanced",
+      "steps": [
+        "Lie on your back with one knee bent and the kettlebell pressed overhead in one arm.",
+        "Drive through your heel to roll onto your forearm, then place your hand on the ground.",
+        "Push through your legs to transition into a half-kneeling position, keeping the kettlebell stable.",
+        "Stand up fully while keeping the kettlebell pressed overhead, then reverse the movement to return to lying."
+      ]
+    },
+    {
+      "id": "kb_006",
+      "name": "KB Front Rack Carry",
+      "aliases": ["Kettlebell Carry", "Racked Carry"],
+      "equipment": "Kettlebell",
+      "target_muscle_group": "Full Body",
+      "movement_pattern": "Carry",
+      "primary_muscle": "Core",
+      "secondary_muscles": ["Shoulders", "Quadriceps", "Glutes", "Trapezius"],
+      "mechanics": "Compound",
+      "force": "Static",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Clean the kettlebell to your shoulder in the racked position.",
+        "Stand tall with your core braced and engaged throughout the movement.",
+        "Walk forward for a prescribed distance or time, maintaining upright posture.",
+        "Keep the kettlebell stable at shoulder height, breathing steadily as you move."
+      ]
+    },
+    {
+      "id": "kb_007",
+      "name": "KB Single-Arm Row",
+      "aliases": ["Kettlebell Row"],
+      "equipment": "Kettlebell",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Horizontal Pull",
+      "primary_muscle": "Lats",
+      "secondary_muscles": ["Rhomboids", "Biceps", "Core"],
+      "mechanics": "Compound",
+      "force": "Pull",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Stand with your feet hip-width apart, holding a kettlebell in one hand.",
+        "Hinge forward at the hips and support yourself with your other hand on a bench or knee.",
+        "Pull the kettlebell up toward your hip, driving your elbow back and squeezing your back muscles.",
+        "Lower the kettlebell with control and repeat for reps, then switch sides."
+      ]
+    },
+    {
+      "id": "kb_008",
+      "name": "KB Overhead Press",
+      "aliases": ["Kettlebell Press"],
+      "equipment": "Kettlebell",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Vertical Push",
+      "primary_muscle": "Shoulders",
+      "secondary_muscles": ["Triceps", "Upper Chest", "Core"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Clean the kettlebell to your shoulder in the racked position.",
+        "Brace your core and keep your glutes tight.",
+        "Press the kettlebell straight overhead until your arm is fully extended.",
+        "Lower the kettlebell back to your shoulder with control and repeat."
+      ]
+    },
+    {
+      "id": "bd_001",
+      "name": "Band Pull-Apart",
+      "aliases": ["Resistance Band Pull-Apart"],
+      "equipment": "Band",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Horizontal Pull",
+      "primary_muscle": "Rear Deltoids",
+      "secondary_muscles": ["Rhomboids", "Upper Back"],
+      "mechanics": "Isolation",
+      "force": "Pull",
+      "difficulty": "Beginner",
+      "steps": [
+        "Stand upright holding a resistance band with both hands at chest height, arms extended.",
+        "Keep a slight bend in your elbows throughout the movement.",
+        "Pull the band apart by moving your hands outward in a controlled arc.",
+        "Squeeze your rear delts and upper back muscles, then slowly return to the starting position."
+      ]
+    },
+    {
+      "id": "bd_002",
+      "name": "Band Chest Press",
+      "aliases": ["Chest Press Band"],
+      "equipment": "Band",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Horizontal Push",
+      "primary_muscle": "Chest",
+      "secondary_muscles": ["Triceps", "Anterior Deltoids"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "steps": [
+        "Anchor the band at chest height behind you, or wrap it around a secure post.",
+        "Grab both ends of the band and face away from the anchor point.",
+        "Press the band forward until your arms are fully extended.",
+        "Slowly return to the starting position with the band at chest level."
+      ]
+    },
+    {
+      "id": "bd_003",
+      "name": "Band Lateral Walk",
+      "aliases": ["Lateral Band Walk", "Glute Walk"],
+      "equipment": "Band",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Gluteus Medius",
+      "secondary_muscles": ["Glutes", "Quadriceps"],
+      "mechanics": "Isolation",
+      "force": "Push",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Place a resistance band above your knees or around your calves.",
+        "Squat into a quarter-squat position with your knees slightly bent.",
+        "Take controlled steps to the side while maintaining tension on the band.",
+        "Step in one direction for reps, then repeat in the opposite direction."
+      ]
+    },
+    {
+      "id": "bd_004",
+      "name": "Band Bicep Curl",
+      "aliases": ["Resistance Band Curl"],
+      "equipment": "Band",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": ["Brachialis", "Forearms"],
+      "mechanics": "Isolation",
+      "force": "Pull",
+      "difficulty": "Beginner",
+      "steps": [
+        "Stand on the center of the band with your feet shoulder-width apart.",
+        "Hold the ends of the band with your palms facing forward and arms extended.",
+        "Curl the band up toward your shoulders by bending your elbows.",
+        "Squeeze your biceps at the top, then lower the band with control."
+      ]
+    },
+    {
+      "id": "bd_005",
+      "name": "Band Tricep Pushdown",
+      "aliases": ["Tricep Band Pushdown"],
+      "equipment": "Band",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": [],
+      "mechanics": "Isolation",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "steps": [
+        "Anchor the band at head height and face the anchor point.",
+        "Grab the band and bring it down to chest height with your elbows bent.",
+        "Press the band downward until your arms are fully extended.",
+        "Control the band as it returns to chest height."
+      ]
+    },
+    {
+      "id": "bd_006",
+      "name": "Band Face Pull",
+      "aliases": ["Resistance Band Face Pull"],
+      "equipment": "Band",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Horizontal Pull",
+      "primary_muscle": "Rear Deltoids",
+      "secondary_muscles": ["Rhomboids", "Upper Traps"],
+      "mechanics": "Compound",
+      "force": "Pull",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Anchor the band at face height and face the anchor point.",
+        "Grab the band with both hands, arms extended in front of your face.",
+        "Pull the band toward your face, spreading it apart as you pull.",
+        "Squeeze your rear delts and upper back, then slowly return to the starting position."
+      ]
+    },
+    {
+      "id": "bd_007",
+      "name": "Band Glute Kickback",
+      "aliases": ["Glute Kickback Band"],
+      "equipment": "Band",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Glutes",
+      "secondary_muscles": ["Hamstrings"],
+      "mechanics": "Isolation",
+      "force": "Push",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Wrap the band around one leg above the knee and hold the other end for stability.",
+        "Stand on one leg and keep a slight bend in the standing knee.",
+        "Extend the banded leg backward and upward, squeezing your glute at the top.",
+        "Lower the leg with control and repeat for reps, then switch sides."
+      ]
+    },
+    {
+      "id": "pl_001",
+      "name": "Box Jump",
+      "aliases": ["Plyo Box Jump"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Plyometric",
+      "primary_muscle": "Quadriceps",
+      "secondary_muscles": ["Glutes", "Hamstrings", "Calves"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Advanced",
+      "steps": [
+        "Stand facing a plyo box at a distance of about 1-2 feet away.",
+        "Bend your knees and arms in preparation, then explosively jump onto the box.",
+        "Land softly on the balls of your feet with your knees slightly bent.",
+        "Stand up fully on the box, then step down carefully (do not jump back down)."
+      ]
+    },
+    {
+      "id": "pl_002",
+      "name": "Jump Squat",
+      "aliases": ["Squat Jump", "Plyometric Squat"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Plyometric",
+      "primary_muscle": "Quadriceps",
+      "secondary_muscles": ["Glutes", "Hamstrings", "Calves"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Stand with your feet shoulder-width apart.",
+        "Lower into a squat position by bending your knees until your thighs are parallel to the floor.",
+        "Explosively drive through your heels to jump upward as high as possible.",
+        "Land softly on the balls of your feet, absorbing the impact, then immediately squat and repeat."
+      ]
+    },
+    {
+      "id": "pl_003",
+      "name": "Broad Jump",
+      "aliases": ["Long Jump"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Plyometric",
+      "primary_muscle": "Quadriceps",
+      "secondary_muscles": ["Glutes", "Hamstrings", "Calves"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Advanced",
+      "steps": [
+        "Stand with your feet hip-width apart and your arms at your sides.",
+        "Swing your arms backward and bend your knees in preparation.",
+        "Explosively drive forward and upward, swinging your arms forward for momentum.",
+        "Land on both feet as softly as possible, ensuring a stable landing position."
+      ]
+    },
+    {
+      "id": "pl_004",
+      "name": "Jumping Lunge",
+      "aliases": ["Jump Lunge", "Alternating Lunge Jump"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Plyometric",
+      "primary_muscle": "Quadriceps",
+      "secondary_muscles": ["Glutes", "Hamstrings"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Start in a lunge position with one foot forward and one foot back.",
+        "Lower your hips until both knees are bent at 90 degrees.",
+        "Explosively jump upward, switching your leg positions in mid-air.",
+        "Land softly in the opposite lunge position and immediately repeat the jump."
+      ]
+    },
+    {
+      "id": "pl_005",
+      "name": "Plyo Push-Up",
+      "aliases": ["Plyometric Push-Up", "Clapping Push-Up"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Plyometric",
+      "primary_muscle": "Chest",
+      "secondary_muscles": ["Triceps", "Anterior Deltoids", "Core"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Advanced",
+      "steps": [
+        "Start in a high plank position with your hands slightly wider than shoulder-width apart.",
+        "Lower your body until your chest is just above the floor.",
+        "Explosively push upward with enough force to lift your hands off the ground.",
+        "Land softly with your hands back on the ground and immediately lower for the next rep."
+      ]
+    },
+    {
+      "id": "pl_006",
+      "name": "Tuck Jump",
+      "aliases": ["Jump with Tuck", "Knees to Chest Jump"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Plyometric",
+      "primary_muscle": "Quadriceps",
+      "secondary_muscles": ["Glutes", "Hamstrings", "Hip Flexors", "Calves"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Advanced",
+      "steps": [
+        "Stand with your feet hip-width apart and your arms at your sides.",
+        "Bend your knees slightly and explosively jump upward.",
+        "While airborne, drive your knees up toward your chest and pull your toes toward your shins.",
+        "Land softly on the balls of your feet with bent knees, then immediately repeat."
+      ]
+    },
+    {
+      "id": "ol_001",
+      "name": "Power Clean",
+      "aliases": ["Hang Power Clean"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Full Body",
+      "movement_pattern": "Olympic",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": ["Glutes", "Quadriceps", "Back", "Shoulders", "Trapezius"],
+      "mechanics": "Compound",
+      "force": "Pull",
+      "difficulty": "Advanced",
+      "steps": [
+        "Start with the bar at mid-thigh level, feet hip-width apart.",
+        "Extend your hips explosively while shrugging and pulling the bar up.",
+        "As the bar reaches chest height, rotate your elbows under it and catch it on your shoulders.",
+        "Stabilize the position, then lower the bar back to the hang position."
+      ]
+    },
+    {
+      "id": "ol_002",
+      "name": "Clean and Jerk",
+      "aliases": ["Full Clean and Jerk"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Full Body",
+      "movement_pattern": "Olympic",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": ["Glutes", "Quadriceps", "Shoulders", "Triceps", "Back"],
+      "mechanics": "Compound",
+      "force": "Pull",
+      "difficulty": "Advanced",
+      "steps": [
+        "Start with the bar on the floor and perform a clean, catching it on your shoulders.",
+        "From the front rack position, dip by bending your knees slightly.",
+        "Drive upward powerfully and press the bar overhead, splitting your feet if necessary.",
+        "Recover by bringing your feet back together, then lower the bar back to your shoulders."
+      ]
+    },
+    {
+      "id": "ol_003",
+      "name": "Snatch",
+      "aliases": ["Barbell Snatch"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Full Body",
+      "movement_pattern": "Olympic",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": ["Glutes", "Quadriceps", "Shoulders", "Back", "Trapezius"],
+      "mechanics": "Compound",
+      "force": "Pull",
+      "difficulty": "Advanced",
+      "steps": [
+        "Stand with the bar on the floor, feet hip-width apart, with a wide grip.",
+        "Drive through your legs and explosively extend your hips, pulling the bar upward.",
+        "As the bar reaches chest height, rotate your elbows under and catch it overhead in a squat position.",
+        "Stand up fully, then lower the bar back down in a controlled manner."
+      ]
+    },
+    {
+      "id": "ol_004",
+      "name": "Hang Clean",
+      "aliases": ["Hang Power Clean"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Full Body",
+      "movement_pattern": "Olympic",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": ["Glutes", "Quadriceps", "Back", "Shoulders", "Trapezius"],
+      "mechanics": "Compound",
+      "force": "Pull",
+      "difficulty": "Advanced",
+      "steps": [
+        "Hold the bar at hip height with your feet hip-width apart.",
+        "Extend your hips explosively while shrugging and pulling the bar upward.",
+        "Rotate your elbows under the bar as it reaches chest height and catch it on your shoulders.",
+        "Stabilize the position, then lower the bar back to hip height."
+      ]
+    },
+    {
+      "id": "ol_005",
+      "name": "Push Press",
+      "aliases": ["Barbell Push Press"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Olympic",
+      "primary_muscle": "Shoulders",
+      "secondary_muscles": ["Triceps", "Chest", "Quadriceps", "Core"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Advanced",
+      "steps": [
+        "Stand with the bar on your shoulders at eye level, feet hip-width apart.",
+        "Bend your knees slightly and dip your hips downward in preparation.",
+        "Drive upward forcefully through your legs while pressing the bar overhead.",
+        "Lock out your arms overhead, then lower the bar back to shoulder level."
+      ]
+    },
+    {
+      "id": "co_001",
+      "name": "Hanging Leg Raise",
+      "aliases": ["Hang Leg Raise", "Toes to Bar"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Core",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Abs",
+      "secondary_muscles": ["Hip Flexors", "Obliques"],
+      "mechanics": "Isolation",
+      "force": "Pull",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Hang from a pull-up bar with your hands shoulder-width apart and arms fully extended.",
+        "Engage your core and lift your legs by raising your knees toward your chest.",
+        "Continue raising until your legs are parallel to the ground or higher if possible.",
+        "Lower your legs slowly with control back to the starting position."
+      ]
+    },
+    {
+      "id": "co_002",
+      "name": "Russian Twist",
+      "aliases": ["Seated Russian Twist"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Core",
+      "movement_pattern": "Rotational",
+      "primary_muscle": "Obliques",
+      "secondary_muscles": ["Abs", "Back"],
+      "mechanics": "Compound",
+      "force": "Static",
+      "difficulty": "Beginner",
+      "steps": [
+        "Sit on the floor with your knees bent and feet slightly elevated off the ground.",
+        "Lean back at about a 45-degree angle, keeping your chest up.",
+        "Clasp your hands together and rotate your torso to one side, bringing your hands toward the floor.",
+        "Rotate to the other side in a controlled manner, maintaining your leg position."
+      ]
+    },
+    {
+      "id": "co_003",
+      "name": "Ab Wheel Rollout",
+      "aliases": ["Abdominal Wheel Rollout"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Core",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Abs",
+      "secondary_muscles": ["Core", "Shoulders", "Chest"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Advanced",
+      "steps": [
+        "Kneel on the floor and grip an ab wheel with both hands.",
+        "Keep your core braced and roll the wheel forward, extending your body toward the floor.",
+        "Stop before your chest touches the ground, then pull the wheel back to the starting position.",
+        "Keep your hips level throughout the movement."
+      ]
+    },
+    {
+      "id": "co_004",
+      "name": "Bicycle Crunch",
+      "aliases": ["Lying Bicycle Crunch"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Core",
+      "movement_pattern": "Rotational",
+      "primary_muscle": "Abs",
+      "secondary_muscles": ["Obliques"],
+      "mechanics": "Isolation",
+      "force": "Static",
+      "difficulty": "Beginner",
+      "steps": [
+        "Lie on your back with your knees bent and hands placed lightly behind your head.",
+        "Lift your shoulders off the ground by engaging your abs.",
+        "Bring your right elbow toward your left knee while extending your right leg.",
+        "Alternate sides in a pedaling motion, maintaining tension on your abdominals."
+      ]
+    },
+    {
+      "id": "co_005",
+      "name": "Dead Bug",
+      "aliases": ["Lying Dead Bug"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Core",
+      "movement_pattern": "Core Isometric",
+      "primary_muscle": "Abs",
+      "secondary_muscles": ["Core", "Hip Flexors"],
+      "mechanics": "Isolation",
+      "force": "Static",
+      "difficulty": "Beginner",
+      "steps": [
+        "Lie on your back with your arms extended toward the ceiling and your knees bent at 90 degrees.",
+        "Engage your core and lower your right arm overhead while extending your left leg toward the floor.",
+        "Return to the starting position, then repeat on the opposite side.",
+        "Alternate sides in a controlled manner, keeping your lower back pressed to the floor."
+      ]
+    },
+    {
+      "id": "co_006",
+      "name": "Hollow Hold",
+      "aliases": ["Hollow Body Hold"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Core",
+      "movement_pattern": "Core Isometric",
+      "primary_muscle": "Abs",
+      "secondary_muscles": ["Core", "Shoulders", "Anterior Deltoids"],
+      "mechanics": "Isolation",
+      "force": "Static",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Lie on your back with your arms extended overhead and your legs straight.",
+        "Engage your core and press your lower back into the floor.",
+        "Raise your shoulders and legs slightly off the ground, creating a slight arch in your body.",
+        "Hold this position while maintaining constant tension, breathing steadily."
+      ]
+    },
+    {
+      "id": "co_007",
+      "name": "Side Plank",
+      "aliases": ["Lateral Plank"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Core",
+      "movement_pattern": "Core Isometric",
+      "primary_muscle": "Obliques",
+      "secondary_muscles": ["Abs", "Shoulders", "Hip Abductors"],
+      "mechanics": "Isolation",
+      "force": "Static",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Lie on your side with your forearm on the ground, elbow aligned below your shoulder.",
+        "Place your top foot on top of your bottom foot, or stagger them for more stability.",
+        "Engage your core and lift your hips off the ground, creating a straight line from head to heels.",
+        "Hold this position while breathing steadily, then repeat on the other side."
+      ]
+    },
+    {
+      "id": "co_008",
+      "name": "Cable Crunch",
+      "aliases": ["Machine Cable Crunch"],
+      "equipment": "Cable",
+      "target_muscle_group": "Core",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Abs",
+      "secondary_muscles": ["Obliques"],
+      "mechanics": "Isolation",
+      "force": "Push",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Set a cable pulley to the high position and attach a rope.",
+        "Kneel facing away from the machine with the rope behind your head.",
+        "Crunch forward by contracting your abs, bringing your head toward your knees.",
+        "Squeeze your abs at the bottom, then slowly return to the starting position."
+      ]
+    },
+    {
+      "id": "is_001",
+      "name": "Preacher Curl",
+      "aliases": ["Preacher Bench Curl"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": ["Brachialis"],
+      "mechanics": "Isolation",
+      "force": "Pull",
+      "difficulty": "Beginner",
+      "steps": [
+        "Sit at a preacher bench and place your arms on the pad, elbows on the bench.",
+        "Hold a dumbbell or barbell with an underhand grip in each hand.",
+        "Curl the weight upward by bending your elbows, keeping them on the bench.",
+        "Squeeze your biceps at the top, then lower the weight with control."
+      ]
+    },
+    {
+      "id": "is_002",
+      "name": "Concentration Curl",
+      "aliases": ["Seated Concentration Curl"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Biceps",
+      "secondary_muscles": ["Brachialis"],
+      "mechanics": "Isolation",
+      "force": "Pull",
+      "difficulty": "Beginner",
+      "steps": [
+        "Sit on a bench with your legs spread wide and a dumbbell in one hand.",
+        "Rest your elbow on your inner thigh, arm hanging straight down.",
+        "Curl the dumbbell up toward your shoulder by flexing your bicep.",
+        "Lower the dumbbell with control back to the starting position."
+      ]
+    },
+    {
+      "id": "is_003",
+      "name": "Cable Glute Kickback",
+      "aliases": ["Cable Kickback"],
+      "equipment": "Cable",
+      "target_muscle_group": "Lower Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Glutes",
+      "secondary_muscles": ["Hamstrings"],
+      "mechanics": "Isolation",
+      "force": "Push",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Attach an ankle strap to a low cable pulley on one side.",
+        "Face the machine and hold the support bar with both hands.",
+        "Extend one leg backward and upward, squeezing your glute at the top.",
+        "Lower your leg with control back to the starting position, then repeat on the other side."
+      ]
+    },
+    {
+      "id": "is_004",
+      "name": "Dumbbell Front Raise",
+      "aliases": ["Front Shoulder Raise"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Anterior Deltoids",
+      "secondary_muscles": ["Upper Chest"],
+      "mechanics": "Isolation",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "steps": [
+        "Stand tall holding a dumbbell in each hand at your sides, palms facing backward.",
+        "Keep a slight bend in your elbows and raise both dumbbells forward and upward to shoulder height.",
+        "Pause briefly at the top, then slowly lower the dumbbells back to your sides."
+      ]
+    },
+    {
+      "id": "is_005",
+      "name": "Barbell Upright Row",
+      "aliases": ["Upright Row"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Isolation",
+      "primary_muscle": "Lateral Deltoids",
+      "secondary_muscles": ["Upper Traps", "Biceps"],
+      "mechanics": "Compound",
+      "force": "Pull",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Stand holding a barbell with a narrow grip (about 8 inches apart) at hip level.",
+        "Keep your chest up and pull the barbell straight up toward your chin.",
+        "Lead with your elbows and keep them high throughout the movement.",
+        "Lower the barbell back down to hip level with control."
+      ]
+    },
+    {
+      "id": "is_006",
+      "name": "Reverse Pec Fly (Dumbbell)",
+      "aliases": ["Dumbbell Reverse Fly"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Horizontal Pull",
+      "primary_muscle": "Rear Deltoids",
+      "secondary_muscles": ["Rhomboids", "Upper Back"],
+      "mechanics": "Isolation",
+      "force": "Pull",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Sit at the edge of a bench and hold a dumbbell in each hand, arms extended downward.",
+        "Hinge forward at the hips until your torso is nearly parallel to the floor.",
+        "Raise the dumbbells out to the sides in a wide arc until they reach shoulder height.",
+        "Squeeze your rear delts, then lower the dumbbells back to the starting position."
+      ]
+    },
+    {
+      "id": "is_007",
+      "name": "Dumbbell Fly",
+      "aliases": ["Chest Fly", "Pec Fly"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Upper Body",
+      "movement_pattern": "Horizontal Push",
+      "primary_muscle": "Chest",
+      "secondary_muscles": ["Anterior Deltoids"],
+      "mechanics": "Isolation",
+      "force": "Push",
+      "difficulty": "Intermediate",
+      "steps": [
+        "Lie flat on a bench with a dumbbell in each hand, arms extended above your chest.",
+        "Keep a slight bend in your elbows and lower the dumbbells in a wide arc toward the floor.",
+        "Stop when you feel a stretch across your chest, then bring the dumbbells back to the starting position.",
+        "Squeeze your chest muscles at the top."
+      ]
+    },
+    {
+      "id": "is_008",
+      "name": "Farmer's Carry",
+      "aliases": ["Farmers Walk", "Loaded Carry"],
+      "equipment": "Freeweight",
+      "target_muscle_group": "Full Body",
+      "movement_pattern": "Carry",
+      "primary_muscle": "Forearms",
+      "secondary_muscles": ["Trapezius", "Core", "Shoulders"],
+      "mechanics": "Compound",
+      "force": "Static",
+      "difficulty": "Beginner",
+      "steps": [
+        "Stand tall holding a dumbbell or kettlebell in each hand at your sides.",
+        "Brace your core and engage your grip strength.",
+        "Walk forward for a prescribed distance or time, maintaining an upright posture.",
+        "Keep your shoulders back and core tight throughout the movement."
+      ]
+    }
+  ]
+}

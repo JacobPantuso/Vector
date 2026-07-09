@@ -1,10 +1,12 @@
 import SwiftUI
 
 struct ExercisePickerView: View {
-    let onSelect: (ManualExerciseEntry) -> Void
+    let onAdd: ([ManualExerciseEntry]) -> Void
 
     @State private var searchText = ""
     @State private var selectedEquipment: String? = nil
+    @State private var showingCreate = false
+    @State private var selectedIDs: [String] = []
     @Environment(\.dismiss) private var dismiss
 
     private var filteredExercises: [LibraryExercise] {
@@ -15,36 +17,44 @@ struct ExercisePickerView: View {
         )
     }
 
-    private let equipmentFilters = ["All", "Bodyweight", "Freeweight", "Cable", "Machine"]
+    private var equipmentFilters: [String] {
+        ["All"] + ExerciseLibrary.shared.allEquipmentTypes
+    }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 filterChips
                     .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
 
                 List {
+                    Button {
+                        showingCreate = true
+                    } label: {
+                        createCustomCard
+                    }
+                    .buttonStyle(.plain)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+
                     ForEach(filteredExercises) { exercise in
                         Button {
-                            let entry = ManualExerciseEntry(
-                                libraryExerciseId: exercise.id,
-                                name: exercise.name,
-                                sets: 3,
-                                reps: 10,
-                                durationSeconds: 30,
-                                inputType: .reps,
-                                weightKg: nil,
-                                restSeconds: 90,
-                                notes: ""
-                            )
-                            onSelect(entry)
+                            toggle(exercise)
                         } label: {
-                            ExerciseRowView(exercise: exercise)
+                            ExerciseRowView(exercise: exercise, isSelected: selectedIDs.contains(exercise.id))
                         }
                         .buttonStyle(.plain)
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
+                        .swipeActions {
+                            if exercise.isCustom {
+                                Button(role: .destructive) {
+                                    CustomExerciseStore.shared.delete(exercise)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                        }
                     }
                 }
                 .listStyle(.plain)
@@ -58,8 +68,47 @@ struct ExercisePickerView: View {
                     Button("Cancel") { dismiss() }
                         .foregroundStyle(.secondary)
                 }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        confirmAdd()
+                    } label: {
+                        Text(selectedIDs.isEmpty ? "Add" : "Add \(selectedIDs.count) Exercises")
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.blue)
+                    }
+                    .disabled(selectedIDs.isEmpty)
+                }
+            }
+            .sheet(isPresented: $showingCreate) {
+                CustomExerciseCreationView { newExercise in
+                    CustomExerciseStore.shared.add(newExercise)
+                    showingCreate = false
+                    if !selectedIDs.contains(newExercise.id) {
+                        selectedIDs.append(newExercise.id)
+                    }
+                }
             }
         }
+    }
+
+    private var createCustomCard: some View {
+        HStack(spacing: 14) {
+            Image(systemName: "plus.circle.fill")
+                .font(.title2)
+                .foregroundStyle(.cyan)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Create Custom Exercise")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text("Add your own movement")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .glassEffect(in: .rect(cornerRadius: 14))
     }
 
     private var filterChips: some View {
@@ -88,6 +137,7 @@ struct ExercisePickerView: View {
                 }
             }
             .padding(.horizontal, 2)
+            .padding(.vertical, 10)
         }
     }
 
@@ -100,11 +150,43 @@ struct ExercisePickerView: View {
         default: return .cyan
         }
     }
+
+    private func toggle(_ exercise: LibraryExercise) {
+        if let idx = selectedIDs.firstIndex(of: exercise.id) {
+            selectedIDs.remove(at: idx)
+        } else {
+            selectedIDs.append(exercise.id)
+        }
+    }
+
+    private func buildEntry(for exercise: LibraryExercise) -> ManualExerciseEntry {
+        ManualExerciseEntry(
+            libraryExerciseId: exercise.id,
+            name: exercise.name,
+            sets: 3,
+            reps: 10,
+            durationSeconds: 30,
+            inputType: .reps,
+            weightKg: nil,
+            restSeconds: 90,
+            notes: ""
+        )
+    }
+
+    private func confirmAdd() {
+        let entries = selectedIDs.compactMap { id in
+            ExerciseLibrary.shared.allExercises.first { $0.id == id }
+        }.map { buildEntry(for: $0) }
+        guard !entries.isEmpty else { return }
+        onAdd(entries)
+        dismiss()
+    }
 }
 
 // MARK: - Exercise Row
 private struct ExerciseRowView: View {
     let exercise: LibraryExercise
+    var isSelected: Bool = false
 
     var body: some View {
         HStack(spacing: 14) {
@@ -113,9 +195,20 @@ private struct ExerciseRowView: View {
                 .frame(width: 4, height: 44)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(exercise.name)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
+                HStack(spacing: 6) {
+                    Text(exercise.name)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    if exercise.isCustom {
+                        Text("CUSTOM")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(.cyan)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.cyan.opacity(0.15))
+                            .clipShape(Capsule())
+                    }
+                }
 
                 HStack(spacing: 6) {
                     Text(exercise.primaryMuscle)
@@ -136,9 +229,9 @@ private struct ExerciseRowView: View {
 
             Spacer()
 
-            Image(systemName: "plus.circle")
-                .foregroundStyle(.secondary)
-                .font(.subheadline)
+            Image(systemName: isSelected ? "checkmark.circle.fill" : "plus.circle")
+                .foregroundStyle(isSelected ? AnyShapeStyle(.cyan) : AnyShapeStyle(.secondary))
+                .font(isSelected ? .title3 : .subheadline)
         }
         .padding(.horizontal, 4)
         .padding(.vertical, 6)

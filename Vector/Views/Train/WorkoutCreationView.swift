@@ -61,9 +61,11 @@ struct WorkoutCreationView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(.secondary)
+                    Button(action: {
+                        dismiss()
+                    }, label: {
+                        Image(systemName: "multiply")
+                    })
                 }
             }
         }

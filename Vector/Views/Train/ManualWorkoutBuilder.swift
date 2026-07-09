@@ -9,6 +9,7 @@ struct ManualWorkoutBuilder: View {
     @State private var exercises: [ManualExerciseEntry] = []
     @State private var showingPicker = false
     @State private var editingExercise: ManualExerciseEntry?
+    @State private var pendingSupersetID: UUID?
 
     private var estimatedDuration: Int {
         let total = exercises.reduce(0) { acc, ex in
@@ -39,8 +40,7 @@ struct ManualWorkoutBuilder: View {
         .scrollEdgeEffectStyle(.soft, for: .all)
         .sheet(isPresented: $showingPicker) {
             ExercisePickerView { selected in
-                exercises.append(selected)
-                showingPicker = false
+                exercises.append(contentsOf: selected)
             }
         }
         .sheet(item: $editingExercise) { exercise in
@@ -57,8 +57,18 @@ struct ManualWorkoutBuilder: View {
     private var metadataSection: some View {
         GlassCard(cornerRadius: 20) {
             VStack(spacing: 14) {
-                TextField("Workout Title", text: $title)
-                    .font(.title3.bold())
+                HStack {
+                    TextField("Workout Title", text: $title)
+                        .font(.title3.bold())
+                        .onChange(of: title) { _, newValue in
+                            if newValue.count > 40 {
+                                title = String(newValue.prefix(40))
+                            }
+                        }
+                    Text("\(title.count)/40")
+                        .font(.caption)
+                        .foregroundStyle(title.count >= 35 ? .orange : .secondary)
+                }
 
                 Divider()
 
@@ -90,14 +100,16 @@ struct ManualWorkoutBuilder: View {
                 Text("Exercises")
                     .font(.title3.bold())
                 Spacer()
-                Button {
-                    showingPicker = true
-                } label: {
-                    Label("Add", systemImage: "plus.circle.fill")
-                        .font(.subheadline.weight(.semibold))
+                if !exercises.isEmpty {
+                    Button {
+                        showingPicker = true
+                    } label: {
+                        Label("Add", systemImage: "plus.circle.fill")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.cyan)
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(.cyan)
             }
 
             if exercises.isEmpty {
@@ -119,6 +131,11 @@ struct ManualWorkoutBuilder: View {
             } else {
                 ForEach(Array(exercises.enumerated()), id: \.element.id) { idx, exercise in
                     exerciseRow(exercise, index: idx)
+                        .draggable(exercise.id.uuidString)
+                        .dropDestination(for: String.self) { items, _ in
+                            handleDrop(draggedID: items.first, onto: exercise.id)
+                            return true
+                        }
                 }
             }
         }
@@ -126,6 +143,19 @@ struct ManualWorkoutBuilder: View {
 
     private func exerciseRow(_ exercise: ManualExerciseEntry, index: Int) -> some View {
         HStack(spacing: 12) {
+            // Drag handle
+            Image(systemName: "line.3.horizontal")
+                .foregroundStyle(.secondary)
+                .font(.caption)
+
+            // Left accent for supersets
+            if exercise.supersetID != nil {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(.purple)
+                    .frame(width: 3)
+            }
+
+            // Number circle
             ZStack {
                 Circle()
                     .fill(.ultraThinMaterial)
@@ -136,8 +166,19 @@ struct ManualWorkoutBuilder: View {
             }
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(exercise.name)
-                    .font(.subheadline.weight(.semibold))
+                HStack(spacing: 6) {
+                    Text(exercise.name)
+                        .font(.subheadline.weight(.semibold))
+                    if exercise.supersetID != nil {
+                        Text("SUPERSET")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(.purple)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.purple.opacity(0.15))
+                            .clipShape(Capsule())
+                    }
+                }
                 HStack(spacing: 6) {
                     Text(exercise.displaySetsReps)
                         .font(.caption)
@@ -149,29 +190,58 @@ struct ManualWorkoutBuilder: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+
+                if exercise.inputType == .reps {
+                    PerSetBreakdownView(exercise: exercise)
+                        .padding(.top, 2)
+                }
+
+                if exercise.supersetID != nil, exercise.supersetID == pendingSupersetID {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.down.to.line")
+                        Text("Drag an exercise on top to combine")
+                    }
+                    .font(.caption2)
+                    .foregroundStyle(.purple)
+                }
             }
 
             Spacer()
 
-            Button { editingExercise = exercise } label: {
-                Image(systemName: "pencil.circle")
-                    .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.plain)
-
-            Button {
-                withAnimation(.spring(duration: 0.3)) {
-                    exercises.removeAll { $0.id == exercise.id }
+            Menu {
+                Button(action: { editingExercise = exercise }) {
+                    Label("Edit Exercise", systemImage: "slider.horizontal.3")
+                }
+                if exercise.supersetID == nil {
+                    Button(action: { makeSuperset(id: exercise.id) }) {
+                        Label("Make Superset", systemImage: "link")
+                    }
+                } else {
+                    Button(role: .destructive, action: { removeFromSuperset(id: exercise.id) }) {
+                        Label("Remove from Superset", systemImage: "xmark.circle")
+                    }
+                }
+                Divider()
+                Button(role: .destructive, action: { deleteExercise(id: exercise.id) }) {
+                    Label("Remove Exercise", systemImage: "trash")
                 }
             } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.red.opacity(0.7))
+                Image(systemName: "ellipsis.circle")
+                    .font(.title3)
+                    .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .glassEffect(in: .rect(cornerRadius: 14))
+        .overlay {
+            if pendingSupersetID != nil, exercise.supersetID == pendingSupersetID {
+                RoundedRectangle(cornerRadius: 14)
+                    .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [6]))
+                    .foregroundStyle(.purple.opacity(0.6))
+            }
+        }
     }
 
     // MARK: - Stats Row
@@ -204,9 +274,11 @@ struct ManualWorkoutBuilder: View {
     // MARK: - Save Button
     private var saveButton: some View {
         Button {
+            pendingSupersetID = nil
+            normalizeSupersets()
             let workout = SavedWorkout(
                 title: title,
-                focus: focus.isEmpty ? "Custom workout" : focus,
+                focus: focus.isEmpty ? "Custom Workout" : focus,
                 source: .manual,
                 aiPlan: nil,
                 exercises: exercises,
@@ -220,6 +292,68 @@ struct ManualWorkoutBuilder: View {
         }
         .buttonStyle(.glassProminent)
     }
+
+    // MARK: - Drag & Reorder Helpers
+    private func handleDrop(draggedID: String?, onto targetID: UUID) {
+        guard let draggedID, let draggedUUID = UUID(uuidString: draggedID),
+              draggedUUID != targetID,
+              let from = exercises.firstIndex(where: { $0.id == draggedUUID }),
+              let toIdx = exercises.firstIndex(where: { $0.id == targetID }) else { return }
+        let target = exercises[toIdx]
+        withAnimation(.spring(duration: 0.3)) {
+            if let sid = target.supersetID {
+                // Drop onto a superset → join it
+                var item = exercises.remove(at: from)
+                item.supersetID = sid
+                let insertIdx = (exercises.firstIndex(where: { $0.id == targetID }) ?? 0) + 1
+                exercises.insert(item, at: insertIdx)
+                if sid == pendingSupersetID { pendingSupersetID = nil }
+            } else {
+                // Drop onto a normal exercise → reorder before it
+                let item = exercises.remove(at: from)
+                let insertAt = toIdx > from ? toIdx - 1 : toIdx
+                exercises.insert(item, at: insertAt)
+            }
+            normalizeSupersets()
+        }
+    }
+
+    // MARK: - Superset Helpers
+    private func makeSuperset(id: UUID) {
+        guard let i = exercises.firstIndex(where: { $0.id == id }) else { return }
+        let newID = UUID()
+        withAnimation(.spring(duration: 0.3)) {
+            exercises[i].supersetID = newID
+            pendingSupersetID = newID
+        }
+    }
+
+    private func deleteExercise(id: UUID) {
+        withAnimation(.spring(duration: 0.3)) {
+            exercises.removeAll { $0.id == id }
+            normalizeSupersets()
+        }
+    }
+
+    private func removeFromSuperset(id: UUID) {
+        guard let i = exercises.firstIndex(where: { $0.id == id }) else { return }
+        withAnimation(.spring(duration: 0.3)) {
+            exercises[i].supersetID = nil
+            normalizeSupersets()
+        }
+    }
+
+    /// Any supersetID that no longer covers 2+ consecutive entries is cleared (the pending one is preserved).
+    private func normalizeSupersets() {
+        let groups = exercises.groupedBySuperset()
+        for group in groups where !group.isSuperset {
+            if let only = group.entries.first,
+               only.supersetID != pendingSupersetID,
+               let i = exercises.firstIndex(where: { $0.id == only.id }) {
+                exercises[i].supersetID = nil
+            }
+        }
+    }
 }
 
 // MARK: - Exercise Entry Editor
@@ -229,42 +363,117 @@ struct ExerciseEntryEditor: View {
 
     @Environment(\.dismiss) private var dismiss
 
+    private let restPresets = [0, 30, 45, 60, 90, 120, 180]
+
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Sets & Reps") {
-                    Picker("Type", selection: $entry.inputType) {
-                        ForEach(ExerciseInputType.allCases, id: \.self) { type in
-                            Text(type.rawValue).tag(type)
+            ScrollView {
+                VStack(spacing: 16) {
+                    // Sets & Reps
+                    GlassCard(cornerRadius: 20) {
+                        VStack(spacing: 16) {
+                            Picker("Type", selection: $entry.inputType) {
+                                ForEach(ExerciseInputType.allCases, id: \.self) { type in
+                                    Text(type.rawValue).tag(type)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+
+                            Divider()
+
+                            counterRow(
+                                label: "Sets",
+                                value: $entry.sets,
+                                range: 1...20,
+                                step: 1,
+                                color: .cyan
+                            )
+
+                            if entry.inputType == .reps {
+                                Divider()
+
+                                perSetRows
+                            } else {
+                                Divider()
+
+                                durationCounter
+                            }
                         }
                     }
-                    .pickerStyle(.segmented)
 
-                    Stepper("Sets: \(entry.sets)", value: $entry.sets, in: 1...20)
+                    // Rest Time
+                    GlassCard(cornerRadius: 20) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Label("Rest Between Sets", systemImage: "timer")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.secondary)
 
-                    if entry.inputType == .reps {
-                        Stepper("Reps: \(entry.reps)", value: $entry.reps, in: 1...100)
-                    } else {
-                        Stepper("Duration: \(entry.durationSeconds)s", value: $entry.durationSeconds, in: 5...600, step: 5)
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4), spacing: 10) {
+                                ForEach(restPresets, id: \.self) { seconds in
+                                    let isSelected = entry.restSeconds == seconds
+                                    Button {
+                                        entry.restSeconds = seconds
+                                    } label: {
+                                        Text(restLabel(seconds))
+                                            .font(.subheadline.weight(.semibold))
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 10)
+                                            .glassEffect(.regular.tint(isSelected ? .orange.opacity(0.35) : .white.opacity(0.06)), in: .rect(cornerRadius: 12))
+                                            .foregroundStyle(isSelected ? .orange : .primary)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                    }
+
+                    // Weight (uniform — reps mode has per-set weights)
+                    if entry.inputType == .duration {
+                        GlassCard(cornerRadius: 20) {
+                            HStack {
+                                Label("Weight", systemImage: "scalemass")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                TextField("0", value: $entry.weightKg, format: .number)
+                                    .keyboardType(.decimalPad)
+                                    .multilineTextAlignment(.trailing)
+                                    .font(.title3.bold().monospacedDigit())
+                                    .frame(width: 72)
+                                Text("lbs")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+
+                    // Notes
+                    GlassCard(cornerRadius: 20) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label("Notes", systemImage: "text.bubble")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                            TextField("Optional cue or note…", text: $entry.notes, axis: .vertical)
+                                .font(.subheadline)
+                                .lineLimit(2...4)
+                        }
                     }
                 }
-
-                Section("Weight") {
-                    HStack {
-                        Text("Weight (kg)")
-                        Spacer()
-                        TextField("0", value: $entry.weightKg, format: .number)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                    }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+            }
+            .scrollEdgeEffectStyle(.soft, for: .all)
+            .onAppear {
+                if entry.inputType == .reps, entry.setDetails == nil {
+                    entry.setDetails = entry.resolvedSetDetails
                 }
-
-                Section("Rest") {
-                    Stepper("Rest: \(entry.restSeconds)s", value: $entry.restSeconds, in: 0...300, step: 15)
-                }
-
-                Section("Notes") {
-                    TextField("Optional cue or note", text: $entry.notes)
+            }
+            .onChange(of: entry.sets) { resizeSetDetails() }
+            .onChange(of: entry.inputType) { _, type in
+                if type == .reps {
+                    if entry.setDetails == nil { entry.setDetails = entry.resolvedSetDetails }
+                } else {
+                    entry.setDetails = nil
                 }
             }
             .navigationTitle(entry.name)
@@ -283,5 +492,188 @@ struct ExerciseEntryEditor: View {
                 }
             }
         }
+    }
+
+    private func counterRow(label: String, value: Binding<Int>, range: ClosedRange<Int>, step: Int, color: Color) -> some View {
+        HStack {
+            Text(label)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 48, alignment: .leading)
+
+            Spacer()
+
+            HStack(spacing: 24) {
+                Button {
+                    if value.wrappedValue - step >= range.lowerBound {
+                        value.wrappedValue -= step
+                    }
+                } label: {
+                    Image(systemName: "minus.circle.fill")
+                        .font(.title)
+                        .foregroundStyle(value.wrappedValue <= range.lowerBound ? AnyShapeStyle(.tertiary) : AnyShapeStyle(color))
+                }
+                .buttonStyle(.plain)
+                .disabled(value.wrappedValue <= range.lowerBound)
+
+                Text("\(value.wrappedValue)")
+                    .font(.title2.bold().monospacedDigit())
+                    .frame(minWidth: 44)
+                    .multilineTextAlignment(.center)
+
+                Button {
+                    if value.wrappedValue + step <= range.upperBound {
+                        value.wrappedValue += step
+                    }
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title)
+                        .foregroundStyle(value.wrappedValue >= range.upperBound ? AnyShapeStyle(.tertiary) : AnyShapeStyle(color))
+                }
+                .buttonStyle(.plain)
+                .disabled(value.wrappedValue >= range.upperBound)
+            }
+        }
+    }
+
+    private var durationCounter: some View {
+        HStack {
+            Text("Duration")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 72, alignment: .leading)
+
+            Spacer()
+
+            HStack(spacing: 24) {
+                Button {
+                    if entry.durationSeconds - 5 >= 5 { entry.durationSeconds -= 5 }
+                } label: {
+                    Image(systemName: "minus.circle.fill")
+                        .font(.title)
+                        .foregroundStyle(entry.durationSeconds <= 5 ? AnyShapeStyle(.tertiary) : AnyShapeStyle(Color.purple))
+                }
+                .buttonStyle(.plain)
+                .disabled(entry.durationSeconds <= 5)
+
+                Text("\(entry.durationSeconds)s")
+                    .font(.title2.bold().monospacedDigit())
+                    .frame(minWidth: 56)
+                    .multilineTextAlignment(.center)
+
+                Button {
+                    if entry.durationSeconds + 5 <= 600 { entry.durationSeconds += 5 }
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title)
+                        .foregroundStyle(entry.durationSeconds >= 600 ? AnyShapeStyle(.tertiary) : AnyShapeStyle(Color.purple))
+                }
+                .buttonStyle(.plain)
+                .disabled(entry.durationSeconds >= 600)
+            }
+        }
+    }
+
+    private func restLabel(_ seconds: Int) -> String {
+        if seconds == 0 { return "None" }
+        if seconds < 60 { return "\(seconds)s" }
+        let m = seconds / 60
+        let s = seconds % 60
+        return s == 0 ? "\(m)m" : "\(m)m \(s)s"
+    }
+
+    // MARK: - Per-Set Editing
+
+    private var perSetRows: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Label("Set Targets", systemImage: "slider.horizontal.3")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            ForEach(0..<entry.sets, id: \.self) { i in
+                HStack(spacing: 12) {
+                    Text("Set \(i + 1)")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 52, alignment: .leading)
+                    Spacer()
+                    HStack(spacing: 4) {
+                        TextField("0", value: setBinding(i).weightKg, format: .number)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .font(.subheadline.bold().monospacedDigit())
+                            .frame(width: 35)
+                        Text("lb")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 8)
+                            .strokeBorder(Color.black.opacity(0.5), lineWidth: 1)
+                    }
+                    Spacer()
+
+                    HStack(spacing: 16) {
+                        Button { adjustSetReps(i, -1) } label: {
+                            Image(systemName: "minus.circle.fill")
+                                .font(.title3)
+                                .foregroundStyle(setReps(i) <= 1 ? AnyShapeStyle(.tertiary) : AnyShapeStyle(Color.gray))
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(setReps(i) <= 1)
+
+                        Text("\(setReps(i)) reps")
+                            .font(.subheadline.bold().monospacedDigit())
+                            .frame(minWidth: 54)
+                            .multilineTextAlignment(.center)
+
+                        Button { adjustSetReps(i, 1) } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.title3)
+                                .foregroundStyle(Color.gray)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+    }
+
+    private func setReps(_ i: Int) -> Int {
+        if let details = entry.setDetails, details.indices.contains(i) { return details[i].reps }
+        return entry.reps
+    }
+
+    private func setBinding(_ i: Int) -> Binding<SetDetail> {
+        Binding(
+            get: {
+                if let details = entry.setDetails, details.indices.contains(i) { return details[i] }
+                return SetDetail(weightKg: entry.weightKg, reps: entry.reps)
+            },
+            set: { newValue in
+                if entry.setDetails == nil { entry.setDetails = entry.resolvedSetDetails }
+                if entry.setDetails!.indices.contains(i) { entry.setDetails![i] = newValue }
+            }
+        )
+    }
+
+    private func adjustSetReps(_ i: Int, _ delta: Int) {
+        if entry.setDetails == nil { entry.setDetails = entry.resolvedSetDetails }
+        guard entry.setDetails!.indices.contains(i) else { return }
+        entry.setDetails![i].reps = max(1, entry.setDetails![i].reps + delta)
+    }
+
+    private func resizeSetDetails() {
+        guard entry.inputType == .reps else { return }
+        var details = entry.setDetails ?? entry.resolvedSetDetails
+        if details.count < entry.sets {
+            let pad = details.last ?? SetDetail(weightKg: entry.weightKg, reps: entry.reps)
+            details.append(contentsOf: Array(repeating: pad, count: entry.sets - details.count))
+        } else if details.count > entry.sets {
+            details = Array(details.prefix(entry.sets))
+        }
+        entry.setDetails = details
     }
 }

@@ -179,6 +179,7 @@ struct AIGenerateView: View {
                     }
                 }
                 .padding(.horizontal, 2)
+                .padding(.vertical, 5)
             }
         }
     }

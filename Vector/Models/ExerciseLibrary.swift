@@ -6,12 +6,16 @@ final class ExerciseLibrary {
 
     private(set) var exercises: [LibraryExercise] = []
 
+    var allExercises: [LibraryExercise] {
+        exercises + CustomExerciseStore.shared.customExercises
+    }
+
     var allEquipmentTypes: [String] {
-        Array(Set(exercises.map(\.equipment))).sorted()
+        Array(Set(allExercises.map(\.equipment))).sorted()
     }
 
     var allMuscleGroups: [String] {
-        Array(Set(exercises.map(\.targetMuscleGroup))).sorted()
+        Array(Set(allExercises.map(\.targetMuscleGroup))).sorted()
     }
 
     init() {
@@ -19,9 +23,9 @@ final class ExerciseLibrary {
     }
 
     func search(_ query: String) -> [LibraryExercise] {
-        guard !query.isEmpty else { return exercises }
+        guard !query.isEmpty else { return allExercises }
         let q = query.lowercased()
-        return exercises.filter {
+        return allExercises.filter {
             $0.name.lowercased().contains(q) ||
             $0.primaryMuscle.lowercased().contains(q) ||
             $0.equipment.lowercased().contains(q) ||
@@ -30,14 +34,14 @@ final class ExerciseLibrary {
     }
 
     func filtered(equipment: String?, muscleGroup: String?) -> [LibraryExercise] {
-        exercises.filter { ex in
+        allExercises.filter { ex in
             (equipment == nil || ex.equipment == equipment) &&
             (muscleGroup == nil || ex.targetMuscleGroup == muscleGroup)
         }
     }
 
     func searchAndFilter(query: String, equipment: String?, muscleGroup: String?) -> [LibraryExercise] {
-        var result = exercises
+        var result = allExercises
         if !query.isEmpty {
             let q = query.lowercased()
             result = result.filter {
@@ -59,4 +63,8 @@ final class ExerciseLibrary {
             exercises = root.exercises
         }
     }
+}
+
+extension LibraryExercise {
+    var isCustom: Bool { id.hasPrefix("custom_") }
 }
