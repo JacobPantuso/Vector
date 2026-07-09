@@ -2,48 +2,57 @@ import SwiftUI
 
 struct WatchVitalsView: View {
     @Environment(WatchHealthStore.self) private var healthStore
+    @Environment(WatchConnectivityService.self) private var connectivityService
 
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 8) {
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
-                    VitalTile(
-                        icon: "heart.fill",
-                        label: "Heart Rate",
-                        value: healthStore.heartRate > 0 ? String(format: "%.0f", healthStore.heartRate) : "--",
-                        unit: "bpm",
-                        color: .red
-                    )
-                    VitalTile(
-                        icon: "waveform.path.ecg",
-                        label: "HRV",
-                        value: healthStore.hrv > 0 ? String(format: "%.0f", healthStore.hrv) : "--",
-                        unit: "ms",
-                        color: .cyan
-                    )
-                    VitalTile(
-                        icon: "moon.fill",
-                        label: "Sleep",
-                        value: healthStore.sleepHours > 0 ? String(format: "%.1f", healthStore.sleepHours) : "--",
-                        unit: "hrs",
-                        color: .indigo
-                    )
-                    VitalTile(
-                        icon: "figure.run",
-                        label: "Recovery",
-                        value: healthStore.recoveryScore > 0 ? "\(healthStore.recoveryScore)" : "--",
-                        unit: "score",
-                        color: .green
-                    )
-                }
-            }
-            .padding(8)
-        }
-        .navigationTitle("Vitals")
-        .task {
-            await healthStore.fetchAll()
-        }
-    }
+	var body: some View {
+		let recovery = connectivityService.recoveryScore
+		let hr = recovery?.restingHeartRate ?? healthStore.heartRate
+		let hrv = recovery?.hrvValue ?? healthStore.hrv
+		let sleepHrs: Double = {
+			if let asleep = connectivityService.sleepAnalysis?.asleepDuration, asleep > 0 { return asleep / 3600 }
+			return healthStore.sleepHours
+		}()
+		ScrollView {
+			VStack(spacing: 8) {
+				LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
+					VitalTile(
+						icon: "heart.fill",
+						label: "Resting HR",
+						value: hr > 0 ? String(format: "%.0f", hr) : "--",
+						unit: "bpm",
+						color: .red
+					)
+					VitalTile(
+						icon: "waveform.path.ecg",
+						label: "HRV",
+						value: hrv > 0 ? String(format: "%.0f", hrv) : "--",
+						unit: "ms",
+						color: .cyan
+					)
+					VitalTile(
+						icon: "moon.fill",
+						label: "Sleep",
+						value: sleepHrs > 0 ? String(format: "%.1f", sleepHrs) : "--",
+						unit: "hrs",
+						color: .indigo
+					)
+					VitalTile(
+						icon: "figure.run",
+						label: "Recovery",
+						value: (recovery?.score ?? 0) > 0 ? "\(recovery!.score)" : "--",
+						unit: "score",
+						color: .green
+					)
+				}
+			}
+			.padding(8)
+		}
+		.navigationTitle("Vitals")
+		.navigationBarTitleDisplayMode(.inline)
+		.task {
+			await healthStore.fetchAll()
+		}
+	}
 }
 
 private struct VitalTile: View {
@@ -78,4 +87,5 @@ private struct VitalTile: View {
 #Preview {
     WatchVitalsView()
         .environment(WatchHealthStore())
+        .environment(WatchConnectivityService())
 }

@@ -6,22 +6,30 @@ struct WatchRootView: View {
 
 	var body: some View {
 		TabView {
-			WatchDashboardView()
+			NavigationStack { WatchDashboardView() }
 				.tag(0)
 
-			WatchRecoveryView()
+			NavigationStack { WatchRecoveryView() }
 				.tag(1)
 
-			WatchExertionView()
+			NavigationStack { WatchExertionView() }
 				.tag(2)
 
-			WatchSleepView()
+			NavigationStack { WatchSleepView() }
 				.tag(3)
 
-			WatchVitalsView()
+			NavigationStack { WatchVitalsView() }
 				.tag(4)
 		}
 		.tabViewStyle(.verticalPage)
+		.fullScreenCover(isPresented: Binding(
+			get: { connectivityService.activeWorkout != nil },
+			set: { _ in }
+		)) {
+			WatchWorkoutView()
+				.environment(connectivityService)
+				.environment(healthStore)
+		}
 		.onAppear {
 			Task {
 				await healthStore.requestAuthorization()

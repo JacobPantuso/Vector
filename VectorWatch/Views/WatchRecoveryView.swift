@@ -50,6 +50,7 @@ struct WatchRecoveryView: View {
             .padding(10)
         }
         .navigationTitle("Recovery")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

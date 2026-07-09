@@ -7,24 +7,24 @@ struct WatchExertionView: View {
         ScrollView {
             VStack(spacing: 10) {
                 if let exertion = connectivityService.exertionScore {
-                    Text(String(format: "%.0f", exertion.todayStrain))
+                    Text("\(exertion.score)")
                         .font(.system(size: 48, weight: .bold, design: .rounded))
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(exertion.exertionLevelColor)
 
-                    Text("kcal strain")
+                    Text("total exertion score")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
 
                     HStack(spacing: 4) {
                         Image(systemName: "bolt.fill")
                             .font(.caption2)
-                        Text(exertion.loadStatusLabel)
+                        Text(exertion.exertionLevelLabel)
                             .font(.caption.weight(.semibold))
                     }
-                    .foregroundStyle(exertion.loadStatusColor)
+                    .foregroundStyle(exertion.exertionLevelColor)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .glassEffect(.regular.tint(exertion.loadStatusColor.opacity(0.18)), in: .capsule)
+                    .glassEffect(.regular.tint(exertion.exertionLevelColor.opacity(0.18)), in: .capsule)
 
                     VStack(spacing: 8) {
                         WatchMetricRow(
@@ -54,6 +54,7 @@ struct WatchExertionView: View {
             .padding(10)
         }
         .navigationTitle("Exertion")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
