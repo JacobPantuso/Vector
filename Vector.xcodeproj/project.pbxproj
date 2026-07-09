@@ -8,6 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		000000000000000150000001 /* VectorWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 000000000000000000000220 /* VectorWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		000000000000000160000001 /* VectorWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 000000000000000000000420 /* VectorWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		000000000000000160000010 /* WorkoutActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000410 /* WorkoutActivityAttributes.swift */; };
+		000000000000000160000011 /* WorkoutLiveActivityIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000411 /* WorkoutLiveActivityIntents.swift */; };
+		000000000000000460000010 /* WorkoutActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000410 /* WorkoutActivityAttributes.swift */; };
+		000000000000000460000011 /* WorkoutLiveActivityIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000411 /* WorkoutLiveActivityIntents.swift */; };
+		BEAEC70E2FECB6E6003DC68C /* MuscleMap in Frameworks */ = {isa = PBXBuildFile; productRef = BEAEC70D2FECB6E6003DC68C /* MuscleMap */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -17,6 +23,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 000000000000000200000000;
 			remoteInfo = VectorWatch;
+		};
+		000000000000000410000010 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 000000000000000400000000;
+			remoteInfo = VectorWidgets;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -30,12 +43,41 @@
 			);
 			name = "Embed Watch Content";
 		};
+		000000000000000160000000 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "";
+			dstSubfolder = PlugIns;
+			files = (
+				000000000000000160000001 /* VectorWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		000000000000000000000120 /* Vector.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Vector.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		000000000000000000000220 /* VectorWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VectorWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000410 /* WorkoutActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutActivityAttributes.swift; sourceTree = "<group>"; };
+		000000000000000000000411 /* WorkoutLiveActivityIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutLiveActivityIntents.swift; sourceTree = "<group>"; };
+		000000000000000000000420 /* VectorWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = VectorWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		000000000000000000000041 /* Exceptions for "VectorWidgets" folder in "VectorWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 000000000000000400000000 /* VectorWidgets */;
+		};
+		BEBEFE822FF70F6D00953834 /* Exceptions for "VectorWatch" folder in "VectorWatch" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 000000000000000200000000 /* VectorWatch */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		000000000000000000000010 /* Vector */ = {
@@ -45,7 +87,18 @@
 		};
 		000000000000000000000030 /* VectorWatch */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				BEBEFE822FF70F6D00953834 /* Exceptions for "VectorWatch" folder in "VectorWatch" target */,
+			);
 			path = VectorWatch;
+			sourceTree = "<group>";
+		};
+		000000000000000000000040 /* VectorWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				000000000000000000000041 /* Exceptions for "VectorWidgets" folder in "VectorWidgets" target */,
+			);
+			path = VectorWidgets;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -54,9 +107,15 @@
 		000000000000000130000000 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
+				BEAEC70E2FECB6E6003DC68C /* MuscleMap in Frameworks */,
 			);
 		};
 		000000000000000230000000 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		000000000000000430000000 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
 			);
@@ -69,6 +128,8 @@
 			children = (
 				000000000000000000000010 /* Vector */,
 				000000000000000000000030 /* VectorWatch */,
+				000000000000000000000040 /* VectorWidgets */,
+				000000000000000000000400 /* Shared */,
 				000000000000000000000020 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -78,8 +139,18 @@
 			children = (
 				000000000000000000000120 /* Vector.app */,
 				000000000000000000000220 /* VectorWatch.app */,
+				000000000000000000000420 /* VectorWidgets.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		000000000000000000000400 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				000000000000000000000410 /* WorkoutActivityAttributes.swift */,
+				000000000000000000000411 /* WorkoutLiveActivityIntents.swift */,
+			);
+			path = Shared;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -93,16 +164,21 @@
 				000000000000000130000000 /* Frameworks */,
 				000000000000000140000000 /* Resources */,
 				000000000000000150000000 /* Embed Watch Content */,
+				000000000000000160000000 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				000000000000000300000000 /* PBXTargetDependency */,
+				000000000000000400000010 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				000000000000000000000010 /* Vector */,
 			);
 			name = Vector;
+			packageProductDependencies = (
+				BEAEC70D2FECB6E6003DC68C /* MuscleMap */,
+			);
 			productName = MyApp;
 			productReference = 000000000000000000000120 /* Vector.app */;
 			productType = "com.apple.product-type.application";
@@ -125,6 +201,24 @@
 			productReference = 000000000000000000000220 /* VectorWatch.app */;
 			productType = "com.apple.product-type.application";
 		};
+		000000000000000400000000 /* VectorWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 000000000000000410000000 /* Build configuration list for PBXNativeTarget "VectorWidgets" */;
+			buildPhases = (
+				000000000000000420000000 /* Sources */,
+				000000000000000430000000 /* Frameworks */,
+				000000000000000440000000 /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				000000000000000000000040 /* VectorWidgets */,
+			);
+			name = VectorWidgets;
+			productName = VectorWidgets;
+			productReference = 000000000000000000000420 /* VectorWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -141,6 +235,9 @@
 					000000000000000200000000 = {
 						CreatedOnToolsVersion = 26.3;
 					};
+					000000000000000400000000 = {
+						CreatedOnToolsVersion = 26.3;
+					};
 				};
 			};
 			buildConfigurationList = 000000000000000010000000 /* Build configuration list for PBXProject "Vector" */;
@@ -152,6 +249,9 @@
 			);
 			mainGroup = 000000000000000000000001;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				BEAEC70C2FECB6E6003DC68C /* XCRemoteSwiftPackageReference "MuscleMap" */,
+			);
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 000000000000000000000020 /* Products */;
 			projectDirPath = "";
@@ -159,6 +259,7 @@
 			targets = (
 				000000000000000100000000 /* Vector */,
 				000000000000000200000000 /* VectorWatch */,
+				000000000000000400000000 /* VectorWidgets */,
 			);
 		};
 /* End PBXProject section */
@@ -174,17 +275,31 @@
 			files = (
 			);
 		};
+		000000000000000440000000 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		000000000000000120000000 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
+				000000000000000160000010 /* WorkoutActivityAttributes.swift in Sources */,
+				000000000000000160000011 /* WorkoutLiveActivityIntents.swift in Sources */,
 			);
 		};
 		000000000000000220000000 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
+			);
+		};
+		000000000000000420000000 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+				000000000000000460000010 /* WorkoutActivityAttributes.swift in Sources */,
+				000000000000000460000011 /* WorkoutLiveActivityIntents.swift in Sources */,
 			);
 		};
 /* End PBXSourcesBuildPhase section */
@@ -194,6 +309,11 @@
 			isa = PBXTargetDependency;
 			target = 000000000000000200000000 /* VectorWatch */;
 			targetProxy = 000000000000000310000000 /* PBXContainerItemProxy */;
+		};
+		000000000000000400000010 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 000000000000000400000000 /* VectorWidgets */;
+			targetProxy = 000000000000000410000010 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -263,7 +383,7 @@
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				WATCHOS_DEPLOYMENT_TARGET = 27.0;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
 				XROS_DEPLOYMENT_TARGET = 27.0;
 			};
 			name = Debug;
@@ -325,7 +445,7 @@
 				PROJECT_UNIQUE_VALUE = BVRBZVPN;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
-				WATCHOS_DEPLOYMENT_TARGET = 27.0;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
 				XROS_DEPLOYMENT_TARGET = 27.0;
 			};
 			name = Release;
@@ -333,6 +453,8 @@
 		000000000000000111000000 /* Debug configuration for PBXNativeTarget "Vector" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = Vector/Vector.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -343,6 +465,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Vector reads your health data to provide personalized recovery scores, exertion tracking, sleep analysis, and AI-powered health insights.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Vector may save computed health scores and insights to your Health data.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -351,15 +474,13 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "devplaceholder.$(PROJECT_UNIQUE_VALUE:identifier).$(PRODUCT_NAME:identifier)";
-				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.jacobpantuso.Vector;
-				"PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]" = com.jacobpantuso.Vector;
-				"PRODUCT_BUNDLE_IDENTIFIER[sdk=xros*]" = com.jacobpantuso.Vector;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jacobpantuso.Vector;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -377,6 +498,8 @@
 		000000000000000112000000 /* Release configuration for PBXNativeTarget "Vector" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = Vector/Vector.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -387,6 +510,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Vector reads your health data to provide personalized recovery scores, exertion tracking, sleep analysis, and AI-powered health insights.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Vector may save computed health scores and insights to your Health data.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -395,15 +519,13 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "devplaceholder.$(PROJECT_UNIQUE_VALUE:identifier).$(PRODUCT_NAME:identifier)";
-				"PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*]" = com.jacobpantuso.Vector;
-				"PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*]" = com.jacobpantuso.Vector;
-				"PRODUCT_BUNDLE_IDENTIFIER[sdk=xros*]" = com.jacobpantuso.Vector;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jacobpantuso.Vector;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -421,19 +543,24 @@
 		000000000000000211000000 /* Debug configuration for PBXNativeTarget "VectorWatch" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = VectorWatch/VectorWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = UN939ZPX52;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = VectorWatch/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Vector;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Vector uses your health data to track workouts, monitor heart rate, and provide recovery insights.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Vector uses HealthKit to track your workouts and monitor heart rate in real time.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortraitUpsideDown;
 				INFOPLIST_KEY_WKApplication = YES;
+				INFOPLIST_KEY_WKBackgroundModes = "workout-processing";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.jacobpantuso.Vector;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "devplaceholder.$(PROJECT_UNIQUE_VALUE:identifier).$(PRODUCT_NAME:identifier)";
-				"PRODUCT_BUNDLE_IDENTIFIER[sdk=watchos*]" = com.jacobpantuso.Vector.watchkitapp;
-				"PRODUCT_BUNDLE_IDENTIFIER[sdk=watchsimulator*]" = com.jacobpantuso.Vector.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jacobpantuso.Vector.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -445,26 +572,31 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 27.0;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Debug;
 		};
 		000000000000000212000000 /* Release configuration for PBXNativeTarget "VectorWatch" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = VectorWatch/VectorWatch.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = UN939ZPX52;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = VectorWatch/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Vector;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Vector uses your health data to track workouts, monitor heart rate, and provide recovery insights.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Vector uses HealthKit to track your workouts and monitor heart rate in real time.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortraitUpsideDown;
 				INFOPLIST_KEY_WKApplication = YES;
+				INFOPLIST_KEY_WKBackgroundModes = "workout-processing";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.jacobpantuso.Vector;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "devplaceholder.$(PROJECT_UNIQUE_VALUE:identifier).$(PRODUCT_NAME:identifier)";
-				"PRODUCT_BUNDLE_IDENTIFIER[sdk=watchos*]" = com.jacobpantuso.Vector.watchkitapp;
-				"PRODUCT_BUNDLE_IDENTIFIER[sdk=watchsimulator*]" = com.jacobpantuso.Vector.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jacobpantuso.Vector.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -476,7 +608,63 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 27.0;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
+		000000000000000411000000 /* Debug configuration for PBXNativeTarget "VectorWidgets" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = UN939ZPX52;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = VectorWidgets/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jacobpantuso.Vector.VectorWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		000000000000000412000000 /* Release configuration for PBXNativeTarget "VectorWidgets" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = UN939ZPX52;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = VectorWidgets/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jacobpantuso.Vector.VectorWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -507,7 +695,34 @@
 			);
 			defaultConfigurationName = Release;
 		};
+		000000000000000410000000 /* Build configuration list for PBXNativeTarget "VectorWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000411000000 /* Debug configuration for PBXNativeTarget "VectorWidgets" */,
+				000000000000000412000000 /* Release configuration for PBXNativeTarget "VectorWidgets" */,
+			);
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		BEAEC70C2FECB6E6003DC68C /* XCRemoteSwiftPackageReference "MuscleMap" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/melihcolpan/MuscleMap";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.6.4;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		BEAEC70D2FECB6E6003DC68C /* MuscleMap */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BEAEC70C2FECB6E6003DC68C /* XCRemoteSwiftPackageReference "MuscleMap" */;
+			productName = MuscleMap;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 000000000000000000000000 /* Project object */;
 }
