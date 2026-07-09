@@ -29,16 +29,6 @@ struct WorkoutPlanningEngine {
         Workout request: \(prompt)
         """
 
-        if #available(iOS 27, *), AIModel.isCloudAvailable {
-            let session = LanguageModelSession(
-                model: PrivateCloudComputeLanguageModel(),
-                instructions: instructions
-            )
-            if let plan = try? await session.respond(to: request, generating: WorkoutPlan.self) {
-                return plan.content
-            }
-        }
-
         if SystemLanguageModel.default.availability == .available {
             let session = LanguageModelSession(
                 model: SystemLanguageModel.default,

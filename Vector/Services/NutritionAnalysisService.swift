@@ -25,7 +25,6 @@ enum NutritionAnalysisError: Error { case unavailable }
 @MainActor
 final class NutritionAnalysisService {
     static let shared = NutritionAnalysisService()
-    private var cloudDisabled = false
 
     private let instructions = "You are a nutrition expert with broad world knowledge of foods, brands, restaurant menu items, and typical portion sizes. Estimate nutrition as accurately as possible using realistic real-world values."
 
@@ -46,16 +45,6 @@ final class NutritionAnalysisService {
     }
 
     private func run(prompt: String) async throws -> NutritionAnalysisResult {
-        let cloudAvailable = AIModel.isCloudAvailable
-        if #available(iOS 27, *), cloudAvailable && !cloudDisabled {
-            do {
-                let session = LanguageModelSession(model: PrivateCloudComputeLanguageModel(), instructions: instructions)
-                let result = try await session.respond(to: prompt, generating: FoodEstimate.self)
-                return NutritionAnalysisResult(estimate: result.content, source: .cloud)
-            } catch {
-                cloudDisabled = true
-            }
-        }
         guard SystemLanguageModel.default.availability == .available else {
             throw NutritionAnalysisError.unavailable
         }
