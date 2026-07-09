@@ -133,7 +133,7 @@ struct SettingsView: View {
                     } label: {
                         iconTile(icon: "sparkles", color: .indigo) {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("AI")
+                                Text("Vector Intelligence")
                                     .font(.subheadline)
                                     .fontWeight(.semibold)
                                 Text("Apple Intelligence settings")
@@ -605,7 +605,7 @@ private struct AISettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            Section("Advisor") {
+            Section("Vector Intelligence") {
                 Picker("Tone", selection: $advisorPersonaRaw) {
                     ForEach(AdvisorPersona.allCases, id: \.rawValue) { persona in
                         Text(persona.rawValue).tag(persona.rawValue)
@@ -616,7 +616,7 @@ private struct AISettingsView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .navigationTitle("AI")
+        .navigationTitle("Vector Intelligence")
     }
 }
 

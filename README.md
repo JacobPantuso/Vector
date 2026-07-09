@@ -21,7 +21,7 @@ Most fitness apps treat your body like a black box: you log a workout, and it te
 
 Every score is computed from real HealthKit signals (HRV, resting and daytime heart rate, sleeping respiratory rate, wrist temperature, SpO2, sleep stages) using transparent, testable scoring engines, not a black-box model. You can trace exactly why your Recovery dropped or your Stress spiked, and Vector connects the dots between them (e.g. "your Stress is elevated because Sleep debt is up three nights running").
 
-On top of the scores, an on-device AI advisor (via Apple's **FoundationModels**) explains what's driving your numbers, generates full workout plans, and coaches progressive overload, all reasoning that stays on your device, for free, instead of being locked behind a subscription tier.
+On top of the scores, **Vector Intelligence** (an on-device AI advisor built on Apple's **FoundationModels**) explains what's driving your numbers, generates full workout plans, and coaches progressive overload, all reasoning that stays on your device, for free, instead of being locked behind a subscription tier.
 
 ## Features
 
@@ -30,8 +30,8 @@ On top of the scores, an on-device AI advisor (via Apple's **FoundationModels**)
 - **Manual workout builder**: full control over exercises, sets, per-set weight/reps, and rest.
 - **Active workout mode**: live in-workout logging, editable per-set targets, exertion tracking against an optimal-intensity target, synced to a **watchOS companion**.
 - **Progressive overload coaching**: a `ProgressionAdvisor` that tracks your top sets over time and surfaces when to add weight, reps, or back off.
-- **AI advisor**: ask questions about your data ("why is my recovery low today?") and get answers reasoned live over your actual HealthKit history, with actions you can review and apply.
-- **Siri & Shortcuts**: App Intents for Recovery, Sleep, Exertion, heart rate, weekly summaries, and asking the advisor directly from Siri or the Shortcuts app.
+- **Vector Intelligence**: ask questions about your data ("why is my recovery low today?") and get answers reasoned live over your actual HealthKit history, with actions you can review and apply.
+- **Siri & Shortcuts**: App Intents for Recovery, Sleep, Exertion, heart rate, weekly summaries, and asking Vector Intelligence directly from Siri or the Shortcuts app.
 - **Home screen & Live Activity widgets**: scores at a glance, plus a Live Activity that tracks your workout in progress.
 - **watchOS companion**: dashboard, live vitals, exertion, sleep, and recovery views, all synced from the phone.
 - **Nutrition tracking** *(flagged off by default)*: AI food-photo analysis, meal scheduling, and baseline targets, ready to enable via `FeatureFlags`.
@@ -57,7 +57,7 @@ Shared/              Code shared across targets (Live Activity attributes & inte
 **Services (`Vector/Services/`)**, the core logic layer:
 - `HealthKitService`: central `@Observable` hub; reads HealthKit vitals and computes/holds all four scores.
 - Score engines are pure, stateless `struct`s: `RecoveryEngine`, `StressEngine`, `TrainingLoadEngine` (exertion), `BaselineStatistics`. `SleepAnalysis` is computed from sleep data.
-- `InsightEngine`, `ProgressionAdvisor`, `AdvisorContext`/`AdvisorTools`: the AI advisor and progressive-overload logic.
+- `InsightEngine`, `ProgressionAdvisor`, `AdvisorContext`/`AdvisorTools`: Vector Intelligence and progressive-overload logic.
 - `WorkoutPlanningEngine`: AI workout generation.
 - Persistence stores (`WorkoutStorageService`, `ExerciseProgressionStore`, `ScoreHistoryStore`, `StressHistoryStore`, `SleepDebtStore`, `FoodLogService`, etc.): JSON/UserDefaults-backed `@Observable`s.
 - `WatchSyncService`: `WCSession` bridge to the watch. The **iPhone owns the `HKWorkout`**; the watch never authors or finishes a workout, which avoids duplicate/phantom entries in Health.
@@ -69,9 +69,9 @@ Shared/              Code shared across targets (Live Activity attributes & inte
 
 **Intents (`Vector/Intents/`)**: App Intents and Siri shortcuts with their own entities and snippet views.
 
-## AI
+## Vector Intelligence
 
-Vector uses Apple's **FoundationModels** framework (`LanguageModelSession`, `@Generable`/`@Guide` result types) for workout generation and advisor reasoning. Reasoning runs on-device via `SystemLanguageModel.default` by default (`AIModel.isPCCEnabled = false`), which is enough for most on-device model requests.
+Vector uses Apple's **FoundationModels** framework (`LanguageModelSession`, `@Generable`/`@Guide` result types) for workout generation and Vector Intelligence's advisor reasoning. Reasoning runs on-device via `SystemLanguageModel.default` by default (`AIModel.isPCCEnabled = false`), which is enough for most on-device model requests.
 
 Private Cloud Compute is meant to be opted into for the requests that actually benefit from it, larger-context advisor reasoning or heavier generation tasks that exceed what the on-device model can comfortably handle, while keeping the same privacy guarantees as on-device inference. It's off by default while that tiering is still being built out; flipping `AIModel.isPCCEnabled` to `true` routes eligible requests through `PrivateCloudComputeLanguageModel` once the build carries the required entitlement.
 

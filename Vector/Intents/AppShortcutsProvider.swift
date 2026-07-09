@@ -32,6 +32,6 @@ struct VectorShortcuts: AppShortcutsProvider {
         AppShortcut(intent: AskAdvisorIntent(), phrases: [
             "Ask \(.applicationName) about my fitness",
             "Open \(.applicationName) advisor",
-        ], shortTitle: "Health Advisor", systemImageName: "brain.head.profile.fill")
+        ], shortTitle: "Vector Intelligence", systemImageName: "brain.head.profile.fill")
     }
 }

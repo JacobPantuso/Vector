@@ -140,7 +140,7 @@ struct AdvisorView: View {
 
                 inputBar
             }
-            .navigationTitle("Advisor")
+            .navigationTitle("Vector Intelligence")
             .containerBackground(isMinimized ? AnyShapeStyle(.clear) : AnyShapeStyle(.background), for: .navigation)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

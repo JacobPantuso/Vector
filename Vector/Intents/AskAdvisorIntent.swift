@@ -1,8 +1,8 @@
 import AppIntents
 
 struct AskAdvisorIntent: AppIntent {
-    static var title: LocalizedStringResource = "Ask Health Advisor"
-    static var description: IntentDescription = "Open Vector's AI health advisor."
+    static var title: LocalizedStringResource = "Ask Vector Intelligence"
+    static var description: IntentDescription = "Open Vector Intelligence, Vector's on-device health advisor."
     static var openAppWhenRun = true
 
     func perform() async throws -> some IntentResult {
