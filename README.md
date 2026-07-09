@@ -6,20 +6,18 @@
 
 **Understand how your body responds to training, for free, on your own device.**
 
-Vector turns raw HealthKit signals into four daily scores: **Recovery**, **Exertion**, **Sleep**, and **Stress**, so you can see, in plain terms, how your body is actually reacting to the training and stress you're putting it through. It generates AI workouts, coaches progressive overload, and (soon) tracks nutrition, all powered by on-device Apple Intelligence.
-
-Vector is open source because the insights that let you understand your own body shouldn't sit behind a subscription. Apple ships Siri, Apple Intelligence, and HealthKit on every iPhone; Vector exists to put those tools to work instead of leaving them idle behind someone else's paywall.
+Vector turns raw HealthKit signals into four daily scores: **Recovery**, **Exertion**, **Sleep**, and **Stress**, so you can see, in plain terms, how your body is actually reacting to the training and stress you're putting it through. It generates AI workouts, coaches progressive overload, and tracks nutrition (WIP), all powered by on-device Apple Intelligence.
 
 ## Why Vector exists
 
-Most fitness apps treat your body like a black box: you log a workout, and it tells you a number. Vector is built around a different question: **what is my body telling me, and how do I read it?**
+Most fitness apps treat your body like a black box: you log a workout, and it tells you a number. Want more insights? Well you have to pay for that. Vector is built around a different question: **what is my body telling me, and how do I read it?**
 
 - **Recovery**: are you primed to train hard today, or should you back off?
-- **Exertion**: how much load did that workout actually place on your body, in and out of the gym?
+- **Exertion**: how much strain did that workout actually place on your body, in and out of the gym?
 - **Sleep**: is your sleep restoring you, and where is it falling short?
 - **Stress**: what's your nervous system doing across the day, not just at rest?
 
-Every score is computed from real HealthKit signals (HRV, resting and daytime heart rate, sleeping respiratory rate, wrist temperature, SpO2, sleep stages) using transparent, testable scoring engines, not a black-box model. You can trace exactly why your Recovery dropped or your Stress spiked, and Vector connects the dots between them (e.g. "your Stress is elevated because Sleep debt is up three nights running").
+Every score is computed from real Health signals (HRV, resting and daytime heart rate, sleeping respiratory rate, wrist temperature, SpO2, sleep stages) using transparent, testable scoring engines, not a black-box model. You can trace exactly why your Recovery dropped or your Stress spiked, and Vector connects the dots between them (e.g. "your Stress is elevated because Sleep debt is up three nights running").
 
 On top of the scores, **Vector Intelligence** (an on-device AI advisor built on Apple's **FoundationModels**) explains what's driving your numbers, generates full workout plans, and coaches progressive overload, all reasoning that stays on your device, for free, instead of being locked behind a subscription tier.
 
@@ -73,13 +71,13 @@ Shared/              Code shared across targets (Live Activity attributes & inte
 
 Vector uses Apple's **FoundationModels** framework (`LanguageModelSession`, `@Generable`/`@Guide` result types) for workout generation and Vector Intelligence's advisor reasoning. Reasoning runs on-device via `SystemLanguageModel.default` by default (`AIModel.isPCCEnabled = false`), which is enough for most on-device model requests.
 
-Private Cloud Compute is meant to be opted into for the requests that actually benefit from it, larger-context advisor reasoning or heavier generation tasks that exceed what the on-device model can comfortably handle, while keeping the same privacy guarantees as on-device inference. It's off by default while that tiering is still being built out; flipping `AIModel.isPCCEnabled` to `true` routes eligible requests through `PrivateCloudComputeLanguageModel` once the build carries the required entitlement.
+Private Cloud Compute is meant to be opted into for the requests that actually benefit from it, larger-context advisor reasoning or heavier generation tasks that exceed what the on-device model can comfortably handle, while keeping the same privacy guarantees as on-device inference. It's off by default while I work on getting access to PCC (flipping `AIModel.isPCCEnabled` to `true` routes eligible requests through `PrivateCloudComputeLanguageModel` once the build carries the required entitlement).
 
 ## Requirements
 
-- Xcode with iOS 27 / watchOS 26 SDKs
+- Xcode with iOS 26 OR Xcode 27 Beta for iOS 27 Development / watchOS 26/27 SDKs
 - A physical device for HealthKit data (the simulator has no real vitals; `HealthKitService.applyMockData()` provides sample data for DEBUG/simulator builds)
-- Apple Intelligence-capable hardware for on-device AI features
+- Apple Intelligence-capable hardware for on-device AI features. iCloud+ plan for PCC access.
 
 ## Contributing
 
