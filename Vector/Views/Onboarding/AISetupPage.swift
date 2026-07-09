@@ -6,6 +6,10 @@ struct AISetupPage: View {
 
     private var onDeviceModel = SystemLanguageModel.default
 
+    init(onComplete: @escaping () -> Void) {
+        self.onComplete = onComplete
+    }
+
     var body: some View {
         GeometryReader { geo in
         ScrollView {
