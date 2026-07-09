@@ -220,9 +220,11 @@ struct NutritionDetailView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     NavigationStack {
         NutritionDetailView(summary: .mock)
     }
     .environment(HealthKitService.preview)
 }
+#endif

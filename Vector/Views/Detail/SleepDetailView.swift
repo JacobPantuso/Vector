@@ -1106,9 +1106,11 @@ private struct SafariView: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {}
 }
 
+#if DEBUG
 #Preview {
     NavigationStack {
         SleepDetailView(analysis: .mock)
     }
     .environment(HealthKitService.preview)
 }
+#endif

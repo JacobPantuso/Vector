@@ -675,9 +675,11 @@ private struct SafariView: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {}
 }
 
+#if DEBUG
 #Preview {
     NavigationStack {
         ExertionDetailView(score: .mock)
     }
     .environment(HealthKitService.preview)
 }
+#endif

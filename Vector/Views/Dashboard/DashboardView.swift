@@ -808,7 +808,9 @@ private extension View {
     }
 }
 
+#if DEBUG
 #Preview {
     HomeView()
         .environment(HealthKitService.preview)
 }
+#endif

@@ -67,6 +67,18 @@ Shared/              Code shared across targets (Live Activity attributes & inte
 
 **Intents (`Vector/Intents/`)**: App Intents and Siri shortcuts with their own entities and snippet views.
 
+## How the Engines work
+
+Each daily score is produced by a pure, stateless `struct` in `Vector/Services/` with a single `static func compute…` entry point: input HealthKit values in, a score model out, no shared state, no side effects. That makes every engine independently testable and easy to reason about, unlike a black-box model.
+
+- **`RecoveryEngine`** (`computeScore`): blends HRV, resting heart rate, sleep quality, respiratory rate, wrist-temperature deviation, SpO2, and heart-rate recovery. Each physiological input is converted to a component score against a personal baseline, most via a log z-score against recent history (`BaselineStatistics.logZScore`) rather than a fixed population norm, so "normal" is calibrated to *your* trend, not an average body.
+- **`StressEngine`** (`computeScore`): takes time-series HRV, resting HR, respiratory rate, daytime HR samples, sleep timing, and workout intervals, splits out "today" from a prior-day baseline for each signal, and scores each component (HRV, RHR, respiratory rate, intraday daytime HR, sleep) as a deviation from that rolling baseline. Workout intervals are excluded from the daytime-HR baseline so a training session doesn't get misread as elevated stress.
+- **`TrainingLoadEngine`** (`computeExertion`): computes Banister TRIMP (heart-rate-reserve-weighted training impulse) per workout, then derives an acute load (7-day) and chronic load (28-day EWMA, weekly-equivalent) to set a personalized daily training target. Today's exertion score is today's strain as a percentage of that target, so the same workout scores differently depending on your recent training history.
+- **`SleepAnalysis`**: computed from HealthKit sleep-stage samples, splitting asleep vs. in-bed duration and penalizing quality for time spent awake overnight rather than just measuring total time in bed.
+- **`BaselineStatistics`**: shared helpers (mean, median, outlier rejection, log z-score, EWMA) used across engines so every score is measured the same way, against your own rolling baseline instead of a generic reference range.
+
+Because the engines are pure functions, `InsightEngine` and `ProgressionAdvisor` can read their outputs and cross-reference them (e.g. "your Stress is elevated because Sleep debt is up three nights running") without needing to know how any individual score was computed.
+
 ## Vector Intelligence
 
 Vector uses Apple's **FoundationModels** framework (`LanguageModelSession`, `@Generable`/`@Guide` result types) for workout generation and Vector Intelligence's advisor reasoning. Reasoning runs on-device via `SystemLanguageModel.default` by default (`AIModel.isPCCEnabled = false`), which is enough for most on-device model requests.
@@ -85,4 +97,4 @@ Vector is early and evolving quickly. Issues and PRs are welcome; see open issue
 
 ## License
 
-*(Add a license file and name it here, e.g. MIT.)*
+MIT — see [LICENSE](LICENSE).
