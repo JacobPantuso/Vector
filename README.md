@@ -82,6 +82,3 @@ Private Cloud Compute is meant to be opted into for the requests that actually b
 
 Vector is early and evolving quickly. Issues and PRs are welcome; see open issues for areas that need work, particularly around nutrition tracking (currently feature-flagged off) and additional score engines.
 
-## License
-
-*(Add a license file and name it here, e.g. MIT.)*
