@@ -50,7 +50,6 @@ Shared/              Code shared across targets (Live Activity attributes & inte
 ```
 
 **Entry point:** `Vector/VectorApp.swift` owns the core services and hosts a `TabView` (Home / Train / Nutrition* / Profile) gated behind onboarding.
-<sub>*Nutrition is hidden by `FeatureFlags.nutritionEnabled`.</sub>
 
 **Services (`Vector/Services/`)**, the core logic layer:
 - `HealthKitService`: central `@Observable` hub; reads HealthKit vitals and computes/holds all four scores.
