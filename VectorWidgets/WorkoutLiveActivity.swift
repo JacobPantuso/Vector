@@ -24,13 +24,28 @@ struct WorkoutLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     if context.state.isResting {
-                        Text("\(context.state.restSecondsRemaining)s")
-                            .font(.title3.bold().monospacedDigit())
-                            .foregroundStyle(.blue)
-                    } else {
+                        if let end = context.state.restEndDate, !context.state.isPaused {
+                            Text(timerInterval: Date()...end, countsDown: true)
+                                .font(.title3.bold().monospacedDigit())
+                                .foregroundStyle(.blue)
+                                .multilineTextAlignment(.trailing)
+                                .frame(maxWidth: 70, alignment: .trailing)
+                        } else {
+                            Text("\(context.state.restSecondsRemaining)s")
+                                .font(.title3.bold().monospacedDigit())
+                                .foregroundStyle(.blue)
+                        }
+                    } else if context.state.isPaused {
                         Text(elapsedClock(context.state.elapsedSeconds))
                             .font(.headline)
                             .foregroundStyle(.secondary)
+                            .padding(.trailing, 5)
+                    } else {
+                        Text(context.state.startDate, style: .timer)
+                            .font(.headline.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.trailing)
+                            .frame(maxWidth: 70, alignment: .trailing)
                             .padding(.trailing, 5)
                     }
                 }
@@ -55,10 +70,12 @@ struct WorkoutLiveActivity: Widget {
                                 Text(context.state.isResting ? "Resting" : weightText(context.state))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
-                                HStack {
-                                    ForEach(0..<context.state.totalExercises) { index in
+                                HStack(spacing: 4) {
+                                    ForEach(0..<max(context.state.totalSets, 1), id: \.self) { index in
                                         RoundedRectangle(cornerRadius: 13)
-                                            .fill(index <= context.state.exerciseIndex ? .green : accent.opacity(0.3))
+                                            .fill(index < context.state.setIndex
+                                                  ? Color.green
+                                                  : (index == context.state.setIndex ? Color.cyan : Color.gray.opacity(0.3)))
                                             .frame(width: 15, height: 8)
                                     }
                                 }
@@ -92,9 +109,17 @@ struct WorkoutLiveActivity: Widget {
                     .frame(width: 20, height: 20)
             } compactTrailing: {
                 if (context.state.isResting) {
-                    Text("\(context.state.restSecondsRemaining)s")
-                        .font(.caption2.bold().monospacedDigit())
-                        .foregroundStyle(accent)
+                    if let end = context.state.restEndDate, !context.state.isPaused {
+                        Text(timerInterval: Date()...end, countsDown: true)
+                            .font(.caption2.bold().monospacedDigit())
+                            .foregroundStyle(accent)
+                            .multilineTextAlignment(.center)
+                            .frame(width: 40)
+                    } else {
+                        Text("\(context.state.restSecondsRemaining)s")
+                            .font(.caption2.bold().monospacedDigit())
+                            .foregroundStyle(accent)
+                    }
                 } else {
                     Image(systemName: "dumbbell.fill")
                         .foregroundStyle(.red)
@@ -147,9 +172,20 @@ private struct WorkoutLockScreenView: View {
                     .font(.headline)
                     .lineLimit(1)
                 if context.state.isResting {
-                    Text("Rest · \(context.state.restSecondsRemaining)s")
+                    if let end = context.state.restEndDate, !context.state.isPaused {
+                        HStack(spacing: 4) {
+                            Text("Rest ·")
+                            Text(timerInterval: Date()...end, countsDown: true)
+                                .monospacedDigit()
+                                .frame(width: 44, alignment: .leading)
+                        }
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.blue)
+                    } else {
+                        Text("Rest · \(context.state.restSecondsRemaining)s")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.blue)
+                    }
                 } else {
                     Text("Set \(context.state.setIndex + 1) of \(context.state.totalSets)" + (context.state.weight > 0 ? String(format: " · %.0f lb", context.state.weight) : ""))
                         .font(.subheadline.weight(.semibold))
@@ -160,8 +196,15 @@ private struct WorkoutLockScreenView: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 3) {
-                Text(elapsed(context.state.elapsedSeconds))
-                    .font(.system(.headline, design: .rounded).monospacedDigit())
+                if context.state.isPaused {
+                    Text(elapsed(context.state.elapsedSeconds))
+                        .font(.system(.headline, design: .rounded).monospacedDigit())
+                } else {
+                    Text(context.state.startDate, style: .timer)
+                        .font(.system(.headline, design: .rounded).monospacedDigit())
+                        .multilineTextAlignment(.trailing)
+                        .frame(maxWidth: 80, alignment: .trailing)
+                }
                 Text("\(context.state.exerciseIndex + 1)/\(context.state.totalExercises)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -186,10 +229,13 @@ private let activeSetState = WorkoutActivityAttributes.ContentState(
     totalSets: 4,
     isResting: false,
     restSecondsRemaining: 0,
+    restEndDate: nil,
     heartRate: 142,
     weight: 135.0,
     reps: 8,
-    elapsedSeconds: 754
+    elapsedSeconds: 754,
+    startDate: Date().addingTimeInterval(-754),
+    isPaused: false
 )
 
 private let restingState = WorkoutActivityAttributes.ContentState(
@@ -200,10 +246,13 @@ private let restingState = WorkoutActivityAttributes.ContentState(
     totalSets: 4,
     isResting: true,
     restSecondsRemaining: 45,
+    restEndDate: Date().addingTimeInterval(45),
     heartRate: 118,
     weight: 135.0,
     reps: 8,
-    elapsedSeconds: 754
+    elapsedSeconds: 754,
+    startDate: Date().addingTimeInterval(-754),
+    isPaused: false
 )
 
 private let bodywightActiveState = WorkoutActivityAttributes.ContentState(
@@ -214,10 +263,13 @@ private let bodywightActiveState = WorkoutActivityAttributes.ContentState(
     totalSets: 3,
     isResting: false,
     restSecondsRemaining: 0,
+    restEndDate: nil,
     heartRate: 155,
     weight: 0.0,
     reps: 12,
-    elapsedSeconds: 1245
+    elapsedSeconds: 1245,
+    startDate: Date().addingTimeInterval(-1245),
+    isPaused: false
 )
 
 #Preview("Lock Screen - Active Set", as: .content, using: previewAttributes) {

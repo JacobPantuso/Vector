@@ -13,10 +13,13 @@ struct WorkoutActivityAttributes: ActivityAttributes {
         var totalSets: Int
         var isResting: Bool
         var restSecondsRemaining: Int
+        var restEndDate: Date?     // when rest ends; drives a native per-second countdown. nil when not resting
         var heartRate: Int
         var weight: Double          // lbs; 0 == bodyweight
         var reps: Int
         var elapsedSeconds: Int
+        var startDate: Date        // effective anchor for a live-counting timer (now - elapsedSeconds); shifts forward across pauses
+        var isPaused: Bool
     }
 
     var workoutTitle: String
