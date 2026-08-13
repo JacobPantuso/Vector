@@ -13,7 +13,7 @@ enum AdvisorContext {
 
         // Recovery score + HRV + RHR
         if let r = health.recoveryScore {
-            lines.append("Recovery: \(r.score)/100 — HRV \(String(format: "%.0f", r.hrvValue))ms, RHR \(String(format: "%.0f", r.restingHeartRate))bpm")
+            lines.append("Recovery: \(r.score)/100 (\(r.level.label)) — HRV \(String(format: "%.0f", r.hrvValue))ms, RHR \(String(format: "%.0f", r.restingHeartRate))bpm")
         }
 
         // Training load status + today strain
@@ -28,7 +28,7 @@ enum AdvisorContext {
 
         // Stress score
         if let st = health.stressScore {
-            lines.append("Stress: \(st.score)/100")
+            lines.append("Stress: \(st.score)/100 (\(st.level.label))")
         }
 
         // Active calories + steps when > 0
@@ -39,7 +39,7 @@ enum AdvisorContext {
             lines.append("Steps: \(String(format: "%.0f", health.todaySteps))")
         }
 
-        lines.append("(Scores are 0-100 and are what the user sees in the app. Raw strain, calories, and steps are supporting figures — when the user asks about a score, quote the 0-100 number.)")
+        lines.append("(Scores are 0-100 and are what the user sees in the app. Each score has a qualitative label (Excellent, Low, etc.) and a 0-100 value. Default to the label: say \"your recovery is excellent,\" not \"you're at 74 recovery.\" Give the numeric score only when the user explicitly asks for the number; when you do, use the 0-100 score, never raw strain, and these are not percentages (no % sign). Raw strain, calories, and steps are supporting figures.)")
 
         let lineStr = lines.joined(separator: "\n")
         return "[Current readings as of \(timeStr) — these supersede any numbers earlier in this conversation]\n\(lineStr)"
@@ -67,7 +67,7 @@ enum AdvisorContext {
 
         // Stress score
         if let st = health.stressScore {
-            lines.append("Stress: \(st.score)/100")
+            lines.append("Stress: \(st.score)/100 (\(st.level.label))")
         }
 
         // Active calories + steps
@@ -109,7 +109,7 @@ enum AdvisorContext {
             if let flag = s.disruption, flag.isFlagged { lines.append("Sleep disruption: \(flag.headline) [\(flag.signals.joined(separator: "; "))]") }
         }
         if let st = health.stressScore {
-            lines.append("Stress: \(st.score)/100")
+            lines.append("Stress: \(st.score)/100 (\(st.level.label))")
         }
         // HRV/RHR are reported on the Recovery line above (canonical source) to avoid the
         // app showing two different HRV numbers; only surface them standalone if no recovery score.
