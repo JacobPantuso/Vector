@@ -3,19 +3,61 @@ import Foundation
 /// Builds the comprehensive context string the Vector Advisor sees each turn —
 /// readiness, nutrition, training, progression, and profile.
 enum AdvisorContext {
+    /// Returns a SHORT authoritative block of only today's headline numbers that is
+    /// prepended to every prompt so the model never references stale data.
+    @MainActor
+    static func currentReadings(_ health: HealthKitService) -> String {
+        let now = Date()
+        let timeStr = now.formatted(date: .omitted, time: .shortened)
+        var lines: [String] = []
+
+        // Recovery score + HRV + RHR
+        if let r = health.recoveryScore {
+            lines.append("Recovery: \(r.score)/100 — HRV \(String(format: "%.0f", r.hrvValue))ms, RHR \(String(format: "%.0f", r.restingHeartRate))bpm")
+        }
+
+        // Training load status + today strain
+        if let e = health.exertionScore {
+            lines.append("Exertion: \(e.score)/100 (\(e.loadStatus.label)) — today's raw strain \(String(format: "%.0f", e.todayStrain))")
+        }
+
+        // Sleep duration + quality
+        if let s = health.sleepAnalysis {
+            lines.append("Sleep: \(s.formattedDuration), \(s.qualityLevel.label)")
+        }
+
+        // Stress score
+        if let st = health.stressScore {
+            lines.append("Stress: \(st.score)/100")
+        }
+
+        // Active calories + steps when > 0
+        if health.todayActiveCalories > 0 {
+            lines.append("Active calories: \(String(format: "%.0f", health.todayActiveCalories)) kcal")
+        }
+        if health.todaySteps > 0 {
+            lines.append("Steps: \(String(format: "%.0f", health.todaySteps))")
+        }
+
+        lines.append("(Scores are 0-100 and are what the user sees in the app. Raw strain, calories, and steps are supporting figures — when the user asks about a score, quote the 0-100 number.)")
+
+        let lineStr = lines.joined(separator: "\n")
+        return "[Current readings as of \(timeStr) — these supersede any numbers earlier in this conversation]\n\(lineStr)"
+    }
+
     @MainActor
     static func snapshot(_ health: HealthKitService) -> String {
         var lines: [String] = []
 
         // Recovery score + HRV + RHR
         if let r = health.recoveryScore {
-            var line = "Recovery: \(r.score)/100 (\(r.level.label)) — HRV \(String(format: "%.0f", r.hrvValue))ms, RHR \(String(format: "%.0f", r.restingHeartRate))bpm"
+            let line = "Recovery: \(r.score)/100 (\(r.level.label)) — HRV \(String(format: "%.0f", r.hrvValue))ms, RHR \(String(format: "%.0f", r.restingHeartRate))bpm"
             lines.append(line)
         }
 
         // Training load status + today strain
         if let e = health.exertionScore {
-            lines.append("Training load: \(e.loadStatus.label) — today strain \(String(format: "%.0f", e.todayStrain))")
+            lines.append("Exertion score: \(e.score)/100 — load \(e.loadStatus.label), today's raw strain \(String(format: "%.0f", e.todayStrain))")
         }
 
         // Sleep duration + quality
@@ -59,7 +101,7 @@ enum AdvisorContext {
             lines.append(recoveryLine)
         }
         if let e = health.exertionScore {
-            lines.append("Training load: \(e.loadStatus.label) — today strain \(String(format: "%.0f", e.todayStrain)), 7-day load \(String(format: "%.0f", e.acuteLoad))")
+            lines.append("Exertion score: \(e.score)/100 — load \(e.loadStatus.label), today's raw strain \(String(format: "%.0f", e.todayStrain)), 7-day load \(String(format: "%.0f", e.acuteLoad))")
         }
         if let s = health.sleepAnalysis {
             lines.append("Sleep: \(s.formattedDuration), \(s.qualityLevel.label) quality (\(String(format: "%.0f", s.efficiency * 100))% efficiency)")
