@@ -58,14 +58,14 @@ struct SleepDetailView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingSafari) {
+        .vectorSheet(isPresented: $showingSafari) {
             SafariView(url: safariURL)
                 .ignoresSafeArea()
         }
-        .sheet(isPresented: $showingHelp) {
+        .vectorSheet(isPresented: $showingHelp, style: .half) {
             CardInfoSheet(cardID: "sleep")
         }
-        .sheet(item: $selectedSleepMetric) { metric in
+        .vectorSheet(item: $selectedSleepMetric, style: .half) { metric in
             sleepMetricDetailSheet(metric)
         }
         .onAppear {
@@ -151,35 +151,6 @@ struct SleepDetailView: View {
                 Divider()
                 ConnectionsBlock(insights: sleepConnections)
             }
-
-            if let flag = analysis.disruption, flag.isFlagged {
-                Divider()
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 8) {
-                        Image(systemName: flag.likelyAlcohol ? "wineglass" : "exclamationmark.triangle.fill")
-                            .foregroundStyle(.orange)
-                        Text(flag.headline)
-                            .font(.subheadline.weight(.semibold))
-                        Spacer()
-                        Text(flag.severity.label)
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(.secondary)
-                    }
-                    ForEach(flag.signals, id: \.self) { signal in
-                        HStack(spacing: 6) {
-                            Image(systemName: "circle.fill")
-                                .font(.system(size: 4))
-                                .foregroundStyle(.secondary)
-                            Text(signal)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    Text("A hypothesis from your overnight metrics — ask Vector to confirm what happened.")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                }
-            }
         }
         .padding(16)
         .glassEffect(.regular, in: .rect(cornerRadius: 20))
@@ -189,22 +160,25 @@ struct SleepDetailView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Sleep Debt")
                 .font(.title3).bold()
-            HStack(spacing: 0) {
-                needDebtStat(label: "Need", value: hoursText(analysis.sleepNeed), color: .indigo)
-                Divider().frame(height: 32)
-                needDebtStat(label: "Debt", value: hoursText(analysis.sleepDebt),
-                             color: (analysis.sleepDebt ?? 0) >= 3600 ? .orange : .secondary)
-                Divider().frame(height: 32)
-                needDebtStat(label: "Consistency",
-                             value: analysis.consistency.map { "\(Int($0 * 100))%" } ?? "--",
-                             color: .cyan)
+
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 0) {
+                    needDebtStat(label: "Need", value: hoursText(analysis.sleepNeed), color: .indigo)
+                    Divider().frame(height: 32)
+                    needDebtStat(label: "Debt", value: hoursText(analysis.sleepDebt),
+                                 color: (analysis.sleepDebt ?? 0) >= 3600 ? .orange : .secondary)
+                    Divider().frame(height: 32)
+                    needDebtStat(label: "Consistency",
+                                 value: analysis.consistency.map { "\(Int($0 * 100))%" } ?? "--",
+                                 color: .cyan)
+                }
+                .padding(.vertical, 4)
+                SleepNeedDebtChart(targetHours: analysis.sleepTargetHours)
             }
-            .padding(.vertical, 8)
-            SleepNeedDebtChart(targetHours: analysis.sleepTargetHours)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .glassEffect(in: .rect(cornerRadius: 20))
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .glassEffect(in: .rect(cornerRadius: 20))
     }
 
     private func needDebtStat(label: String, value: String, color: Color) -> some View {
@@ -236,6 +210,7 @@ struct SleepDetailView: View {
             VStack(spacing: 0) {
                 ForEach(Array(sleepStages.enumerated()), id: \.offset) { index, stage in
                     SleepStageRow(stage: stage, isSelected: selectedStage?.id == stage.id)
+                        .animation(.spring(response: 0.3), value: selectedStage?.id)
                         .onTapGesture {
                             withAnimation(.spring(response: 0.3)) {
                                 selectedStage = selectedStage?.id == stage.id ? nil : stage
@@ -260,8 +235,9 @@ struct SleepDetailView: View {
                 Text("Sleep Stages")
                     .font(.title3).bold()
                 Spacer()
-                Text("Timeline")
+                Text("\(analysis.bedtime.formatted(date: .omitted, time: .shortened)) – \(analysis.wakeTime.formatted(date: .omitted, time: .shortened))")
                     .font(.caption)
+                    .monospacedDigit()
                     .foregroundStyle(.tertiary)
             }
 
@@ -741,10 +717,31 @@ private struct SleepTimelineChart: View {
         }
     }
 
+    /// Hour ticks anchored to the first whole hour at or after bedtime, so the axis
+    /// doesn't open with a blank stretch when sleep starts mid-hour.
+    private var axisTicks: [Date] {
+        let cal = Calendar.current
+        let start = analysis.bedtime
+        let end = analysis.wakeTime
+        let step = end.timeIntervalSince(start) / 3600 > 8 ? 2 : 1
+        var comps = cal.dateComponents([.year, .month, .day, .hour], from: start)
+        comps.minute = 0
+        comps.second = 0
+        guard var tick = cal.date(from: comps) else { return [] }
+        if tick < start {
+            tick = cal.date(byAdding: .hour, value: 1, to: tick) ?? tick
+        }
+        var ticks: [Date] = []
+        while tick <= end {
+            ticks.append(tick)
+            guard let next = cal.date(byAdding: .hour, value: step, to: tick) else { break }
+            tick = next
+        }
+        return ticks
+    }
+
     var body: some View {
         let bedtime = analysis.bedtime
-        let hours = analysis.totalDuration / 3600
-        let strideCount = hours > 8 ? 2 : 1
 
         Chart {
             ForEach(analysis.segments) { segment in
@@ -760,7 +757,7 @@ private struct SleepTimelineChart: View {
         .chartYScale(domain: ["Awake", "REM", "Core", "Deep"])
         .chartYAxis(.hidden )
         .chartXAxis {
-            AxisMarks(values: .stride(by: .hour, count: strideCount)) { value in
+            AxisMarks(values: axisTicks) { value in
                 if let date = value.as(Date.self), date >= bedtime, date <= analysis.wakeTime {
                     AxisValueLabel {
                         Text(date.formatted(.dateTime.hour(.defaultDigits(amPM: .abbreviated))))
@@ -785,59 +782,39 @@ private struct SleepTimelineChart: View {
 
 // MARK: - Sleep Need & Debt Chart
 
-/// Overlays a rolling sleep-debt trend on the personalized sleep-need line
-/// (need rises with exertion), reconstructed from persisted nightly sleep and
-/// per-day exertion history so it mirrors the engine's own figures.
+/// Nightly sleep drawn as bars against a personalized nightly sleep-need line
+/// (need rises with the prior day's exertion). The orange cap on each bar is
+/// that night's shortfall — the gap that accumulates into sleep debt.
 private struct SleepNeedDebtChart: View {
     let targetHours: Double
 
     private struct Point: Identifiable {
         let id = UUID()
         let date: Date
+        let label: String
+        let slept: Double
         let need: Double
-        let debt: Double
+        var shortfall: Double { max(0, need - slept) }
     }
 
     private var points: [Point] {
         let nights = SleepDebtStore.recentNights(days: 14).sorted { $0.date < $1.date }
-        guard !nights.isEmpty else { return [] }
         return nights.map { night in
             // Need = base target + an exertion strain bump (matches the engine).
             let exertion = Double(ScoreHistoryStore.score(for: .exertion, on: night.date) ?? 0)
             let strainBump = min(0.75, exertion / 100.0 * 0.75)
-            let need = targetHours + strainBump
-
-            // Debt = recency-weighted average shortfall vs the base target, as of this night.
-            let window = nights.filter { $0.date <= night.date }
-                .sorted { $0.date > $1.date }
-                .prefix(14)
-            var weightedShortfall = 0.0
-            var weightTotal = 0.0
-            for (i, n) in window.enumerated() {
-                let w = pow(0.85, Double(i))
-                weightedShortfall += max(0, targetHours - n.asleepHours) * w
-                weightTotal += w
-            }
-            let debt = weightTotal > 0 ? weightedShortfall / weightTotal : 0
-            return Point(date: night.date, need: need, debt: debt)
+            return Point(
+                date: night.date,
+                label: night.date.formatted(.dateTime.month(.defaultDigits).day()),
+                slept: night.asleepHours,
+                need: targetHours + strainBump
+            )
         }
     }
 
-    /// Debt is drawn hanging directly beneath the need line rather than
-    /// building up from zero on its own scale — its "0h" mark sits right on
-    /// the need line, and the band's depth below it reads as the shortfall.
-    private var needDomainMax: Double {
-        let maxNeed = points.map(\.need).max() ?? targetHours
-        return maxNeed * 1.15
-    }
-
-    private var needDomainMin: Double {
-        let minFloor = points.map { $0.need - $0.debt }.min() ?? 0
-        return max(0, min(minFloor * 0.9, needDomainMax * 0.7))
-    }
-
-    private func axisLabel(_ hours: Double) -> String {
-        hours.rounded() == hours ? "\(Int(hours))h" : String(format: "%.1fh", hours)
+    private var domainMax: Double {
+        let peak = points.map { max($0.slept, $0.need) }.max() ?? targetHours
+        return (peak + 0.5).rounded(.up)
     }
 
     var body: some View {
@@ -848,53 +825,49 @@ private struct SleepNeedDebtChart: View {
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, minHeight: 120, alignment: .center)
         } else {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 14) {
-                    legendItem(color: .indigo, label: "Sleep need")
-                    legendItem(color: .orange, label: "Sleep debt")
-                }
+            VStack(spacing: 8) {
                 Chart {
                     ForEach(data) { p in
-                        AreaMark(
-                            x: .value("Day", p.date),
-                            yStart: .value("NeedLessDebt", p.need - p.debt),
-                            yEnd: .value("Need", p.need)
+                        BarMark(
+                            x: .value("Day", p.label),
+                            yStart: .value("Start", 0),
+                            yEnd: .value("Slept", p.slept),
+                            width: .ratio(0.62)
                         )
-                        .foregroundStyle(
-                            .linearGradient(
-                                colors: [.orange.opacity(0.32), .orange.opacity(0.04)],
-                                startPoint: .top, endPoint: .bottom
+                        .foregroundStyle(Color.indigo.gradient)
+                        .cornerRadius(3)
+                    }
+                    ForEach(data) { p in
+                        if p.shortfall > 0.01 {
+                            BarMark(
+                                x: .value("Day", p.label),
+                                yStart: .value("Slept", p.slept),
+                                yEnd: .value("Need", p.need),
+                                width: .ratio(0.62)
                             )
-                        )
-                        .interpolationMethod(.catmullRom)
+                            .foregroundStyle(Color.orange.opacity(0.3))
+                            .cornerRadius(3)
+                        }
                     }
                     ForEach(data) { p in
                         LineMark(
-                            x: .value("Day", p.date),
-                            y: .value("Value", p.need - p.debt),
-                            series: .value("Series", "Debt")
-                        )
-                        .foregroundStyle(.orange)
-                        .interpolationMethod(.catmullRom)
-                    }
-                    ForEach(data) { p in
-                        LineMark(
-                            x: .value("Day", p.date),
-                            y: .value("Value", p.need),
+                            x: .value("Day", p.label),
+                            y: .value("Need", p.need),
                             series: .value("Series", "Need")
                         )
-                        .foregroundStyle(.indigo)
-                        .interpolationMethod(.catmullRom)
-                        .lineStyle(StrokeStyle(lineWidth: 2, dash: [4, 3]))
+                        .foregroundStyle(Color.secondary)
+                        .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+                        .interpolationMethod(.monotone)
                     }
                 }
-                .chartYScale(domain: needDomainMin...needDomainMax)
+                .chartXScale(domain: data.map(\.label))
+                .chartYScale(domain: 0...domainMax)
                 .chartYAxis {
-                    AxisMarks(position: .leading) { value in
+                    AxisMarks(position: .leading, values: .stride(by: 2)) { value in
                         AxisGridLine()
                         AxisValueLabel {
                             if let h = value.as(Double.self) {
-                                Text(axisLabel(h))
+                                Text("\(Int(h))h")
                                     .font(.system(size: 9))
                                     .foregroundStyle(.secondary)
                             }
@@ -902,26 +875,47 @@ private struct SleepNeedDebtChart: View {
                     }
                 }
                 .chartXAxis {
-                    AxisMarks(values: .stride(by: .day, count: 3)) { value in
-                        AxisValueLabel {
-                            if let date = value.as(Date.self) {
-                                Text(date.formatted(.dateTime.month(.abbreviated).day()))
+                    AxisMarks(values: data.map(\.label)) { value in
+                        AxisValueLabel(collisionResolution: .disabled) {
+                            if let label = value.as(String.self) {
+                                Text(label)
                                     .font(.system(size: 9))
                                     .foregroundStyle(.secondary)
+                                    .fixedSize()
+                                    .rotationEffect(.degrees(-45), anchor: .topTrailing)
+                                    .offset(x: -14)
                             }
                         }
                     }
                 }
                 .frame(height: 150)
+                .padding(.bottom, 16)
+
+                HStack(spacing: 14) {
+                    legendItem(label: "Slept") {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(Color.indigo.gradient)
+                            .frame(width: 10, height: 10)
+                    }
+                    legendItem(label: "Short") {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(Color.orange.opacity(0.35))
+                            .frame(width: 10, height: 10)
+                    }
+                    legendItem(label: "Need") {
+                        Rectangle()
+                            .fill(Color.secondary)
+                            .frame(width: 14, height: 2)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
             }
         }
     }
 
-    private func legendItem(color: Color, label: String) -> some View {
+    private func legendItem<Swatch: View>(label: String, @ViewBuilder swatch: () -> Swatch) -> some View {
         HStack(spacing: 5) {
-            RoundedRectangle(cornerRadius: 1)
-                .fill(color)
-                .frame(width: 12, height: 3)
+            swatch()
             Text(label)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
@@ -954,31 +948,33 @@ private struct SleepStageRow: View {
 
                 Spacer()
 
-                HStack(spacing: 6) {
-                    Text(formatTimeInterval(stage.duration))
-                        .font(.subheadline.weight(.medium))
-                        .monospacedDigit()
-                    Image(systemName: isSelected ? "chevron.down" : "chevron.left")
-                        .font(.caption2)
+                HStack(spacing: 8) {
+                    HStack(spacing: 4) {
+                        Text(formatTimeInterval(stage.duration))
+                            .font(.subheadline.weight(.medium))
+                            .monospacedDigit()
+                        Text("(\(stage.displayPercent)%)")
+                            .font(.caption.weight(.medium))
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                    }
+                    Image(systemName: "chevron.down")
+                        .font(.caption2.weight(.semibold))
                         .foregroundStyle(.tertiary)
+                        .rotationEffect(.degrees(isSelected ? 0 : -90))
                 }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
 
             if isSelected {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 12) {
                     Text(stage.explanation)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
 
-                    HStack(spacing: 6) {
-                        Image(systemName: stage.targetStatusIcon)
-                            .font(.caption2)
-                        Text(stage.targetStatusText)
-                            .font(.caption.weight(.medium))
-                    }
-                    .foregroundStyle(stage.targetStatusColor)
+                    StageTargetBar(stage: stage)
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 14)
@@ -994,6 +990,62 @@ private struct SleepStageRow: View {
             return "\(hours)h \(minutes)m"
         } else {
             return "\(minutes)m"
+        }
+    }
+}
+
+// MARK: - Stage Target Bar
+
+/// Shows where this stage landed relative to its healthy band: a track with the
+/// target range highlighted and a needle at the actual share of the night.
+private struct StageTargetBar: View {
+    let stage: SleepStage
+
+    /// Matches the needle to the number on screen, so an "On target" verdict never
+    /// draws the needle outside the band because of sub-point rounding.
+    private var shownFraction: Double {
+        Double(stage.displayPercent) / 100
+    }
+
+    private var scaleMax: Double {
+        max(stage.targetRange.1 * 1.6, shownFraction * 1.3, 0.08)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: stage.targetStatusIcon)
+                    .font(.caption2.weight(.bold))
+                Text(stage.targetStatusText)
+                    .font(.caption.weight(.semibold))
+                Spacer(minLength: 8)
+                Text(stage.targetRangeText)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            .foregroundStyle(stage.targetStatusColor)
+
+            GeometryReader { geo in
+                let w = max(geo.size.width, 1)
+                let bandX = w * min(stage.targetRange.0 / scaleMax, 1)
+                let bandW = max(w * (stage.targetRange.1 - stage.targetRange.0) / scaleMax, 3)
+                let needleX = w * min(shownFraction / scaleMax, 1)
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.primary.opacity(0.07))
+                        .frame(height: 10)
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(stage.color.opacity(0.3))
+                        .frame(width: bandW, height: 10)
+                        .offset(x: bandX)
+                    RoundedRectangle(cornerRadius: 1.5)
+                        .fill(stage.color)
+                        .frame(width: 3, height: 18)
+                        .offset(x: max(needleX - 1.5, 0))
+                }
+                .frame(height: 18)
+            }
+            .frame(height: 18)
         }
     }
 }
@@ -1015,31 +1067,40 @@ private struct SleepStage: Identifiable {
         return duration / totalDuration
     }
 
+    /// The percentage the UI actually shows. All target comparisons run against this
+    /// so the verdict can never contradict the number on screen (e.g. a raw 14.6%
+    /// displaying as "15%" must not also read "below target" against a 15% floor).
+    var displayPercent: Int {
+        Int((percentage * 100).rounded())
+    }
+
+    var lowerPercent: Int { Int((targetRange.0 * 100).rounded()) }
+    var upperPercent: Int { Int((targetRange.1 * 100).rounded()) }
+
     var isOnTarget: Bool {
-        percentage >= targetRange.0 && percentage <= targetRange.1
+        displayPercent >= lowerPercent && displayPercent <= upperPercent
+    }
+
+    /// Whole percentage points from the nearest edge of the band.
+    private var gapPoints: Int {
+        if displayPercent < lowerPercent { return lowerPercent - displayPercent }
+        if displayPercent > upperPercent { return displayPercent - upperPercent }
+        return 0
+    }
+
+    var targetRangeText: String {
+        "Target \(lowerPercent)–\(upperPercent)%"
     }
 
     var targetStatusText: String {
-        let pct = Int(percentage * 100)
-        if isOnTarget {
-            return "On target (\(pct)% — target \(Int(targetRange.0 * 100))–\(Int(targetRange.1 * 100))%)"
-        } else if percentage < targetRange.0 {
-            let diff = Int((targetRange.0 - percentage) * 100)
-            return "\(diff)% below target (\(pct)% — target \(Int(targetRange.0 * 100))–\(Int(targetRange.1 * 100))%)"
-        } else {
-            let diff = Int((percentage - targetRange.1) * 100)
-            return "\(diff)% above target (\(pct)% — target \(Int(targetRange.0 * 100))–\(Int(targetRange.1 * 100))%)"
-        }
+        guard !isOnTarget else { return "On target" }
+        let direction = displayPercent < lowerPercent ? "below" : "above"
+        return "\(gapPoints)% \(direction) target"
     }
 
     var targetStatusIcon: String {
-        if isOnTarget {
-            return "checkmark.circle.fill"
-        } else if percentage < targetRange.0 {
-            return "arrow.down.circle.fill"
-        } else {
-            return "arrow.up.circle.fill"
-        }
+        if isOnTarget { return "checkmark.circle.fill" }
+        return displayPercent < lowerPercent ? "arrow.down.circle.fill" : "arrow.up.circle.fill"
     }
 
     var targetStatusColor: Color {
@@ -1113,4 +1174,5 @@ private struct SafariView: UIViewControllerRepresentable {
     }
     .environment(HealthKitService.preview)
 }
+
 #endif

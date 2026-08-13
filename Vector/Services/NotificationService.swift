@@ -54,10 +54,16 @@ final class NotificationService {
 
         if let flag = sleep?.disruption, flag.isFlagged {
             let detail = flag.signals.first.map { " (\($0))" } ?? ""
+            let body: String
+            if flag.isTrainingExplained {
+                body = "Yesterday's training is still showing in your overnight numbers\(detail). Prioritize recovery today."
+            } else {
+                body = "Last night looked off\(detail). Consider an easier day and an earlier night."
+            }
             schedule(
                 id: disruptionID,
                 title: flag.headline,
-                body: "Last night looked off\(detail). Consider an easier day and an earlier night.",
+                body: body,
                 hour: hour, minute: minute, repeats: false
             )
         }

@@ -78,6 +78,7 @@ struct ExertionScore: Identifiable, Codable, Sendable, Equatable {
     let date: Date
     let zoneSplits: [ZoneTime]
     var confidence: Double? = nil
+    var fitnessTargetMultiplier: Double? = nil
 
     var loadRatio: Double {
         guard chronicLoad != 0 else { return 0 }
@@ -120,9 +121,10 @@ struct ExertionScore: Identifiable, Codable, Sendable, Equatable {
         }
     }
 
-    /// The exertion-score band (same 0–100+ scale as `score`) that today's strain should
+    /// The exertion-score band (0–100+ scale, uncapped) that today's strain should
     /// land in to keep the weekly acute:chronic ratio inside the healthy part of the
-    /// optimal 0.8–1.3 band. Returns nil when there's no chronic history to anchor a target.
+    /// optimal 0.8–1.3 band. Returns nil when there's no chronic history to anchor a target
+    /// or when data confidence is low (< 0.5).
     ///
     /// Rather than trying to close the entire weekly acute:chronic gap in a single day
     /// (which produced wildly high targets when the ratio was even slightly low — e.g. a
@@ -130,6 +132,7 @@ struct ExertionScore: Identifiable, Codable, Sendable, Equatable {
     /// the ratio and reports the band that nudges the weekly ratio toward ~0.95–1.15.
     var optimalTargetRange: ClosedRange<Double>? {
         guard chronicLoad > 0 else { return nil }
+        guard (confidence ?? 1.0) >= 0.5 else { return nil }
         let lower = targetScore(forRatio: 0.95)
         let upper = targetScore(forRatio: 1.15)
         return min(lower, upper)...max(lower, upper)
@@ -142,8 +145,8 @@ struct ExertionScore: Identifiable, Codable, Sendable, Equatable {
         // Daily load that, sustained, holds the weekly acute:chronic ratio at ~1.0.
         let maintenanceLoad = chronicLoad / 7
         guard maintenanceLoad > 0 else { return 0 }
-        // Score scale: 100 == a hard day of 1.5x the average daily load.
-        let dailyTarget = max(30, maintenanceLoad * 1.5)
+        // Score scale: 100 == a hard day of 1.5x the average daily load, scaled by fitness.
+        let dailyTarget = TrainingLoadEngine.dailyTarget(chronicLoad: chronicLoad, fitnessTargetMultiplier: fitnessTargetMultiplier ?? 1.0)
         // Steady-state daily load that holds the weekly ratio at `targetRatio`.
         let steadyLoad = maintenanceLoad * targetRatio
         // Small, damped nudge for the current weekly deficit/surplus (excluding today, for
@@ -153,7 +156,7 @@ struct ExertionScore: Identifiable, Codable, Sendable, Equatable {
         let priorRatio = priorAcute / chronicLoad
         let nudge = ((targetRatio - priorRatio) * 0.25).clamped(to: -0.15...0.15)
         let adjustedLoad = steadyLoad + maintenanceLoad * nudge
-        return min(max((adjustedLoad / dailyTarget) * 100, 0), 100)
+        return max(0, (adjustedLoad / dailyTarget) * 100)
     }
 
     init(id: UUID = UUID(), score: Int, acuteLoad: Double, chronicLoad: Double, todayStrain: Double, date: Date = Date(), zoneSplits: [ZoneTime]) {

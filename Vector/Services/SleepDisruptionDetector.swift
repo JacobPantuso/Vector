@@ -1,5 +1,9 @@
 import Foundation
 
+enum DisruptionAttribution: String, Codable, Sendable {
+    case unexplained, training
+}
+
 enum DisruptionSeverity: String, Codable, Sendable {
     case none, light, moderate, heavy
 
@@ -20,6 +24,16 @@ enum DisruptionSeverity: String, Codable, Sendable {
         case .heavy: return 3
         }
     }
+
+    /// Downgrade severity by one rank (heavy→moderate, moderate→light, light→none, none→none).
+    fileprivate func downgraded() -> DisruptionSeverity {
+        switch self {
+        case .none: return .none
+        case .light: return .none
+        case .moderate: return .light
+        case .heavy: return .moderate
+        }
+    }
 }
 
 /// A confirmable hypothesis about an unusually disrupted night (e.g. alcohol, illness, late meal),
@@ -28,11 +42,15 @@ struct SleepDisruptionFlag: Codable, Sendable, Equatable {
     let severity: DisruptionSeverity
     let likelyAlcohol: Bool
     let signals: [String]
+    let attribution: DisruptionAttribution?
+    let trainingDescriptor: String?
 
     var isFlagged: Bool { severity != .none }
+    var isTrainingExplained: Bool { attribution == .training }
 
     var headline: String {
         guard isFlagged else { return "No unusual disruption detected" }
+        if isTrainingExplained { return "Recovering from yesterday's training" }
         return likelyAlcohol ? "Possible alcohol or late-night disruption" : "Disrupted night detected"
     }
 }
@@ -40,14 +58,16 @@ struct SleepDisruptionFlag: Codable, Sendable, Equatable {
 enum SleepDisruptionDetector {
     /// Dose-graded thresholds adapted from Pietilä 2018: nocturnal RHR rises ~+1.4/+4.0/+8.7 bpm and
     /// HRV falls ~−2/−5.7/−12.9 ms for light/moderate/heavy alcohol. We compare to personal baselines
-    /// and surface a confirmable hypothesis, never a verdict.
+    /// and surface a confirmable hypothesis, never a verdict. A hard prior training day is expected to
+    /// elevate nocturnal HR and suppress HRV, so it is attributed to training rather than treated as an anomaly.
     static func evaluate(
         restingHR: Double?,
         rhrBaseline: Double?,
         hrv: Double?,
         hrvBaseline: Double?,
         wristTempDeviation: Double?,
-        sleepEfficiency: Double?
+        sleepEfficiency: Double?,
+        priorDayStrain: PriorDayStrain? = nil
     ) -> SleepDisruptionFlag {
         var severities: [DisruptionSeverity] = []
         var signals: [String] = []
@@ -81,10 +101,32 @@ enum SleepDisruptionDetector {
             severities.append(.light)
         }
 
-        let severity = severities.max(by: { $0.rank < $1.rank }) ?? .none
+        var severity = severities.max(by: { $0.rank < $1.rank }) ?? .none
         // The classic alcohol signature is elevated RHR *and* suppressed HRV together.
-        let likelyAlcohol = rhrElevated && hrvSuppressed && severity.rank >= DisruptionSeverity.moderate.rank
-        return SleepDisruptionFlag(severity: severity, likelyAlcohol: likelyAlcohol, signals: signals)
+        var likelyAlcohol = rhrElevated && hrvSuppressed && severity.rank >= DisruptionSeverity.moderate.rank
+
+        let trainingExplained = (priorDayStrain?.isHard ?? false) && (rhrElevated || hrvSuppressed)
+        var attribution: DisruptionAttribution? = nil
+        if trainingExplained {
+            likelyAlcohol = false
+            severity = severity.downgraded()
+            if let strain = priorDayStrain {
+                let trainingSignal: String
+                if strain.typicalTrimp > 0 {
+                    trainingSignal = String(format: "Expected after yesterday's hard session (load %.0f vs typical %.0f)", strain.trimp, strain.typicalTrimp)
+                } else {
+                    trainingSignal = String(format: "Expected after yesterday's hard session (load %.0f)", strain.trimp)
+                }
+                signals.insert(trainingSignal, at: 0)
+            }
+            if severity != .none {
+                attribution = .training
+            }
+        } else {
+            attribution = .unexplained
+        }
+
+        return SleepDisruptionFlag(severity: severity, likelyAlcohol: likelyAlcohol, signals: signals, attribution: attribution, trainingDescriptor: trainingExplained ? priorDayStrain?.descriptor : nil)
     }
 
     /// Sleep-amount consistency 0…1 from the coefficient of variation of recent nightly sleep

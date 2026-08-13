@@ -37,11 +37,62 @@ class HealthKitService {
     var recentWorkouts: [HKWorkout] = []
     private var backfillingRecordIDs: Set<UUID> = []
     private var attachingWorkoutIDs: Set<UUID> = []
+    private(set) var pendingSaveRecordIDs: Set<UUID> = []
+    /// True when launch state came from the persisted snapshot rather than a live HealthKit
+    /// read, so the first `refreshIfStale` still refreshes instead of trusting the cached age.
+    private(set) var isRestoredFromSnapshot = false
 
     static let bpmUnit = HKUnit.count().unitDivided(by: .minute())
     static let msUnit = HKUnit.secondUnit(with: .milli)
     static let kcalUnit = HKUnit.kilocalorie()
     static let metUnit = HKUnit.kilocalorie().unitDivided(by: HKUnit.gramUnit(with: .kilo).unitMultiplied(by: .hour()))
+
+    init() {
+        if let snapshot = DashboardSnapshotStore.load() {
+            let calendar = Calendar.current
+            let isToday = calendar.isDateInToday(snapshot.savedAt)
+
+            // Always restore: scores and "latest" vitals carry over across days
+            recoveryScore = snapshot.recoveryScore
+            exertionScore = snapshot.exertionScore
+            sleepAnalysis = snapshot.sleepAnalysis
+            stressScore = snapshot.stressScore
+            latestHeartRate = snapshot.latestHeartRate
+            latestRestingHR = snapshot.latestRestingHR
+            latestHRV = snapshot.latestHRV
+            latestVO2Max = snapshot.latestVO2Max
+            latestWristTempDeviation = snapshot.latestWristTempDeviation
+            latestSpO2 = snapshot.latestSpO2
+            spo2Baseline = snapshot.spo2Baseline
+            latestHRR = snapshot.latestHRR
+            hrrBaseline = snapshot.hrrBaseline
+            physicalEffortSeries = snapshot.physicalEffortSeries.map { (date: $0.date, value: $0.value) }
+            lastSyncedDate = snapshot.lastSyncedDate
+
+            // Day-scoped values: only restore if snapshot is from today
+            if isToday {
+                todaySteps = snapshot.todaySteps
+                todayActiveCalories = snapshot.todayActiveCalories
+                todayBasalCalories = snapshot.todayBasalCalories
+                todayPhysicalEffort = snapshot.todayPhysicalEffort
+                nutritionSummary = snapshot.nutritionSummary
+
+                // Restore generated overview only if all three strings are non-nil
+                if let headline = snapshot.overviewHeadline,
+                   let body = snapshot.overviewBody,
+                   let status = snapshot.overviewStatus {
+                    generatedOverview = GeneratedOverview(
+                        reasoningSteps: "",
+                        headline: headline,
+                        body: body,
+                        status: status
+                    )
+                }
+            }
+
+            isRestoredFromSnapshot = true
+        }
+    }
 
     func requestAuthorization() async {
         guard HKHealthStore.isHealthDataAvailable() else { return }
@@ -125,7 +176,9 @@ class HealthKitService {
 
         let shareTypes: Set<HKSampleType> = [
             HKWorkoutType.workoutType(),
-            HKQuantityType(.workoutEffortScore)
+            HKQuantityType(.workoutEffortScore),
+            HKQuantityType(.activeEnergyBurned),
+            HKQuantityType(.heartRate)
         ]
 
         try? await store.requestAuthorization(toShare: shareTypes, read: readTypes)
@@ -262,7 +315,10 @@ class HealthKitService {
             }
             if !samplesToAdd.isEmpty {
                 await withCheckedContinuation { continuation in
-                    builder.add(samplesToAdd) { _, _ in continuation.resume() }
+                    builder.add(samplesToAdd) { _, error in
+                        if let error { print("[HealthKitService] failed to attach samples at save: \(error.localizedDescription)") }
+                        continuation.resume()
+                    }
                 }
             }
 
@@ -311,14 +367,54 @@ class HealthKitService {
         _ = try? await store.relateWorkoutEffortSample(sample, with: workout, activity: nil)
     }
 
+    /// How many exertion points (0–100 scale) a single workout contributes to today's
+    /// Exertion score: the workout's TRIMP (topped up by strength volume, mirroring the
+    /// merged-load logic in refreshToday) divided by the personal daily strain target.
+    func exertionContribution(for workout: HKWorkout, hrSamples: [(date: Date, value: Double)]) -> Double? {
+        let restingHRForLoad = (latestRestingHR ?? 0) > 0
+            ? latestRestingHR!
+            : 60
+        let maxHRForLoad = TrainingLoadEngine.estimatedMaxHR(age: Self.userAgeEstimate())
+        let isFemaleForLoad = UserDefaults.standard.string(forKey: UserProfileStorage.biologicalSex) == BiologicalSex.female.rawValue
+
+        var trimp = TrainingLoadEngine.workoutLoad(
+            date: workout.startDate,
+            hrSamples: hrSamples,
+            restingHR: restingHRForLoad,
+            maxHR: maxHRForLoad,
+            fallbackEnergyKcal: workout.activeEnergyKcal,
+            fallbackDuration: workout.duration,
+            isFemale: isFemaleForLoad
+        ).trimp
+
+        if let record = WorkoutCompletionStore.shared.record(matching: workout), record.totalVolume > 0 {
+            let volumeTrimp = min(120, record.totalVolume / 120)
+            trimp = max(trimp, volumeTrimp)
+        }
+
+        let chronicLoad = exertionScore?.chronicLoad ?? 0
+        let target = TrainingLoadEngine.dailyTarget(
+            chronicLoad: chronicLoad,
+            fitnessTargetMultiplier: Self.fitnessTargetMultiplier()
+        )
+        guard target > 0 else { return nil }
+        return (trimp / target) * 100
+    }
+
     // MARK: - Refresh
 
     /// Refreshes only when data is missing or older than `maxAge`.
     /// Used by tab-level `.task`s so tab switches don't refetch; pull-to-refresh
     /// still calls `refreshToday()` directly for a forced refresh.
+    /// On a cold launch when state was restored from a persisted snapshot, always refreshes
+    /// once so live data supersedes the stale cached values.
     func refreshIfStale(maxAge: TimeInterval = 300) async {
         guard !isSyncing else { return }
-        if let last = lastSyncedDate, Date().timeIntervalSince(last) < maxAge { return }
+        if isRestoredFromSnapshot {
+            isRestoredFromSnapshot = false
+        } else if let last = lastSyncedDate, Date().timeIntervalSince(last) < maxAge {
+            return
+        }
         await refreshToday()
     }
 
@@ -568,7 +664,8 @@ class HealthKitService {
                 hrv: recoveryScore?.hrvValue ?? hrvValue,
                 hrvBaseline: recoveryScore?.hrvBaseline,
                 wristTempDeviation: wristTemp,
-                sleepEfficiency: efficiency
+                sleepEfficiency: efficiency,
+                priorDayStrain: TrainingLoadEngine.priorDayStrain(loads: mergedLoads)
             )
 
             sleepAnalysis?.disruption = disruption
@@ -603,6 +700,7 @@ class HealthKitService {
         if let e = exertionScore { ScoreHistoryStore.save(metric: .exertion, score: e.score) }
         if let s = sleepAnalysis { ScoreHistoryStore.save(metric: .sleep, score: Int(s.quality * 100)) }
         lastSyncedDate = Date()
+        persistDashboardSnapshot()
         await backfillUnsyncedWorkouts()
         await attachPendingWorkoutSamples()
         await consolidateDuplicateWorkoutsIfNeeded()
@@ -614,7 +712,48 @@ class HealthKitService {
         )
     }
 
+    // MARK: - Persistence
+
+    /// Persists the current dashboard state to disk so the home cards can render real values
+    /// on a cold launch instead of placeholders. Called both after `refreshToday()` completes
+    /// and after a generated overview is created, so all dashboard data is captured.
+    func persistDashboardSnapshot() {
+        let snapshot = DashboardSnapshot(
+            savedAt: Date(),
+            lastSyncedDate: lastSyncedDate,
+            recoveryScore: recoveryScore,
+            exertionScore: exertionScore,
+            sleepAnalysis: sleepAnalysis,
+            stressScore: stressScore,
+            nutritionSummary: nutritionSummary,
+            latestHeartRate: latestHeartRate,
+            latestRestingHR: latestRestingHR,
+            latestHRV: latestHRV,
+            latestVO2Max: latestVO2Max,
+            latestWristTempDeviation: latestWristTempDeviation,
+            latestSpO2: latestSpO2,
+            spo2Baseline: spo2Baseline,
+            latestHRR: latestHRR,
+            hrrBaseline: hrrBaseline,
+            todayPhysicalEffort: todayPhysicalEffort,
+            todaySteps: todaySteps,
+            todayActiveCalories: todayActiveCalories,
+            todayBasalCalories: todayBasalCalories,
+            physicalEffortSeries: physicalEffortSeries.map { EffortPoint(date: $0.date, value: $0.value) },
+            overviewHeadline: generatedOverview?.headline,
+            overviewBody: generatedOverview?.body,
+            overviewStatus: generatedOverview?.status
+        )
+        DashboardSnapshotStore.save(snapshot)
+    }
+
     // MARK: - Backfill
+
+    /// Marks a record's foreground save as in-flight so the backfill doesn't race it.
+    func beginPendingSave(_ id: UUID) { pendingSaveRecordIDs.insert(id) }
+
+    /// Clears the in-flight marker once the foreground save completes.
+    func endPendingSave(_ id: UUID) { pendingSaveRecordIDs.remove(id) }
 
     /// Recovers a workout that JUST failed to save to HealthKit (e.g. the save threw
     /// moments ago). Deliberately narrow: only the last hour, only records not already
@@ -623,9 +762,13 @@ class HealthKitService {
     func backfillUnsyncedWorkouts() async {
         guard isAuthorized else { return }
         let cutoff = Date().addingTimeInterval(-3600)
-        let recent = WorkoutCompletionStore.shared.records.filter { $0.date >= cutoff }
+        // A record only seconds old may still have its foreground save in flight; the backfill
+        // is only meant to rescue saves that already failed.
+        let minAge = Date().addingTimeInterval(-60)
+        let recent = WorkoutCompletionStore.shared.records.filter { $0.date >= cutoff && $0.date <= minAge }
         for record in recent {
             guard !backfillingRecordIDs.contains(record.id) else { continue }
+            guard !pendingSaveRecordIDs.contains(record.id) else { continue }
             guard record.expectsHealthSync ?? true else { continue }
             guard !(record.syncedToHealth ?? false) else { continue }
             let alreadySynced = recentWorkouts.contains { wk in
@@ -923,6 +1066,102 @@ class HealthKitService {
             sums[day, default: 0] += sample.quantity.doubleValue(for: unit)
         }
         return sums.keys.sorted().map { (date: $0, value: sums[$0]!) }
+    }
+
+    /// Like `dailySumSeries`, but each day is summed only up to the current clock time —
+    /// so today's partial total is compared against prior days at the same point in the day
+    /// instead of against their full-day totals.
+    func timeOfDaySumSeries(for identifier: HKQuantityTypeIdentifier, unit: HKUnit, days: Int) async -> [(date: Date, value: Double)] {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -days, to: Date()) ?? Date())
+        let predicate = HKSamplePredicate.quantitySample(
+            type: HKQuantityType(identifier),
+            predicate: HKQuery.predicateForSamples(withStart: start, end: Date())
+        )
+        let descriptor = HKSampleQueryDescriptor(
+            predicates: [predicate],
+            sortDescriptors: [SortDescriptor(\.startDate, order: .forward)]
+        )
+        let samples = (try? await descriptor.result(for: store)) ?? []
+
+        let now = Date()
+        let today = calendar.startOfDay(for: now)
+        let cutoffSeconds = now.timeIntervalSince(today)
+
+        var sums: [Date: Double] = [:]
+        for sample in samples {
+            let day = calendar.startOfDay(for: sample.startDate)
+            let sampleSeconds = sample.startDate.timeIntervalSince(day)
+            guard sampleSeconds <= cutoffSeconds else { continue }
+            sums[day, default: 0] += sample.quantity.doubleValue(for: unit)
+        }
+        return sums.keys.sorted().map { (date: $0, value: sums[$0]!) }
+    }
+
+    /// Like `timeOfDaySumSeries`, but averages each day's samples from midnight to the current
+    /// clock time — correct for rate-style quantities (METs) where the day-so-far mean, not the
+    /// running total, is the comparable figure.
+    func timeOfDayAverageSeries(for identifier: HKQuantityTypeIdentifier, unit: HKUnit, days: Int) async -> [(date: Date, value: Double)] {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -days, to: Date()) ?? Date())
+        let predicate = HKSamplePredicate.quantitySample(
+            type: HKQuantityType(identifier),
+            predicate: HKQuery.predicateForSamples(withStart: start, end: Date())
+        )
+        let descriptor = HKSampleQueryDescriptor(
+            predicates: [predicate],
+            sortDescriptors: [SortDescriptor(\.startDate, order: .forward)]
+        )
+        let samples = (try? await descriptor.result(for: store)) ?? []
+
+        let now = Date()
+        let today = calendar.startOfDay(for: now)
+        let cutoffSeconds = now.timeIntervalSince(today)
+
+        var accum: [Date: (total: Double, count: Int)] = [:]
+        for sample in samples {
+            let day = calendar.startOfDay(for: sample.startDate)
+            let sampleSeconds = sample.startDate.timeIntervalSince(day)
+            guard sampleSeconds <= cutoffSeconds else { continue }
+            let value = sample.quantity.doubleValue(for: unit)
+            let existing = accum[day] ?? (0, 0)
+            accum[day] = (existing.total + value, existing.count + 1)
+        }
+        return accum.keys.sorted().map { (date: $0, value: accum[$0]!.total / Double(accum[$0]!.count)) }
+    }
+
+    /// Averages each day's samples inside a ±`window` band around the current clock time, so an
+    /// instantaneous reading (heart rate) is compared against what this hour of the day usually
+    /// looks like rather than against a whole-day mean.
+    func timeOfDayWindowAverageSeries(for identifier: HKQuantityTypeIdentifier, unit: HKUnit, days: Int, window: TimeInterval) async -> [(date: Date, value: Double)] {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -days, to: Date()) ?? Date())
+        let predicate = HKSamplePredicate.quantitySample(
+            type: HKQuantityType(identifier),
+            predicate: HKQuery.predicateForSamples(withStart: start, end: Date())
+        )
+        let descriptor = HKSampleQueryDescriptor(
+            predicates: [predicate],
+            sortDescriptors: [SortDescriptor(\.startDate, order: .forward)]
+        )
+        let samples = (try? await descriptor.result(for: store)) ?? []
+
+        let now = Date()
+        let today = calendar.startOfDay(for: now)
+        let centerSeconds = now.timeIntervalSince(today)
+        let lower = centerSeconds - window
+        let upper = centerSeconds + window
+
+        var accum: [Date: (total: Double, count: Int)] = [:]
+        for sample in samples {
+            let day = calendar.startOfDay(for: sample.startDate)
+            let sampleSeconds = sample.startDate.timeIntervalSince(day)
+            guard sampleSeconds >= lower && sampleSeconds <= upper else { continue }
+            let value = sample.quantity.doubleValue(for: unit)
+            let existing = accum[day] ?? (0, 0)
+            accum[day] = (existing.total + value, existing.count + 1)
+        }
+        return accum.keys.sorted().map { (date: $0, value: accum[$0]!.total / Double(accum[$0]!.count)) }
     }
 
     /// Like `dailyAverageSeries`, but restricted to overnight hours (18:00 → noon, keyed by
