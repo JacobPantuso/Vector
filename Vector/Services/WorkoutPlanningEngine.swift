@@ -10,6 +10,10 @@ struct WorkoutPlanningEngine {
     ) async -> WorkoutPlan {
         let recovered = recoveryScore?.score ?? 0
         let loadStatus = exertionScore?.loadStatus.label ?? "unknown"
+        let equipmentPrefs = EquipmentPreferencesStore.shared.preferences
+        let availableEquipment = equipmentPrefs.availableKinds.map { $0.rawValue }.joined(separator: ", ")
+        let trainingLocation = equipmentPrefs.location.rawValue
+
         let instructions = """
         You are Vector's workout planner.
         Generate a safe, realistic strength or conditioning workout as structured data.
@@ -17,6 +21,7 @@ struct WorkoutPlanningEngine {
         Include warm-ups, working sets, rest periods, cooldowns, and exact weights where possible.
         Keep the workout under 75 minutes.
         Keep the workout title under 40 characters. Use short, descriptive names like "Push Day" or "Upper Body Strength".
+        Only prescribe exercises using the available equipment: \(availableEquipment) at \(trainingLocation).
         """
 
         let request = """
@@ -26,6 +31,7 @@ struct WorkoutPlanningEngine {
         Sleep target: \(profile.sleepTargetHours) hours
         Recovery score: \(recovered)
         Load status: \(loadStatus)
+        Available equipment: \(availableEquipment) at \(trainingLocation)
         Workout request: \(prompt)
         """
 
