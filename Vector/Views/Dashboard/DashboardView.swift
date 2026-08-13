@@ -11,9 +11,15 @@ struct HomeView: View {
     @AppStorage(UserProfileStorage.sleepTargetHours) private var sleepTargetHours = UserProfile.defaultSleepTargetHours
     @AppStorage(UserProfileStorage.firstName) private var firstName = ""
     @Environment(AdvisorPresenter.self) private var advisorPresenter
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showingCalendar = false
     @State private var selectedHistoricalDate = Date()
     @State private var now = Date()
+    @State private var headerScroll = HeaderScrollState()
+    @State private var vitalsLayout = VitalsLayoutStore.shared
+    @State private var vitalsSeries = VitalsSeriesStore()
+    @State private var showingVitalsCustomize = false
+    @State private var vitalsContentWidth: CGFloat = 0
 
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -47,6 +53,20 @@ struct HomeView: View {
         return name.isEmpty ? timeGreeting : "\(timeGreeting), \(name)"
     }
 
+    private var greetingEmoji: String {
+        let hour = Calendar.current.component(.hour, from: now)
+        switch hour {
+        case 0..<12:  return "☀️"
+        case 12..<17: return "🌤️"
+        case 17..<21: return "🌆"
+        default:      return "🌙"
+        }
+    }
+
+    private var greetingHeadline: String {
+        "\(greetingTitle) \(greetingEmoji)"
+    }
+
     private var profile: UserProfile {
         UserProfile(
             goal: FitnessGoal(rawValue: goalRaw) ?? UserProfile.defaultGoal,
@@ -60,70 +80,56 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(greetingTitle)
-                                .font(.largeTitle.bold())
-                            Text(lastSyncedLabel)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
+                    VStack(alignment: .leading, spacing: 18) {
+                        expandedHeader
+                        gradientOverviewHeader
                     }
                     summaryGrid
-                    personalizedOverviewSection
                     todaySection
                 }
                 .padding(.horizontal, 20)
-                .padding(.vertical, 20)
+                .padding(.top, 10)
+                .padding(.bottom, 20)
+            }
+            .onScrollGeometryChange(for: CGFloat.self) {
+                $0.contentOffset.y
+            } action: { _, new in
+                headerScroll.offset = new
             }
             .refreshable {
                 await service.refreshToday()
                 await generateOverview(force: true)
+                await vitalsSeries.load(service: service, force: true)
             }
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .navigationBar)
             .scrollEdgeEffectStyle(.soft, for: .all)
-            .gradientHeader()
+            .gradientHeader(height: 460)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: service.isSyncing)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    ModeToolbarMenu()
-                }
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    if service.isSyncing {
-                        HStack(spacing: 6) {
-                            ProgressView()
-                                .scaleEffect(0.75)
-                            Text("Syncing")
-                                .font(.caption.weight(.medium))
-                                .foregroundStyle(.secondary)
-                        }
-                        .transition(.opacity.combined(with: .scale(scale: 0.9)))
-                    } else {
-                        Button {
-                            showingCalendar = true
-                        } label: {
-                            Image(systemName: "calendar")
-                        }
-                        .transition(.opacity.combined(with: .scale(scale: 0.9)))
+            .animation(.spring(duration: 0.3), value: showingCalendar)
+            .overlay(alignment: .top) {
+                CompactHeaderBar(
+                    scroll: headerScroll,
+                    date: now,
+                    isSyncing: service.isSyncing,
+                    onTapDate: {
+                        selectedHistoricalDate = Date()
+                        showingCalendar = true
                     }
-                    Button {
-                        advisorPresenter.open()
-                    } label: {
-                        Image(systemName: "sparkles")
-                    }
-                }
+                )
             }
-            .sheet(isPresented: $showingCalendar) {
+            .vectorSheet(isPresented: $showingCalendar) {
                 HistoricalDataSheet(selectedDate: $selectedHistoricalDate)
-                    .presentationDetents([.medium, .large])
-                    .presentationDragIndicator(.visible)
                     .environment(service)
+            }
+            .vectorSheet(isPresented: $showingVitalsCustomize) {
+                VitalsCustomizeSheet(store: vitalsLayout)
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
             }
             .task {
                 await service.refreshIfStale()
                 await generateOverview()
+                await vitalsSeries.load(service: service)
             }
             .onReceive(timer) { now = $0 }
         }
@@ -159,73 +165,118 @@ struct HomeView: View {
         )
     }
 
-    private var personalizedOverviewSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Vector Intelligence")
-                    .font(.title3.bold())
-                Spacer()
-                if service.isGeneratingOverview {
-                    HStack(spacing: 5) {
-                        ProgressView().scaleEffect(0.65)
-                        Text("Personalizing")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
+    private var isOverviewLoading: Bool {
+        service.isGeneratingOverview
+    }
 
-            GlassCard(tint: .cyan.opacity(0.18), cornerRadius: 24) {
-                VStack(alignment: .leading, spacing: 10) {
-                    if service.isGeneratingOverview && service.generatedOverview == nil {
-                        overviewSkeleton
-                    } else {
-                        Text(service.generatedOverview?.headline ?? staticFocusHeadline)
-                            .font(.headline)
-                        Text(service.generatedOverview?.body ?? staticFocusBody)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    if !service.isGeneratingOverview {
-                        HStack(spacing: 6) {
-                            Text("Sources:")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            sourceChip(icon: "moon.fill", label: "Sleep", color: .blue)
-                            sourceChip(icon: "heart.fill", label: "Recovery", color: .red)
-                            sourceChip(icon: "flame.fill", label: "Load", color: .orange)
-                            sourceChip(icon: "person.fill", label: "Profile", color: .purple)
-                        }
-                    }
-                }
+    private var headerStatusControls: some View {
+        HStack(spacing: 8) {
+            if service.isSyncing {
+                ProgressView()
+                    .scaleEffect(0.8)
+                    .frame(width: 34, height: 34)
+                    .glassEffect(.regular, in: .circle)
+                    .transition(.opacity.combined(with: .scale(scale: 0.8)))
             }
-            .askVector(AdvisorTopic(
-                title: "Today's Overview",
-                icon: "sparkles",
-                tintName: "cyan",
-                contextLines: [
-                    service.generatedOverview?.headline ?? staticFocusHeadline,
-                    service.generatedOverview?.body ?? staticFocusBody
-                ],
-                suggestedPrompt: "Tell me more about today's overview and what I should prioritize."
-            ))
+            ModeToolbarMenu(style: .headerChip)
         }
+    }
+
+    private var expandedHeader: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Button {
+                selectedHistoricalDate = Date()
+                showingCalendar = true
+            } label: {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(now.formatted(.dateTime.weekday(.wide)))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+
+                    HStack(spacing: 6) {
+                        Text(now.formatted(.dateTime.month(.wide).day()))
+                            .font(.system(size: 28, weight: .bold))
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(.secondary)
+                            .rotationEffect(.degrees(showingCalendar && !reduceMotion ? 180 : 0))
+                    }
+                }
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("View historical data")
+            .accessibilityHint("Opens a calendar to browse past days")
+
+            headerStatusControls
+        }
+    }
+
+    private var gradientOverviewHeader: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if isOverviewLoading {
+                overviewSkeleton
+            } else {
+                Text(greetingHeadline)
+                    .font(.title3.weight(.semibold))
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+
+                Text(service.generatedOverview?.body ?? staticFocusBody)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+
+            if !service.isGeneratingOverview {
+                HStack(spacing: 6) {
+                    Group {
+                        sourceChip(icon: "moon.fill", label: "Sleep", color: .blue)
+                        sourceChip(icon: "heart.fill", label: "Recovery", color: .red)
+                        sourceChip(icon: "flame.fill", label: "Load", color: .orange)
+                        sourceChip(icon: "person.fill", label: "Profile", color: .purple)
+                    }
+                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                    Spacer()
+                    Text(lastSyncedLabel)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .contentTransition(.numericText())
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+                .transition(.opacity)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .animation(.smooth(duration: 0.35), value: isOverviewLoading)
+        .animation(.spring(duration: 0.3), value: service.isGeneratingOverview)
+        .askVector(AdvisorTopic(
+            title: "Today's Overview",
+            icon: "sparkles",
+            tintName: "cyan",
+            contextLines: [
+                staticFocusHeadline,
+                service.generatedOverview?.body ?? staticFocusBody
+            ],
+            suggestedPrompt: "Tell me more about today's overview and what I should prioritize."
+        ))
     }
 
     private var overviewSkeleton: some View {
         VStack(alignment: .leading, spacing: 8) {
             RoundedRectangle(cornerRadius: 4)
-                .fill(.secondary.opacity(0.2))
-                .frame(width: 220, height: 16)
-            RoundedRectangle(cornerRadius: 4)
-                .fill(.secondary.opacity(0.15))
+                .fill(.secondary.opacity(0.3))
                 .frame(maxWidth: .infinity, minHeight: 12)
             RoundedRectangle(cornerRadius: 4)
-                .fill(.secondary.opacity(0.12))
+                .fill(.secondary.opacity(0.26))
                 .frame(width: 180, height: 12)
+            RoundedRectangle(cornerRadius: 4)
+                .fill(.secondary.opacity(0.22))
+                .frame(width: 120, height: 12)
         }
-        .redacted(reason: .placeholder)
         .shimmering()
     }
 
@@ -278,7 +329,11 @@ struct HomeView: View {
         case "morning", "late-night":
             return "Focus on how the athlete recovered overnight and their sleep quality. Frame the day ahead as an opportunity."
         case "afternoon":
-            return "Focus on nutrition intake so far, exertion and training load. Encourage smart fueling and pacing for the rest of the day."
+            if FeatureFlags.nutritionEnabled {
+                return "Focus on nutrition intake so far, exertion and training load. Encourage smart fueling and pacing for the rest of the day."
+            } else {
+                return "Focus on exertion and training load so far. Encourage smart pacing for the rest of the day."
+            }
         case "evening", "night":
             return "Focus on winding down — summarise what was accomplished today, acknowledge the effort, and encourage quality sleep and recovery tonight."
         default:
@@ -292,20 +347,25 @@ struct HomeView: View {
         guard SystemLanguageModel.default.availability == .available else { return }
         guard recovery.score > 0 || sleep.totalDuration > 0 || exertion.todayStrain > 0 else { return }
 
-        let nutrition = service.nutritionSummary
         let nutritionBlock: String
-        if let n = nutrition, n.caloriesConsumed > 0 {
-            nutritionBlock = """
-            Nutrition today: \(String(format: "%.0f", n.caloriesConsumed)) kcal consumed, \
-            \(String(format: "%.0f", n.protein))g protein, \
-            \(String(format: "%.0f", n.carbs))g carbs, \
-            \(String(format: "%.0f", n.fat))g fat. \
-            Energy balance: \(n.energyBalance.label.lowercased())
-            """
+        if FeatureFlags.nutritionEnabled {
+            let nutrition = service.nutritionSummary
+            if let n = nutrition, n.caloriesConsumed > 0 {
+                nutritionBlock = """
+                Nutrition today: \(String(format: "%.0f", n.caloriesConsumed)) kcal consumed, \
+                \(String(format: "%.0f", n.protein))g protein, \
+                \(String(format: "%.0f", n.carbs))g carbs, \
+                \(String(format: "%.0f", n.fat))g fat. \
+                Energy balance: \(n.energyBalance.label.lowercased())
+                """
+            } else {
+                nutritionBlock = "Nutrition today: no logged meals yet"
+            }
         } else {
-            nutritionBlock = "Nutrition today: no logged meals yet"
+            nutritionBlock = ""
         }
 
+        let nutritionLine = nutritionBlock.isEmpty ? "" : "\n\(nutritionBlock)"
         let prompt = """
         Time of day: \(timeOfDayContext)
         Day of week: \(now.formatted(.dateTime.weekday(.wide)))
@@ -323,10 +383,9 @@ struct HomeView: View {
         Overnight disruption: \(sleep.disruption.map { $0.isFlagged ? "\($0.headline) — \($0.signals.joined(separator: ", "))" : "none detected" } ?? "unknown")
         Today's exertion level: \(exertion.todayStrain > 0 ? "\(exertion.exertionLevel.label) (\(exertion.loadStatus.label.lowercased()) weekly load)" : "none yet")
         Weekly training load: \(exertion.acuteLoad > 0 ? String(format: "%.0f load (%@)", exertion.acuteLoad, exertion.loadStatus.label) : "no data")
-        Stress level: \(stress.score > 0 ? "\(stress.score)/100 (\(stress.level.label))" : "unknown")
-        \(nutritionBlock)
+        Stress level: \(stress.score > 0 ? "\(stress.score)/100 (\(stress.level.label))" : "unknown")\(nutritionLine)
 
-        This overview is about RIGHT NOW — today only. Never reference tomorrow, future days, or upcoming sessions. Every recommendation must be something the athlete can act on immediately. Use your knowledge of exercise science, sleep physiology, and nutrition to add depth. If recovery or sleep quality is low AND overnight signals are off (elevated resting heart rate or wrist temperature, suppressed HRV, elevated breathing rate, or a disruption flag), tell the athlete that something appears to be straining their body right now and recommend rest, hydration, and light activity. Never name a specific cause (no illness, no alcohol, no diagnosis) — just flag that the body seems under strain.
+        This overview is about RIGHT NOW — today only. Never reference tomorrow, future days, or upcoming sessions. Every recommendation must be something the athlete can act on immediately. Use your knowledge of exercise science, sleep physiology, and nutrition to add depth. If recovery or sleep quality is low AND overnight signals are off (elevated resting heart rate or wrist temperature, suppressed HRV, elevated breathing rate, or a disruption flag), decide the cause from the training data above. If weekly training load is moderate or high, or there was meaningful exertion today, treat it as accumulated training stress — the body is still absorbing recent workouts — and recommend rest, hydration, and light activity. But if training load is low, absent, or has no data, and the overnight signals are still off — especially an elevated wrist temperature paired with an elevated breathing rate or suppressed HRV — do NOT blame training. Say the body looks like it is working on something other than training, and recommend rest, fluids, and skipping hard sessions today. Never name a diagnosis or a specific illness, never mention alcohol, and never tell the athlete they are sick — describe what the signals show and leave the cause open.
         """
 
         // Run in an unstructured Task so switching tabs (which cancels the view's
@@ -335,6 +394,9 @@ struct HomeView: View {
             service.isGeneratingOverview = true
             defer { service.isGeneratingOverview = false }
             do {
+                let nutritionNote = FeatureFlags.nutritionEnabled
+                    ? ""
+                    : "\n\nNutrition tracking is not active in this app. Never mention food, meals, calories, macros, or nutrition tracking. If the data is sparse, never suggest nutrition as a factor."
                 let overviewInstructions = """
                     You're a coach who knows this athlete well, checking in like a text from a friend — direct, warm, natural. No jargon, no motivational-poster language, no formal report tone. Second person. \
                     Everything you write is about right now, today only. Never mention tomorrow, next session, or anything upcoming. \
@@ -343,7 +405,7 @@ struct HomeView: View {
                     Headline: a short status phrase, 2-4 words. Never a command, never a raw stat. \
                     Body: say less. 1-2 sentences, 3 at most. Reference the data naturally as insight, not a report — never cite a raw strain, exertion, or recovery score number, describe it qualitatively instead (e.g. high/moderate/low). \
                     The body must obey the time-of-day focus you are given. Never fabricate any number, workout, or event that is not in the provided data. \
-                    Use your broad knowledge of sports science, circadian rhythm, and nutrition to add context, briefly.
+                    Use your broad knowledge of sports science and circadian rhythm to add context, briefly. When the body shows signs of strain, training load is the default explanation — but only when the training data actually supports it. If the athlete has trained little and overnight signals are still elevated, say the body appears to be handling something other than training rather than forcing a training explanation. Never give a diagnosis or name a specific illness.\(nutritionNote)
                     """ + "\n\nTone: \(AdvisorPersona.current.instruction)"
                 let session = LanguageModelSession(
                     model: SystemLanguageModel.default,
@@ -351,6 +413,7 @@ struct HomeView: View {
                 )
                 let result = try await session.respond(to: prompt, generating: GeneratedOverview.self)
                 service.generatedOverview = result.content
+                service.persistDashboardSnapshot()
             } catch {
                 // Fall through to static fallback
             }
@@ -396,7 +459,7 @@ struct HomeView: View {
                 icon: "flame.fill",
                 tintName: "orange",
                 contextLines: [
-                    "Exertion score \(exertion.score)/100 (\(exertion.exertionLevel.label))",
+                    "Exertion score \(exertion.score) (\(exertion.exertionLevel.label))",
                     String(format: "Today's strain: %.0f", exertion.todayStrain),
                     String(format: "Acute load: %.0f (%@)", exertion.acuteLoad, exertion.loadStatus.label)
                 ],
@@ -448,138 +511,275 @@ struct HomeView: View {
     }
 
     private var todaySection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Today's Vitals")
-                .font(.title3.bold())
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .center, spacing: 12) {
+                Text("Today's Vitals")
+                    .font(.title3.bold())
+                Spacer()
+                Button(action: { showingVitalsCustomize = true }) {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.primary)
+                }
+                .buttonStyle(.plain)
+                .frame(width: 30, height: 30)
+                .glassEffect(.regular, in: .circle)
+            }
 
-            LazyVGrid(columns: columns, spacing: 12) {
-                vitalTile(icon: "heart.fill", label: "Heart Rate",
-                          value: service.latestHeartRate.map { String(format: "%.0f", $0) } ?? "--",
-                          unit: "bpm", color: .red)
-                    .askVector(AdvisorTopic(
-                        title: "Heart Rate",
-                        icon: "heart.fill",
-                        tintName: "red",
-                        contextLines: [
-                            String(format: "Current: %.0f bpm", service.latestHeartRate ?? 0),
-                            "A key indicator of cardiovascular stress and recovery status"
-                        ],
-                        suggestedPrompt: "Explain what my heart rate means for my recovery and training readiness."
-                    ))
-
-                vitalTile(icon: "waveform.path.ecg", label: "HRV",
-                          value: service.latestHRV.map { String(format: "%.0f", $0) } ?? "--",
-                          unit: "ms", color: .cyan)
-                    .askVector(AdvisorTopic(
-                        title: "Heart Rate Variability",
-                        icon: "waveform.path.ecg",
-                        tintName: "cyan",
-                        contextLines: [
-                            String(format: "Current HRV: %.0f ms", service.latestHRV ?? 0),
-                            "Higher HRV indicates parasympathetic activation and better recovery"
-                        ],
-                        suggestedPrompt: "What does my HRV tell me about my recovery and stress levels?"
-                    ))
-
-                vitalTile(icon: "heart.text.square", label: "Resting HR",
-                          value: service.latestRestingHR.map { String(format: "%.0f", $0) } ?? "--",
-                          unit: "bpm", color: .pink)
-                    .askVector(AdvisorTopic(
-                        title: "Resting Heart Rate",
-                        icon: "heart.text.square",
-                        tintName: "pink",
-                        contextLines: [
-                            String(format: "Current RHR: %.0f bpm", service.latestRestingHR ?? 0),
-                            "Resting HR reflects baseline cardiovascular fitness"
-                        ],
-                        suggestedPrompt: "How does my resting heart rate affect my overall fitness?"
-                    ))
-
-                vitalTile(icon: "bed.double.fill", label: "Sleep",
-                          value: service.sleepAnalysis?.formattedDuration ?? "--",
-                          unit: "", color: .blue)
-                    .askVector(AdvisorTopic(
-                        title: "Sleep Duration",
-                        icon: "bed.double.fill",
-                        tintName: "blue",
-                        contextLines: [
-                            "Sleep duration: \(service.sleepAnalysis?.formattedDuration ?? "No data")",
-                            "Quality sleep is essential for recovery and adaptation"
-                        ],
-                        suggestedPrompt: "Is my sleep duration and quality adequate for my training?"
-                    ))
-
-                vitalTile(icon: "flame.fill", label: "Active Energy",
-                          value: service.todayActiveCalories > 0 ? String(format: "%.0f", service.todayActiveCalories) : "--",
-                          unit: "kcal", color: .orange)
-                    .askVector(AdvisorTopic(
-                        title: "Active Energy",
-                        icon: "flame.fill",
-                        tintName: "orange",
-                        contextLines: [
-                            String(format: "Active calories: %.0f kcal", service.todayActiveCalories),
-                            "Energy burned through movement and exercise"
-                        ],
-                        suggestedPrompt: "How does my active energy expenditure compare to my goals?"
-                    ))
-
-                vitalTile(icon: "flame", label: "Resting Energy",
-                          value: service.todayBasalCalories > 0 ? String(format: "%.0f", service.todayBasalCalories) : "--",
-                          unit: "kcal", color: .red)
-                    .askVector(AdvisorTopic(
-                        title: "Resting Energy",
-                        icon: "flame",
-                        tintName: "red",
-                        contextLines: [
-                            String(format: "Resting calories: %.0f kcal", service.todayBasalCalories),
-                            "Baseline energy required for basic body functions"
-                        ],
-                        suggestedPrompt: "What is my basal metabolic rate and how does it affect my nutrition?"
-                    ))
-
-                vitalTile(icon: "figure.walk", label: "Steps",
-                          value: service.todaySteps > 0 ? String(format: "%.0f", service.todaySteps) : "--",
-                          unit: "steps", color: .green)
-                    .askVector(AdvisorTopic(
-                        title: "Steps",
-                        icon: "figure.walk",
-                        tintName: "green",
-                        contextLines: [
-                            String(format: "Today's steps: %.0f", service.todaySteps),
-                            "Daily movement is crucial for overall health"
-                        ],
-                        suggestedPrompt: "Am I hitting my daily activity targets?"
-                    ))
+            if vitalsLayout.visibleMetrics.isEmpty {
+                VStack(spacing: 8) {
+                    Text("No vitals selected — tap the slider icon to add some.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 24)
+                .glassEffect(in: .rect(cornerRadius: 14))
+            } else {
+                VStack(spacing: 16) {
+                    ForEach(Array(vitalCardRows.enumerated()), id: \.offset) { _, row in
+                        if row.count == 1, let metric = row.first {
+                            let resolvedSize = vitalsLayout.sizes[metric] ?? metric.defaultSize
+                            if resolvedSize == .wide {
+                                vitalCard(for: metric, size: .wide)
+                                    .askVector(advisorTopic(for: metric))
+                            } else {
+                                HStack(spacing: 16) {
+                                    vitalCard(for: metric, size: .small)
+                                        .askVector(advisorTopic(for: metric))
+                                        .frame(width: loneSmallCardWidth, alignment: .leading)
+                                    Spacer(minLength: 0)
+                                }
+                                .frame(maxWidth: .infinity)
+                            }
+                        } else {
+                            HStack(spacing: 16) {
+                                ForEach(row, id: \.self) { metric in
+                                    vitalCard(for: metric, size: .small)
+                                        .askVector(advisorTopic(for: metric))
+                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                }
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                    }
+                }
+                .onGeometryChange(for: CGFloat.self) { proxy in
+                    proxy.size.width
+                } action: { newValue in
+                    vitalsContentWidth = newValue
+                }
             }
         }
     }
 
+    private var vitalCardRows: [[VitalMetric]] {
+        var rows: [[VitalMetric]] = []
+        var currentRow: [VitalMetric] = []
 
-    private func vitalTile(icon: String, label: String, value: String, unit: String, color: Color) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: icon)
-                .font(.body)
-                .foregroundStyle(color)
-                .frame(width: 24)
+        for metric in vitalsLayout.visibleMetrics {
+            let size = vitalsLayout.sizes[metric] ?? metric.defaultSize
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(label)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                HStack(spacing: 3) {
-                    Text(value)
-                        .font(.subheadline.bold())
-                        .monospacedDigit()
-                    Text(unit)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+            if size == .wide {
+                if !currentRow.isEmpty {
+                    rows.append(currentRow)
+                    currentRow = []
                 }
+                rows.append([metric])
+            } else {
+                if currentRow.count == 2 {
+                    rows.append(currentRow)
+                    currentRow = []
+                }
+                currentRow.append(metric)
             }
-
-            Spacer()
         }
-        .padding(12)
-        .glassEffect(in: .rect(cornerRadius: 14))
+
+        if !currentRow.isEmpty {
+            rows.append(currentRow)
+        }
+
+        return rows
+    }
+
+    /// Exactly half of the vitals row, so a lone small card matches a paired one.
+    private var loneSmallCardWidth: CGFloat? {
+        guard vitalsContentWidth > 0 else { return nil }
+        return (vitalsContentWidth - 16) / 2
+    }
+
+    private func vitalCard(for metric: VitalMetric, size: VitalCardSize) -> some View {
+        VitalCard(
+            snapshot: VitalSnapshotBuilder.snapshot(
+                for: metric,
+                service: service,
+                series: vitalsSeries.series[metric] ?? [],
+                paceSeries: vitalsSeries.paceSeries[metric] ?? []
+            ),
+            size: size
+        )
+    }
+
+    private func advisorTopic(for metric: VitalMetric) -> AdvisorTopic {
+        switch metric {
+        case .heartRate:
+            return AdvisorTopic(
+                title: "Heart Rate",
+                icon: "heart.fill",
+                tintName: "red",
+                contextLines: [
+                    String(format: "Current: %.0f bpm", service.latestHeartRate ?? 0),
+                    "A key indicator of cardiovascular stress and recovery status"
+                ],
+                suggestedPrompt: "Explain what my heart rate means for my recovery and training readiness."
+            )
+
+        case .hrv:
+            return AdvisorTopic(
+                title: "Heart Rate Variability",
+                icon: "waveform.path.ecg",
+                tintName: "cyan",
+                contextLines: [
+                    String(format: "Current HRV: %.0f ms", service.latestHRV ?? 0),
+                    "Higher HRV indicates parasympathetic activation and better recovery"
+                ],
+                suggestedPrompt: "What does my HRV tell me about my recovery and stress levels?"
+            )
+
+        case .restingHR:
+            return AdvisorTopic(
+                title: "Resting Heart Rate",
+                icon: "heart.text.square",
+                tintName: "pink",
+                contextLines: [
+                    String(format: "Current RHR: %.0f bpm", service.latestRestingHR ?? 0),
+                    "Resting HR reflects baseline cardiovascular fitness"
+                ],
+                suggestedPrompt: "How does my resting heart rate affect my overall fitness?"
+            )
+
+        case .sleep:
+            return AdvisorTopic(
+                title: "Sleep Duration",
+                icon: "bed.double.fill",
+                tintName: "blue",
+                contextLines: [
+                    "Sleep duration: \(service.sleepAnalysis?.formattedDuration ?? "No data")",
+                    "Quality sleep is essential for recovery and adaptation"
+                ],
+                suggestedPrompt: "Is my sleep duration and quality adequate for my training?"
+            )
+
+        case .activeEnergy:
+            return AdvisorTopic(
+                title: "Active Energy",
+                icon: "flame.fill",
+                tintName: "orange",
+                contextLines: [
+                    String(format: "Active calories: %.0f kcal", service.todayActiveCalories),
+                    "Energy burned through movement and exercise"
+                ],
+                suggestedPrompt: "How does my active energy expenditure compare to my goals?"
+            )
+
+        case .restingEnergy:
+            return AdvisorTopic(
+                title: "Resting Energy",
+                icon: "flame",
+                tintName: "red",
+                contextLines: [
+                    String(format: "Resting calories: %.0f kcal", service.todayBasalCalories),
+                    "Baseline energy required for basic body functions"
+                ],
+                suggestedPrompt: "What is my basal metabolic rate and how does it affect my nutrition?"
+            )
+
+        case .steps:
+            return AdvisorTopic(
+                title: "Steps",
+                icon: "figure.walk",
+                tintName: "green",
+                contextLines: [
+                    String(format: "Today's steps: %.0f", service.todaySteps),
+                    "Daily movement is crucial for overall health"
+                ],
+                suggestedPrompt: "Am I hitting my daily activity targets?"
+            )
+
+        case .vo2Max:
+            return AdvisorTopic(
+                title: "VO2 Max",
+                icon: "lungs.fill",
+                tintName: "mint",
+                contextLines: [
+                    String(format: "Current VO2 Max: %.1f ml/kg·min", service.latestVO2Max ?? 0),
+                    "VO2 Max measures your aerobic capacity and cardiovascular fitness"
+                ],
+                suggestedPrompt: "How does my VO2 Max compare to my fitness level and what does it mean for my training?"
+            )
+
+        case .wristTemp:
+            return AdvisorTopic(
+                title: "Temperature Deviation",
+                icon: "thermometer",
+                tintName: "orange",
+                contextLines: [
+                    String(format: "Deviation: %+.1f°C", service.latestWristTempDeviation ?? 0),
+                    "Wrist temperature deviation from your baseline can indicate stress or illness"
+                ],
+                suggestedPrompt: "What does my wrist temperature tell me about my current health and recovery state?"
+            )
+
+        case .spo2:
+            return AdvisorTopic(
+                title: "Blood Oxygen",
+                icon: "drop.fill",
+                tintName: "teal",
+                contextLines: [
+                    String(format: "Current SpO2: %.0f%%", service.latestSpO2 ?? 0),
+                    "Blood oxygen saturation reflects your cardiovascular and respiratory health"
+                ],
+                suggestedPrompt: "What does my blood oxygen level tell me about my respiratory and cardiovascular health?"
+            )
+
+        case .respiratoryRate:
+            let rr = service.sleepAnalysis?.respiratoryRate ?? 0
+            return AdvisorTopic(
+                title: "Respiratory Rate",
+                icon: "lungs",
+                tintName: "indigo",
+                contextLines: [
+                    String(format: "Current RR: %.1f breaths/min", rr),
+                    "Respiratory rate is an indicator of stress levels and cardiovascular fitness"
+                ],
+                suggestedPrompt: "What does my respiratory rate tell me about my stress and physical condition?"
+            )
+
+        case .physicalEffort:
+            return AdvisorTopic(
+                title: "Physical Effort",
+                icon: "bolt.fill",
+                tintName: "purple",
+                contextLines: [
+                    String(format: "Today's effort: %.1f METs", service.todayPhysicalEffort ?? 0),
+                    "Physical effort measures the intensity and volume of your daily activity"
+                ],
+                suggestedPrompt: "How does my physical effort today compare to my typical training intensity?"
+            )
+
+        case .hrr:
+            return AdvisorTopic(
+                title: "HR Recovery",
+                icon: "arrow.down.heart",
+                tintName: "yellow",
+                contextLines: [
+                    String(format: "Current HRR: %.0f bpm", service.latestHRR ?? 0),
+                    "Heart rate recovery measures how quickly your heart rate drops after effort"
+                ],
+                suggestedPrompt: "What does my heart rate recovery tell me about my cardiovascular fitness?"
+            )
+        }
     }
 
 
@@ -591,6 +791,8 @@ struct HomeView: View {
             Text(label)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
@@ -598,182 +800,6 @@ struct HomeView: View {
     }
 }
 
-struct HistoricalDataSheet: View {
-    @Binding var selectedDate: Date
-    @Environment(HealthKitService.self) var service
-    @State private var sleep: SleepAnalysis?
-    @State private var steps: Double = 0
-    @State private var activeCalories: Double = 0
-    @State private var isLoading = false
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    DatePicker(
-                        "Select Date",
-                        selection: $selectedDate,
-                        in: ...Date(),
-                        displayedComponents: .date
-                    )
-                    .datePickerStyle(.graphical)
-                    .padding(.horizontal, 4)
-
-                    recoveryHeatmapStrip
-
-                    if isLoading {
-                        ProgressView("Loading data…")
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 20)
-                    } else {
-                        historicalSummary
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 20)
-            }
-            .navigationTitle(selectedDate.formatted(date: .abbreviated, time: .omitted))
-            .navigationBarTitleDisplayMode(.inline)
-        }
-        .task(id: selectedDate) {
-            await fetchData(for: selectedDate)
-        }
-    }
-
-    @ViewBuilder
-    private var recoveryHeatmapStrip: some View {
-        let series = Array(ScoreHistoryStore.series(for: .recovery).suffix(14))
-        if !series.isEmpty {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Recovery · last 14 days")
-                    .font(.caption).foregroundStyle(.secondary)
-                HStack(spacing: 4) {
-                    ForEach(series, id: \.date) { entry in
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(heatColor(entry.score))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 30)
-                            .overlay(
-                                Text("\(entry.score)")
-                                    .font(.system(size: 9, weight: .bold))
-                                    .foregroundStyle(.white)
-                            )
-                            .onTapGesture { selectedDate = entry.date }
-                    }
-                }
-            }
-            .padding(12)
-            .glassEffect(in: .rect(cornerRadius: 14))
-        }
-    }
-
-    private func heatColor(_ s: Int) -> Color {
-        switch s {
-        case ..<50: return .red
-        case ..<70: return .orange
-        case ..<85: return .green
-        default:    return .mint
-        }
-    }
-
-    private var scoresGrid: some View {
-        let recovery = ScoreHistoryStore.score(for: .recovery, on: selectedDate)
-        let stress = ScoreHistoryStore.score(for: .stress, on: selectedDate)
-        let exertion = ScoreHistoryStore.score(for: .exertion, on: selectedDate)
-        let sleepScore = sleep.map { Int($0.quality * 100) } ?? ScoreHistoryStore.score(for: .sleep, on: selectedDate)
-        return LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-            historicalScoreTile("Recovery", recovery, "heart.fill", .green)
-            historicalScoreTile("Sleep", sleepScore, "moon.fill", .blue)
-            historicalScoreTile("Exertion", exertion, "flame.fill", .orange)
-            historicalScoreTile("Stress", stress, "waveform.path.ecg", .indigo)
-        }
-    }
-
-    private func historicalScoreTile(_ label: String, _ score: Int?, _ icon: String, _ color: Color) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: icon).foregroundStyle(color).frame(width: 24)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(label).font(.caption).foregroundStyle(.secondary)
-                Text(score.map(String.init) ?? "—").font(.title3.bold().monospacedDigit())
-            }
-            Spacer()
-        }
-        .padding(12)
-        .glassEffect(in: .rect(cornerRadius: 14))
-    }
-
-    private var historicalSummary: some View {
-        VStack(spacing: 14) {
-            scoresGrid
-            if let sleep {
-                HStack(spacing: 10) {
-                    Image(systemName: "moon.fill")
-                        .foregroundStyle(.blue)
-                        .frame(width: 28)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Sleep")
-                            .font(.caption).foregroundStyle(.secondary)
-                        Text(sleep.formattedDuration)
-                            .font(.subheadline.bold())
-                    }
-                    Spacer()
-                    Text(sleep.qualityLevel.label)
-                        .font(.caption.bold())
-                        .foregroundStyle(sleep.qualityLevel.color)
-                }
-                .padding(12)
-                .glassEffect(in: .rect(cornerRadius: 14))
-            }
-
-            HStack(spacing: 10) {
-                Image(systemName: "figure.walk")
-                    .foregroundStyle(.green)
-                    .frame(width: 28)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Steps")
-                        .font(.caption).foregroundStyle(.secondary)
-                    Text(steps > 0 ? String(format: "%.0f", steps) : "No data")
-                        .font(.subheadline.bold()).monospacedDigit()
-                }
-                Spacer()
-                Image(systemName: "flame.fill")
-                    .foregroundStyle(.orange)
-                    .frame(width: 28)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Active Cal")
-                        .font(.caption).foregroundStyle(.secondary)
-                    Text(activeCalories > 0 ? String(format: "%.0f kcal", activeCalories) : "No data")
-                        .font(.subheadline.bold()).monospacedDigit()
-                }
-            }
-            .padding(12)
-            .glassEffect(in: .rect(cornerRadius: 14))
-
-            if sleep == nil && steps == 0 && activeCalories == 0
-                && ScoreHistoryStore.score(for: .recovery, on: selectedDate) == nil
-                && ScoreHistoryStore.score(for: .exertion, on: selectedDate) == nil
-                && ScoreHistoryStore.score(for: .stress, on: selectedDate) == nil {
-                Text("No health data found for this date.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.vertical, 16)
-            }
-        }
-    }
-
-    private func fetchData(for date: Date) async {
-        isLoading = true
-        defer { isLoading = false }
-        async let sleepResult = service.fetchSleepAnalysis(for: date)
-        async let stepsResult = service.fetchStatistic(for: .stepCount, unit: .count(), on: date)
-        async let caloriesResult = service.fetchStatistic(for: .activeEnergyBurned, unit: .kilocalorie(), on: date)
-        let (s, st, ac) = await (sleepResult, stepsResult, caloriesResult)
-        sleep = s
-        steps = st
-        activeCalories = ac
-    }
-}
 
 // MARK: - Generated Overview Model
 
@@ -789,22 +815,121 @@ struct GeneratedOverview {
     var status: String
 }
 
+// MARK: - Header Scroll State
+
+@Observable
+private final class HeaderScrollState {
+    var offset: CGFloat = 0
+}
+
+// MARK: - Compact Header Bar
+
+private struct CompactHeaderBar: View {
+    let scroll: HeaderScrollState
+    let date: Date
+    let isSyncing: Bool
+    var onTapDate: () -> Void
+
+    /// Fades in as the expanded header scrolls away.
+    private var visibility: Double {
+        Double(min(max((scroll.offset - 34) / 40, 0), 1))
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Button(action: onTapDate) {
+                HStack(spacing: 5) {
+                    Text(date.formatted(.dateTime.month(.abbreviated).day()))
+                        .font(.title2.weight(.bold))
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.secondary)
+                }
+                .foregroundStyle(.primary)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("View historical data")
+
+            Spacer()
+
+            if isSyncing {
+                ProgressView()
+                    .scaleEffect(0.8)
+                    .frame(width: 34, height: 34)
+            }
+            ModeToolbarMenu(style: .headerChip)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 6)
+        .padding(.bottom, 18)
+        .background {
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .mask {
+                    LinearGradient(
+                        stops: [
+                            .init(color: .black, location: 0.0),
+                            .init(color: .black, location: 0.55),
+                            .init(color: .black.opacity(0.35), location: 0.82),
+                            .init(color: .clear, location: 1.0)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                }
+                .ignoresSafeArea(edges: .top)
+        }
+        .opacity(visibility)
+        .allowsHitTesting(visibility > 0.5)
+    }
+}
+
 // MARK: - Shimmer modifier
 
-private extension View {
-    @ViewBuilder func shimmering() -> some View {
-        self.overlay {
-            GeometryReader { geo in
-                LinearGradient(
-                    colors: [.clear, .white.opacity(0.35), .clear],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-                .frame(width: geo.size.width * 0.6)
-                .offset(x: -geo.size.width)
-            }
+private struct ShimmerModifier: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) var reduceMotion
+    @Environment(\.colorScheme) var colorScheme
+
+    func body(content: Content) -> some View {
+        if reduceMotion {
+            return AnyView(content)
+        } else {
+            return AnyView(
+                content
+                    .overlay {
+                        TimelineView(.animation) { timeline in
+                            GeometryReader { geo in
+                                let width = geo.size.width
+                                let band = max(width * 0.35, 1)
+                                let t = timeline.date.timeIntervalSinceReferenceDate
+                                let phase = CGFloat((t.truncatingRemainder(dividingBy: 1.3)) / 1.3)
+
+                                let shimmerColor: [Color] = colorScheme == .dark
+                                    ? [.clear, .white.opacity(0.85), .clear]
+                                    : [.clear, .black.opacity(0.35), .clear]
+
+                                LinearGradient(
+                                    colors: shimmerColor,
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                                .frame(width: band)
+                                .offset(x: -band + phase * (width + band))
+                                .blendMode(colorScheme == .dark ? .plusLighter : .normal)
+                            }
+                        }
+                        .mask(content)
+                        .allowsHitTesting(false)
+                    }
+            )
         }
-        .clipped()
+    }
+}
+
+private extension View {
+    func shimmering() -> some View {
+        modifier(ShimmerModifier())
     }
 }
 
