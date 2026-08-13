@@ -420,23 +420,19 @@ struct HomeView: View {
             service.markOverviewAttempted()
             defer { service.isGeneratingOverview = false }
             do {
-                let nutritionNote = FeatureFlags.nutritionEnabled
-                    ? ""
-                    : "\n\nNutrition tracking is not active in this app. Never mention food, meals, calories, macros, or nutrition tracking. If the data is sparse, never suggest nutrition as a factor."
-                let overviewInstructions = """
-                    You're a coach who knows this athlete well, checking in like a text from a friend — direct, warm, natural. No jargon, no motivational-poster language, no formal report tone. Second person. \
-                    Everything you write is about right now, today only. Never mention tomorrow, next session, or anything upcoming. \
-                    Match your tone and focus to the time of day you're given. \
-                    Think step-by-step about what the data means before writing your answer. \
-                    Headline: a short status phrase, 2-4 words. Never a command, never a raw stat. \
-                    Body: say less. 1-2 sentences, 3 at most. Reference the data naturally as insight, not a report — never cite a raw strain, exertion, or recovery score number, describe it qualitatively instead (e.g. high/moderate/low). \
-                    The body must obey the time-of-day focus you are given. Never fabricate any number, workout, or event that is not in the provided data. \
-                    Use your broad knowledge of sports science and circadian rhythm to add context, briefly. When the body shows signs of strain, training load is the default explanation — but only when the training data actually supports it. If the athlete has trained little and overnight signals are still elevated, say the body appears to be handling something other than training rather than forcing a training explanation. Never give a diagnosis or name a specific illness.\(nutritionNote)
-                    """ + "\n\nTone: \(AdvisorPersona.current.instruction)"
-                let session = LanguageModelSession(
-                    model: SystemLanguageModel.default,
-                    instructions: overviewInstructions
-                )
+                let overviewInstructionsHead = "You're a coach who knows this athlete well, checking in like a text from a friend — direct, warm, natural. No jargon, no motivational-poster language, no formal report tone. Second person. Everything you write is about right now, today only. Never mention tomorrow, next session, or anything upcoming. Match your tone and focus to the time of day you're given. "
+                let stepByStepLine = AIModel.supportsReasoning ? "" : "Think step-by-step about what the data means before writing your answer. "
+                let overviewInstructionsTail = "Headline: a short status phrase, 2-4 words. Never a command, never a raw stat. Body: say less. 1-2 sentences, 3 at most. Reference the data naturally as insight, not a report — never cite a raw strain, exertion, or recovery score number, describe it qualitatively instead (e.g. high/moderate/low). The body must obey the time-of-day focus you are given. Never fabricate any number, workout, or event that is not in the provided data. Use your broad knowledge of sports science and circadian rhythm to add context, briefly. When the body shows signs of strain, training load is the default explanation — but only when the training data actually supports it. If the athlete has trained little and overnight signals are still elevated, say the body appears to be handling something other than training rather than forcing a training explanation. Never give a diagnosis or name a specific illness."
+
+                let profile = LanguageModelSession.Profile {
+                    Instructions(overviewInstructionsHead + stepByStepLine + overviewInstructionsTail)
+                    if !FeatureFlags.nutritionEnabled {
+                        Instructions("Nutrition tracking is not active in this app. Never mention food, meals, calories, macros, or nutrition tracking. If the data is sparse, never suggest nutrition as a factor.")
+                    }
+                    Instructions("Tone: \(AdvisorPersona.current.instruction)")
+                }
+                .reasoningLevel(AIModel.supportsReasoning ? .moderate : nil)
+                let session = LanguageModelSession(profile: profile)
                 let result = try await session.respond(to: prompt, generating: GeneratedOverview.self)
                 service.generatedOverview = result.content
                 service.persistDashboardSnapshot()

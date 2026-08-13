@@ -173,7 +173,9 @@ struct MetricDetailSheet: View {
         .presentationDetents([.medium, .fraction(0.85)])
         .presentationDragIndicator(.visible)
         .presentationCornerRadius(28)
-        .task { await generateExplanation() }
+        .task {
+            await generateExplanation()
+        }
     }
 
     /// The on-device model sometimes prefixes its answer with invented tool-call
@@ -202,6 +204,9 @@ struct MetricDetailSheet: View {
         return cleaned.isEmpty ? nil : cleaned
     }
 
+    /// Shared instruction prefix for explanation generation (iOS 26 and 27).
+    private static let baseExplanationInstructions = "You are Vector, a concise on-device health and fitness coach explaining one metric inside the user's app. You are given the user's real measured history for this metric. Write 2-3 short sentences (under 55 words total) that say what this metric's RECENT PATTERN means for the user right now — reference the trend, not just today's number. Never restate the current value verbatim; the app already shows it. Do not use markdown, bullets, or headings. Do not invent numbers that are not in the data given to you. Speak directly to the user as \"you\". Reply with prose only."
+
     /// Builds an on-device explanation grounded in real history and the metric's
     /// baseline favorability (isPositive) so the model doesn't contradict the UI's status label.
     private func generateExplanation() async {
@@ -215,11 +220,6 @@ struct MetricDetailSheet: View {
         case .some(false): "This reading is currently a NEGATIVE signal relative to baseline (status: \(statusLabel))."
         case .none: "This reading is informational (status: \(statusLabel)); it is not being judged good or bad."
         }
-
-        let session = LanguageModelSession(
-            model: SystemLanguageModel.default,
-            instructions: "You are Vector, a concise on-device health and fitness coach explaining one metric inside the user's app. You are given the user's real measured history for this metric. Write 2-3 short sentences (under 55 words total) that say what this metric's RECENT PATTERN means for the user right now — reference the trend, not just today's number. Never restate the current value verbatim; the app already shows it. Do not use markdown, bullets, or headings. Do not invent numbers that are not in the data given to you. Speak directly to the user as \"you\". Reply with prose only. You have no tools. Never emit tool calls, function names, JSON, key-value pairs, code fences, or lines beginning with 'tool:', 'result:', 'thought:', or 'action:' — output only the sentences the user should read."
-        )
 
         var promptParts: [String] = [
             "Metric: \(title)",
@@ -238,6 +238,13 @@ struct MetricDetailSheet: View {
         let prompt = promptParts.joined(separator: "\n")
 
         do {
+            let profile = LanguageModelSession.Profile {
+                Instructions(Self.baseExplanationInstructions)
+            }
+            .reasoningLevel(AIModel.supportsReasoning ? .light : nil)
+            .maximumResponseTokens(120)
+            .toolCallingMode(.disallowed)
+            let session = LanguageModelSession(profile: profile)
             let response = try await session.respond(to: prompt)
             aiExplanation = cleanedExplanation(response.content)
         } catch {

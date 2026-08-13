@@ -111,18 +111,10 @@ struct VectorApp: App {
             }
 
             if isAdvisorSupported {
-                if #available(iOS 27.0, *) {
-                    Tab("Vector", image: "VectorMark", value: 4, role: .prominent) {
-                        AdvisorView()
-                            .tint(nil)
-                            .tabCrossFade(gradientHeight: 0)
-                    }
-                } else {
-                    Tab("Vector", image: "VectorMark", value: 4, role: .search) {
-                        AdvisorView()
-                            .tint(nil)
-                            .tabCrossFade(gradientHeight: 0)
-                    }
+                Tab("Vector", image: "VectorMark", value: 4, role: .prominent) {
+                    AdvisorView()
+                        .tint(nil)
+                        .tabCrossFade(gradientHeight: 0)
                 }
             }
         }

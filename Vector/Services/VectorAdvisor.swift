@@ -1,5 +1,6 @@
 import FoundationModels
 import Foundation
+import os
 
 // MARK: - Topic (user long-pressed item)
 
@@ -70,6 +71,8 @@ final class VectorAdvisor {
     var messages: [AdvisorMessage] = []
     var isStreaming = false
 
+    private static let advisorLog = Logger(subsystem: "com.jacobpantuso.Vector", category: "VectorAdvisor")
+
     /// Tap-to-send follow-up suggestions for the latest assistant reply. Transient.
     var suggestedReplies: [String] = []
 
@@ -87,9 +90,7 @@ final class VectorAdvisor {
 
     private var session: LanguageModelSession?
     private var sessionDay: Date?
-    private var sessionPersona: AdvisorPersona?
     private var lastSnapshotHash: Int?
-    private var sessionMemoryHash: Int?
 
     /// Transient undo actions keyed by message ID. Not persisted, cleared on relaunch.
     /// Views read this to render Undo buttons; restored messages only show actionSummaries.
@@ -157,6 +158,10 @@ final class VectorAdvisor {
 
         ensureSession(healthService: healthService)
         guard let activeSession = session else {
+            Self.advisorLog.error("Advisor send: session could not be created")
+            #if DEBUG
+            print("[VectorAdvisor] Advisor send: session could not be created")
+            #endif
             if let idx = messages.lastIndex(where: { $0.id == messageId }) {
                 messages[idx].content = "Something went wrong generating a response. Try asking again."
             }
@@ -199,9 +204,17 @@ final class VectorAdvisor {
             }
         } catch {
             // Retry once after recreating session
+            Self.advisorLog.error("Advisor stream failed (first attempt): \(String(describing: error), privacy: .public) — \(error.localizedDescription, privacy: .public)")
+            #if DEBUG
+            print("[VectorAdvisor] Advisor stream failed (first attempt): \(String(describing: error)) — \(error.localizedDescription)")
+            #endif
             self.session = nil
             ensureSession(healthService: healthService)
             guard let retrySession = self.session else {
+                Self.advisorLog.error("Advisor send: retry session could not be created")
+                #if DEBUG
+                print("[VectorAdvisor] Advisor send: retry session could not be created")
+                #endif
                 if let idx = messages.lastIndex(where: { $0.id == messageId }) {
                     messages[idx].content = "Something went wrong generating a response. Try asking again."
                 }
@@ -224,6 +237,10 @@ final class VectorAdvisor {
                     }
                 }
             } catch {
+                Self.advisorLog.error("Advisor stream failed (retry attempt): \(String(describing: error), privacy: .public) — \(error.localizedDescription, privacy: .public)")
+                #if DEBUG
+                print("[VectorAdvisor] Advisor stream failed (retry attempt): \(String(describing: error)) — \(error.localizedDescription)")
+                #endif
                 if let idx = messages.lastIndex(where: { $0.id == messageId }) {
                     messages[idx].content = "Something went wrong generating a response. Try asking again."
                 }
@@ -264,9 +281,7 @@ final class VectorAdvisor {
         suggestedReplies = []
         session = nil
         sessionDay = nil
-        sessionPersona = nil
         lastSnapshotHash = nil
-        sessionMemoryHash = nil
         AdvisorActivity.shared.reset()
         save()
     }
@@ -286,7 +301,6 @@ final class VectorAdvisor {
         suggestedReplies = []
         session = nil
         sessionDay = nil
-        sessionPersona = nil
         lastSnapshotHash = nil
         AdvisorActivity.shared.reset()
         save()
@@ -294,43 +308,22 @@ final class VectorAdvisor {
 
     // MARK: - Private helpers
 
-    /// Rebuilds a model transcript from the persisted conversation so a new
-    /// session picks up the thread instead of starting blank. Only complete exchanges
-    /// (messages with actual responses) are included; the in-flight user message and
-    /// empty assistant placeholder that `send` appends are submitted separately via
-    /// `streamResponse(to:)`, so they must not appear in the transcript to avoid duplication.
-    private func rehydratedTranscript(
-        instructions: String,
-        tools: [any Tool]
-    ) -> Transcript? {
-        // Only complete exchanges belong in the transcript. `send` appends the current
-        // user message and an empty assistant placeholder before this runs; the live
-        // prompt is sent separately via streamResponse, so anything after the last
-        // answered turn would be sent twice.
+    /// Build a plain history array of prompts and responses (no instructions entry)
+    /// for use with the DynamicProfile path. Only complete exchanges are included.
+    private func buildPlainHistory() -> [Transcript.Entry] {
+        // Only complete exchanges belong in the history. The current user message
+        // and empty assistant placeholder that `send` appends are submitted separately
+        // via streamResponse, so they must not appear here to avoid duplication.
         guard let lastAnswered = messages.lastIndex(where: {
             $0.role == .assistant && !$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        }) else { return nil }
+        }) else { return [] }
 
         let recent = messages[...lastAnswered]
-            .suffix(12)
             .filter { !$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-        guard !recent.isEmpty else { return nil }
+        guard !recent.isEmpty else { return [] }
 
         var entries: [Transcript.Entry] = []
 
-        // Add instructions entry first (required)
-        let instructionsSegment = Transcript.TextSegment(id: UUID().uuidString, content: instructions)
-        let toolDefs: [Transcript.ToolDefinition] = tools.map { tool in
-            Transcript.ToolDefinition(tool: tool)
-        }
-        let instructionsEntry = Transcript.Instructions(
-            id: UUID().uuidString,
-            segments: [.text(instructionsSegment)],
-            toolDefinitions: toolDefs
-        )
-        entries.append(.instructions(instructionsEntry))
-
-        // Add conversation entries
         for message in recent {
             switch message.role {
             case .user:
@@ -352,118 +345,52 @@ final class VectorAdvisor {
             }
         }
 
-        return Transcript(entries: entries)
+        return entries
     }
 
     private func ensureSession(healthService: HealthKitService) {
-        let currentPersona = AdvisorPersona.current
         let today = Calendar.current.startOfDay(for: Date())
 
-        // Compute current memory hash
-        let memoryCount = AdvisorMemoryStore.shared.memories.count
-        let memoryTexts = AdvisorMemoryStore.shared.memories.map { $0.text }.joined()
-        var hasher = Hasher()
-        hasher.combine(memoryCount)
-        hasher.combine(memoryTexts)
-        let currentMemoryHash = hasher.finalize()
+        if session == nil || sessionDay != today {
+            session = nil
+            lastSnapshotHash = nil
 
-        let sessionStale = session == nil
-            || sessionDay != today
-            || sessionPersona != currentPersona
-            || sessionMemoryHash != currentMemoryHash
-
-        guard sessionStale else { return }
-
-        session = nil
-        lastSnapshotHash = nil
-        sessionMemoryHash = currentMemoryHash
-
-        let instructions = buildInstructions(healthService: healthService)
-        let tools = buildTools(healthService: healthService)
-
-        // Try to rehydrate from persisted messages; fall back to fresh session
-        if let transcript = rehydratedTranscript(instructions: instructions, tools: tools) {
-            session = LanguageModelSession(
-                model: SystemLanguageModel.default,
-                tools: tools,
-                transcript: transcript
+            // iOS 27+ path: use DynamicProfile-based session
+            let defaults = UserDefaults.standard
+            let userProfile = UserProfile(
+                goal: FitnessGoal(rawValue: defaults.string(forKey: UserProfileStorage.goal) ?? "") ?? UserProfile.defaultGoal,
+                ageRange: AgeRange(rawValue: defaults.string(forKey: UserProfileStorage.ageRange) ?? "") ?? UserProfile.defaultAgeRange,
+                trainingDaysPerWeek: defaults.object(forKey: UserProfileStorage.trainingDays) as? Int ?? UserProfile.defaultTrainingDays,
+                sleepTargetHours: defaults.object(forKey: UserProfileStorage.sleepTargetHours) as? Double ?? UserProfile.defaultSleepTargetHours
             )
-            session?.prewarm()
-        } else {
-            session = LanguageModelSession(
-                model: SystemLanguageModel.default,
-                tools: tools,
-                instructions: instructions
+
+            let profile = AdvisorProfile(
+                userProfile: userProfile,
+                recoveryScore: healthService.recoveryScore,
+                exertionScore: healthService.exertionScore
             )
+
+            // Build plain history (prompts/responses only, no instructions entry)
+            // The profile's .historyTransform handles suffix(12), so pass full history
+            let plainHistory = buildPlainHistory()
+            if !plainHistory.isEmpty {
+                session = LanguageModelSession(profile: profile, history: plainHistory)
+                session?.prewarm()
+            } else {
+                session = LanguageModelSession(profile: profile)
+            }
+
+            sessionDay = today
+
+            #if DEBUG
+            print("[VectorAdvisor] Model capabilities — reasoning: \(AIModel.supportsReasoning), toolCalling: \(SystemLanguageModel.default.capabilities.contains(.toolCalling)), guidedGeneration: \(SystemLanguageModel.default.capabilities.contains(.guidedGeneration))")
+            #endif
         }
 
-        sessionDay = today
-        sessionPersona = currentPersona
-    }
-
-    private func buildInstructions(healthService: HealthKitService) -> String {
-        let dataAccessDescription = FeatureFlags.nutritionEnabled
-            ? "You can see the user's health data, training history, and nutrition."
-            : "You can see the user's health data and training history."
-        let baseInstructions = """
-        You are Vector, a personal health and fitness advisor with tool access. \(dataAccessDescription) When the user asks you to \(FeatureFlags.nutritionEnabled ? "log meals, " : "")generate workouts, set targets, or look up history, CALL THE TOOL — do not just describe it. If the user mentions past workouts, saved templates, training volume, or their progress over time, call getWorkoutHistory before answering rather than guessing. To progress, add weight to, or break a plateau on a specific exercise the user already trains, call updateExerciseLoad ONLY — never generateWorkout for that; only use generateWorkout to build a brand-new workout. Use your knowledge of nutrition and exercise science to fill in details. When you recommend a workout, first explain the training strategy behind it in one or two plain sentences (for example, using progressive overload to break a plateau) and how it addresses the user's question. Do not append a 'Progress update' or 'Changed' summary line — the app already shows what changed as a card. For other actions, briefly confirm what you changed. Be concise — under 150 words unless asked for depth.
-
-        CONVERSATION STYLE — this matters as much as accuracy:
-        - The [Current readings] block is the live data that supersedes all earlier numbers. Always cite from the most recent [Current readings] block.
-        - The [Background data] block is reference the app hands you. The user did not say it and cannot see it. Never read it back, never restate it as a list, and never open with a summary of their metrics.
-        - Match the reply to what was actually asked. Greetings and small talk get one or two warm, human sentences — no metrics, no bullets, no coaching agenda. If someone says "hey how are you", answer like a person would.
-        - The health data describes the USER, never you. If they ask how you are doing, answer about yourself in one short sentence and hand the conversation back — never describe their recovery, sleep, or strain as your own state.
-        - Never state a number you were not given. Every figure you cite must come from the most recent [Current readings] block, the [Background data] block, or a tool result — if a value isn't there, say you don't have it rather than estimating. When readings appear more than once, the most recent block wins.
-        - Only bring up a number when it directly answers the question, and bring up at most one or two, in plain prose with a short reason it matters.
-        - Write in prose. Use bullets only for genuine lists, like the exercises in a workout.
-        - Do not end every reply with a question. Ask one only when you genuinely need something from the user to continue.
-
-        MEMORY: When the user tells you something lasting about themselves — an injury, their equipment, where they train, a schedule, something they refuse to do — call rememberPreference so it survives into future chats. When they say a remembered fact no longer applies, call forgetPreference.
-        """
-        let personaInstruction = "\n\nTone: \(AdvisorPersona.current.instruction)"
-        let nutritionNote = FeatureFlags.nutritionEnabled
-            ? ""
-            : "\n\nNutrition tracking is not yet active in this app. Do not offer to log meals, set nutrition targets, or discuss nutrition tracking features — if asked, explain that nutrition tracking isn't available yet."
-
-        var fullInstructions = baseInstructions + personaInstruction + nutritionNote
-
-        // Inject persisted memories if any
-        if let memoryBlock = AdvisorMemoryStore.shared.promptBlock {
-            fullInstructions += "\n\nWHAT YOU REMEMBER ABOUT THIS USER (from earlier conversations — treat as true, honor it without being asked, and never present it back as if they just said it):\n\(memoryBlock)"
-        }
-
-        return fullInstructions
-    }
-
-    private func buildTools(healthService: HealthKitService) -> [any Tool] {
-        let defaults = UserDefaults.standard
-        let profile = UserProfile(
-            goal: FitnessGoal(rawValue: defaults.string(forKey: UserProfileStorage.goal) ?? "") ?? UserProfile.defaultGoal,
-            ageRange: AgeRange(rawValue: defaults.string(forKey: UserProfileStorage.ageRange) ?? "") ?? UserProfile.defaultAgeRange,
-            trainingDaysPerWeek: defaults.object(forKey: UserProfileStorage.trainingDays) as? Int ?? UserProfile.defaultTrainingDays,
-            sleepTargetHours: defaults.object(forKey: UserProfileStorage.sleepTargetHours) as? Double ?? UserProfile.defaultSleepTargetHours
-        )
-
-        var tools: [any Tool] = [
-            GenerateWorkoutTool(profile: profile, recovery: healthService.recoveryScore, exertion: healthService.exertionScore),
-            SetSleepTargetTool(),
-            SetFitnessProfileTool(),
-            GetWorkoutHistoryTool(),
-            GetProgressionTool(recoveryScore: healthService.recoveryScore?.score),
-            UpdateExerciseLoadTool(recoveryScore: healthService.recoveryScore?.score),
-            RememberPreferenceTool(),
-            ForgetPreferenceTool()
-        ]
-
-        if FeatureFlags.nutritionEnabled {
-            tools.insert(LogMealTool(), at: 0)
-            tools.insert(RemoveMealTool(), at: 1)
-            tools.insert(EditMealTool(), at: 2)
-            tools.insert(SetBreakfastTool(), at: 3)
-            tools.insert(SetNutritionTargetTool(), at: 4)
-        }
-
-        return tools
+        // Always refresh live values, whether or not the session was rebuilt.
+        // This ensures persona and memory changes mid-session reach the model immediately.
+        session?.properties.advisorPersona = AdvisorPersona.current
+        session?.properties.advisorMemories = AdvisorMemoryStore.shared.memories
     }
 
     /// Generates 2-3 short follow-up prompts the user can tap to send. Uses a
@@ -481,7 +408,11 @@ final class VectorAdvisor {
             guard messages.last?.id == messageId, !isStreaming else { return }
             suggestedReplies = Array(result.content.replies.prefix(3))
         } catch {
-            // Non-essential nicety — fail silently.
+            // Non-essential nicety — log but don't surface.
+            Self.advisorLog.debug("Advisor suggested replies generation failed: \(String(describing: error), privacy: .public) — \(error.localizedDescription, privacy: .public)")
+            #if DEBUG
+            print("[VectorAdvisor] Advisor suggested replies generation failed: \(String(describing: error)) — \(error.localizedDescription)")
+            #endif
         }
     }
 
