@@ -39,7 +39,7 @@
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
-      allowLocationSimulation = "YES"
+      allowLocationSimulation = "NO"
       queueDebuggingEnabled = "No">
       <BuildableProductRunnable
          runnableDebuggingMode = "0">
@@ -51,6 +51,10 @@
             ReferencedContainer = "container:Vector.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <LocationScenarioReference
+         identifier = "../../../../../Downloads/route.gpx"
+         referenceType = "0">
+      </LocationScenarioReference>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
