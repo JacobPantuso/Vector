@@ -64,6 +64,7 @@ extension VectorTheme {
 /// so inset rows stay distinguishable once the gradient fades out.
 struct GradientHeaderModifier: ViewModifier {
     var base: Color?
+    var height: CGFloat = 360
 
     func body(content: Content) -> some View {
         content
@@ -71,7 +72,7 @@ struct GradientHeaderModifier: ViewModifier {
             .background(alignment: .top) {
                 VectorTheme.brandGradient
                     .frame(maxWidth: .infinity)
-                    .frame(height: 360)
+                    .frame(height: height)
                     .ignoresSafeArea()
                     .allowsHitTesting(false)
             }
@@ -87,7 +88,8 @@ extension View {
     /// Adds the standard Vector top-of-page brand gradient.
     /// - Parameter base: Optional opaque color layered beneath the gradient
     ///   (use `Color(.systemGroupedBackground)` on grouped `List` screens).
-    func gradientHeader(base: Color? = nil) -> some View {
-        modifier(GradientHeaderModifier(base: base))
+    /// - Parameter height: Height of the gradient band (default 360).
+    func gradientHeader(base: Color? = nil, height: CGFloat = 360) -> some View {
+        modifier(GradientHeaderModifier(base: base, height: height))
     }
 }

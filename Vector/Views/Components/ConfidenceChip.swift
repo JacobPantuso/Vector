@@ -20,14 +20,14 @@ struct ConfidenceChip: View {
                 Image(systemName: tier == .high ? "checkmark.seal.fill" : "hourglass")
                     .font(.caption2)
             }
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.white)
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
             .glassEffect(.regular.tint(tierColor), in: .capsule)
         }
         .buttonStyle(.plain)
         .accessibilityHint("Learn how confidence is calculated")
-        .sheet(isPresented: $showExplanation) {
+        .vectorSheet(isPresented: $showExplanation, style: .half) {
             ConfidenceExplanationSheet(
                 confidence: confidence,
                 tier: tier,

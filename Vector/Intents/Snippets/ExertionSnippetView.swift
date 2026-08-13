@@ -9,9 +9,12 @@ struct ExertionSnippetView: View {
             ZStack {
                 Circle()
                     .stroke(Color.orange.opacity(0.2), lineWidth: 8)
+                let fraction = min(Double(score) / 100, 1)
+                let isOver = Double(score) > 100
+                let strokeColor = isOver ? Color(hue: 0.0, saturation: 0.95, brightness: 0.5) : Color.orange
                 Circle()
-                    .trim(from: 0, to: Double(score) / 100)
-                    .stroke(Color.orange, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                    .trim(from: 0, to: fraction)
+                    .stroke(strokeColor, style: StrokeStyle(lineWidth: 8, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                 Text("\(score)")
                     .font(.title2.bold())
