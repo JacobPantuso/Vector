@@ -16,16 +16,15 @@ struct WorkoutDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showingDeleteConfirm = false
     @State private var isEditing = false
-    @State private var editingExercise: ManualExerciseEntry?
     @State private var stepsExercise: ManualExerciseEntry?
-    @State private var showingPicker = false
+    @State private var pickerRole: ExerciseRole?
     @State private var pendingSupersetID: UUID?
     @State private var showingProgressionApplied = false
+    @State private var showingProgressionReview = false
     @State private var appliedChanges: [ProgressionChange] = []
     @FocusState private var titleFocused: Bool
     @FocusState private var focusFocused: Bool
 
-    private let editMenuTip = WorkoutEditMenuTip()
     private let supersetDragTip = SupersetDragTip()
 
     private let titleCharLimit = 40
@@ -77,7 +76,7 @@ struct WorkoutDetailView: View {
                     exercisesSection
                 }
                 .padding(.horizontal, 20)
-                .padding(.bottom, 100)
+                .padding(.bottom, 140)
             }
             .scrollEdgeEffectStyle(.soft, for: .all)
             .navigationTitle(isEditing ? "Edit Workout" : workout.title)
@@ -115,26 +114,42 @@ struct WorkoutDetailView: View {
             } message: {
                 Text("This cannot be undone.")
             }
-            .sheet(item: $editingExercise) { exercise in
-                ExerciseEntryEditor(entry: exercise) { updated in
-                    if let idx = workout.exercises.firstIndex(where: { $0.id == updated.id }) {
-                        workout.exercises[idx] = updated
-                    }
-                    editingExercise = nil
-                }
-            }
-            .sheet(item: $stepsExercise) { exercise in
+            .vectorSheet(item: $stepsExercise, style: .half) { exercise in
                 ExerciseStepsSheet(exercise: exercise)
             }
-            .sheet(isPresented: $showingPicker) {
-                ExercisePickerView { selected in
-                    workout.exercises.append(contentsOf: selected)
-                }
+            .vectorSheet(item: $pickerRole) { role in
+                ExercisePickerView(onAdd: { selected in
+                    let updated = selected.map { var e = $0; e.role = role; return e }
+
+                    if role == .warmup {
+                        let insertIdx = workout.exercises.firstIndex { $0.resolvedRole == .main } ?? workout.exercises.count
+                        workout.exercises.insert(contentsOf: updated, at: insertIdx)
+                    } else if role == .cooldown {
+                        workout.exercises.append(contentsOf: updated)
+                    } else {
+                        workout.exercises.append(contentsOf: updated)
+                    }
+                }, role: role)
             }
-            .sheet(isPresented: $showingProgressionApplied) {
+            .vectorSheet(isPresented: $showingProgressionApplied, style: .half) {
                 ProgressionAppliedSheet(changes: appliedChanges)
                     .presentationDetents([.medium])
                     .presentationDragIndicator(.visible)
+            }
+            .vectorSheet(isPresented: $showingProgressionReview, style: .half) {
+                ProgressionReviewSheet(
+                    changes: pendingProgressionChanges,
+                    headlines: progressionHeadlines
+                ) { selected in
+                    showingProgressionReview = false
+                    // Wait for the review sheet to finish dismissing before
+                    // presenting the applied confirmation sheet.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+                        applyProgression(selected)
+                    }
+                }
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
             }
         }
     }
@@ -220,8 +235,18 @@ struct WorkoutDetailView: View {
         }
     }
 
-    private func applyProgression() {
-        let changes = pendingProgressionChanges
+    /// Advisor headlines keyed by exercise ID, for the review sheet.
+    private var progressionHeadlines: [UUID: String] {
+        var result: [UUID: String] = [:]
+        for ex in workout.exercises {
+            if let insight = ProgressionAdvisor.insight(for: ex) {
+                result[ex.id] = insight.headline
+            }
+        }
+        return result
+    }
+
+    private func applyProgression(_ changes: [ProgressionChange]) {
         guard !changes.isEmpty else { return }
         for change in changes {
             guard let idx = workout.exercises.firstIndex(where: { $0.id == change.id }) else { continue }
@@ -244,8 +269,11 @@ struct WorkoutDetailView: View {
     private var volumeYDomain: ClosedRange<Double> {
         let values = completions.map(\.totalVolume)
         guard let minV = values.min(), let maxV = values.max(), maxV > 0 else { return 0...1 }
-        let lower = max(0, (minV * 0.66 / 500).rounded(.down) * 500)
-        let upper = max(lower + 500, (maxV * 1.05 / 500).rounded(.up) * 500)
+        let spread = maxV - minV
+        let padBelow = spread > 0 ? spread * 0.25 : maxV * 0.05
+        let padAbove = spread > 0 ? spread * 0.20 : maxV * 0.05
+        let lower = max(0, ((minV - padBelow) / 250).rounded(.down) * 250)
+        let upper = max(lower + 250, ((maxV + padAbove) / 250).rounded(.up) * 250)
         return lower...upper
     }
 
@@ -283,7 +311,7 @@ struct WorkoutDetailView: View {
                             }
                         }
                         progressionChart
-                            .frame(height: 160)
+                            .frame(height: 180)
                     }
                 }
             } else {
@@ -322,7 +350,7 @@ struct WorkoutDetailView: View {
             Image(systemName: "sparkles")
                 .font(.title2)
                 .foregroundStyle(
-                    LinearGradient(colors: [.indigo, .purple], startPoint: .topLeading, endPoint: .bottomTrailing)
+                    LinearGradient(colors: [.indigo, .indigo.opacity(0.8)], startPoint: .topLeading, endPoint: .bottomTrailing)
                 )
 
             VStack(alignment: .leading, spacing: 3) {
@@ -338,54 +366,108 @@ struct WorkoutDetailView: View {
             Spacer()
 
             Button {
-                applyProgression()
+                showingProgressionReview = true
             } label: {
-                Image(systemName: "checkmark")
+                Image(systemName: "magnifyingglass")
                     .font(.headline)
             }
             .buttonStyle(.glassProminent)
-            .tint(.purple)
+            .tint(.indigo)
         }
         .padding(16)
         .glassEffect(.regular, in: .rect(cornerRadius: 20))
-        .shadow(color: .purple.opacity(0.45), radius: 15)
-        .shadow(color: .purple.opacity(0.25), radius: 6)
+        .overlay {
+            RoundedRectangle(cornerRadius: 20)
+                .strokeBorder(Color.indigo.opacity(0.18), lineWidth: 1)
+        }
+        .shadow(color: .indigo.opacity(0.15), radius: 10)
         .padding(.top, 20)
+    }
+
+    private var volumeXDomain: ClosedRange<Date> {
+        guard let minDate = completions.map(\.date).min(),
+              let maxDate = completions.map(\.date).max() else {
+            let now = Date()
+            return now...now
+        }
+        let timespan = maxDate.timeIntervalSince(minDate)
+        let leadingPad = timespan == 0 ? (12 * 3600) : (timespan * 0.08)
+        let trailingPad = timespan == 0 ? (12 * 3600) : (timespan * 0.16)
+        return Date(timeInterval: -leadingPad, since: minDate)...Date(timeInterval: trailingPad, since: maxDate)
     }
 
     private var progressionChart: some View {
         Chart(completions, id: \.id) { record in
+            AreaMark(
+                x: .value("Date", record.date),
+                yStart: .value("Base", volumeYDomain.lowerBound),
+                yEnd: .value("Volume", record.totalVolume)
+            )
+            .foregroundStyle(
+                LinearGradient(
+                    stops: [
+                        .init(color: .green.opacity(0.32), location: 0.0),
+                        .init(color: .green.opacity(0.18), location: 0.45),
+                        .init(color: .green.opacity(0.0), location: 0.90)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .interpolationMethod(.monotone)
+
             LineMark(
                 x: .value("Date", record.date),
                 y: .value("Volume", record.totalVolume)
             )
             .foregroundStyle(Color.green.gradient)
             .interpolationMethod(.monotone)
+            .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
 
             PointMark(
                 x: .value("Date", record.date),
                 y: .value("Volume", record.totalVolume)
             )
-            .foregroundStyle(Color.green)
+            .symbolSize(60)
+            .symbol {
+                Circle()
+                    .fill(Color.green)
+                    .frame(width: 8, height: 8)
+                    .overlay(Circle().strokeBorder(.background, lineWidth: 1.5))
+            }
         }
-        .chartXAxis {
-            AxisMarks(values: completions.map(\.date)) { value in
+        .chartXScale(domain: volumeXDomain)
+        .chartYScale(domain: volumeYDomain)
+        .chartXAxis(.hidden)
+        .chartOverlay { proxy in
+            GeometryReader { geo in
+                if let plotFrame = proxy.plotFrame {
+                    let rect = geo[plotFrame]
+                    ForEach(completions, id: \.id) { record in
+                        if let x = proxy.position(forX: record.date) {
+                            Text(record.date.formatted(.dateTime.month(.abbreviated).day()))
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .fixedSize()
+                                .position(x: rect.minX + x, y: rect.maxY - 6)
+                        }
+                    }
+                }
+            }
+        }
+        .chartYAxis {
+            AxisMarks(position: .trailing, values: .automatic(desiredCount: 4)) { value in
+                AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [3, 3]))
                 AxisValueLabel {
-                    if let date = value.as(Date.self) {
-                        Text(date.formatted(.dateTime.month(.abbreviated).day()))
+                    if let v = value.as(Double.self) {
+                        Text(v >= 1000 ? "\(Int(v/1000))k" : "\(Int(v))")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
                 }
             }
         }
-        .chartYAxis {
-            AxisMarks { _ in
-                AxisGridLine()
-                AxisValueLabel()
-            }
-        }
-        .chartYScale(domain: volumeYDomain)
+        .chartPlotStyle { $0.padding(.horizontal, 4).padding(.vertical, 8).clipped() }
     }
 
     private var progressionPlaceholderChart: some View {
@@ -447,52 +529,104 @@ struct WorkoutDetailView: View {
     // MARK: - Exercises Section
 
     private var exercisesSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text("Exercises")
-                    .font(.title3.bold())
-                Spacer()
-                if isEditing {
-                    Button { showingPicker = true } label: {
-                        Label("Add", systemImage: "plus.circle.fill")
-                            .font(.subheadline.weight(.semibold))
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.cyan)
-                }
+        let warmups = workout.exercises.filter { $0.resolvedRole == .warmup }
+        let mains = workout.exercises.filter { $0.resolvedRole == .main }
+        let cooldowns = workout.exercises.filter { $0.resolvedRole == .cooldown }
+
+        return VStack(alignment: .leading, spacing: 14) {
+            Text("Exercises")
+                .font(.title3.bold())
+
+            // Warm-Up section
+            if !warmups.isEmpty {
+                exerciseSection(warmups, title: "Warm-Up")
+            } else if isEditing {
+                addButton(label: "Add Warm-Up", role: .warmup)
             }
-            .padding(.bottom, 14)
 
-            ForEach(Array(workout.exercises.enumerated()), id: \.element.id) { idx, exercise in
-                exerciseCard(exercise, index: idx)
-
-                // Rest indicator or superset connector between exercises
-                if idx < workout.exercises.count - 1 {
-                    let nextExercise = workout.exercises[idx + 1]
-                    let sameSuperset = exercise.supersetID != nil && exercise.supersetID == nextExercise.supersetID
-
-                    if sameSuperset {
-                        supersetConnector
-                    } else {
-                        restIndicator(seconds: exercise.restSeconds)
+            // Main exercises section
+            if !mains.isEmpty  {
+                exerciseSection(mains, title: "Main", showsTitle: !(warmups.isEmpty && cooldowns.isEmpty))
+            } else if isEditing {
+                VStack(spacing: 12) {
+                    Image(systemName: "dumbbell")
+                        .font(.system(size: 36))
+                        .foregroundStyle(.tertiary)
+                    Text("No exercises yet")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Button { pickerRole = .main } label: {
+                        Label("Add Exercise", systemImage: "plus")
                     }
+                    .buttonStyle(.glass)
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 28)
+                .glassEffect(in: .rect(cornerRadius: 20))
+            }
+
+            // Cool-Down section
+            if !cooldowns.isEmpty {
+                exerciseSection(cooldowns, title: "Cool-Down")
+            } else if isEditing {
+                addButton(label: "Add Cool-Down", role: .cooldown)
             }
         }
     }
 
-    private func exerciseCard(_ exercise: ManualExerciseEntry, index: Int) -> some View {
-        let cardContent = VStack(alignment: .leading, spacing: 10) {
+    private func exerciseSection(_ exs: [ManualExerciseEntry], title: String, showsTitle: Bool = true) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if showsTitle {
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
 
-            // Exercise header
+            ForEach(exs, id: \.id) { exercise in
+                exerciseCardWithConnector(exercise)
+            }
+        }
+    }
+
+    private func addButton(label: String, role: ExerciseRole) -> some View {
+        Button {
+            pickerRole = role
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "plus")
+                    .font(.caption)
+                Text(label)
+                    .font(.caption.weight(.semibold))
+            }
+            .foregroundStyle(.cyan)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.vertical, 12)
+        }
+        .buttonStyle(.plain)
+        .glassEffect(in: .rect(cornerRadius: 12))
+    }
+
+    private func exerciseCardWithConnector(_ exercise: ManualExerciseEntry) -> some View {
+        VStack(spacing: 0) {
+            exerciseCard(exercise)
+
+            // Superset connector after exercise
+            let exs = workout.exercises
+            if let idx = exs.firstIndex(where: { $0.id == exercise.id }), idx < exs.count - 1 {
+                let nextExercise = exs[idx + 1]
+                let sameSuperset = exercise.supersetID != nil && exercise.supersetID == nextExercise.supersetID
+
+            }
+        }
+    }
+
+    private func exerciseCard(_ exercise: ManualExerciseEntry) -> some View {
+        let card = VStack(spacing: 0) {
             HStack(spacing: 10) {
-                ZStack {
-                    Circle()
-                        .fill(Color.cyan.opacity(0.2))
-                        .frame(width: 34, height: 34)
-                    Text("\(index + 1)")
-                        .font(.caption.bold())
-                        .foregroundStyle(.cyan)
+                if isEditing {
+                    Image(systemName: "line.3.horizontal")
+                        .foregroundStyle(.secondary)
+                        .frame(width: 20)
                 }
 
                 VStack(alignment: .leading, spacing: 3) {
@@ -511,41 +645,33 @@ struct WorkoutDetailView: View {
                                 .clipShape(Capsule())
                         }
                     }
-
                 }
 
                 Spacer()
 
                 if isEditing {
-                    let menu = Menu {
-                        Button(action: { editingExercise = exercise }) {
-                            Label("Edit Exercise", systemImage: "slider.horizontal.3")
-                        }
+                    Button {
                         if exercise.supersetID == nil {
-                            Button(action: { makeSuperset(id: exercise.id) }) {
-                                Label("Make Superset", systemImage: "link")
-                            }
+                            makeSuperset(id: exercise.id)
                         } else {
-                            Button(role: .destructive, action: { removeFromSuperset(id: exercise.id) }) {
-                                Label("Remove from Superset", systemImage: "xmark.circle")
-                            }
-                        }
-                        Divider()
-                        Button(role: .destructive, action: { deleteExercise(id: exercise.id) }) {
-                            Label("Remove Exercise", systemImage: "trash")
+                            removeFromSuperset(id: exercise.id)
                         }
                     } label: {
-                        Image(systemName: "ellipsis.circle")
-                            .font(.title3)
-                            .foregroundStyle(.secondary)
+                        Image(systemName: exercise.supersetID == nil ? "link" : "link.slash")
+                            .font(.subheadline)
+                            .foregroundStyle(exercise.supersetID == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(Color.purple))
                     }
+                    .buttonStyle(.plain)
 
-                    if index == 0 {
-                        menu.popoverTip(editMenuTip)
-                    } else {
-                        menu
+                    Button(role: .destructive) {
+                        deleteExercise(id: exercise.id)
+                    } label: {
+                        Image(systemName: "trash")
+                            .font(.subheadline)
+                            .foregroundStyle(.red)
                     }
-                } else if isEditing == false {
+                    .buttonStyle(.plain)
+                } else {
                     Button {
                         stepsExercise = exercise
                     } label: {
@@ -556,23 +682,38 @@ struct WorkoutDetailView: View {
                     .buttonStyle(.plain)
                 }
             }
+            .padding(.vertical, 12)
+            .padding(.horizontal, 14)
 
-            if exercise.inputType == .reps {
-                PerSetBreakdownView(exercise: exercise)
-                    .padding(.leading, 44)
-            }
-
-            if isEditing, exercise.supersetID != nil, exercise.supersetID == pendingSupersetID {
-                HStack(spacing: 6) {
-                    Image(systemName: "arrow.down.to.line")
-                    Text("Drag an exercise on top to combine")
+            if isEditing {
+                Divider()
+                InlineSetEditor(entry: Binding(
+                    get: { exercise },
+                    set: { updated in
+                        if let idx = workout.exercises.firstIndex(where: { $0.id == exercise.id }) {
+                            workout.exercises[idx] = updated
+                        }
+                    }
+                ))
+            } else {
+                if exercise.inputType == .reps {
+                    PerSetBreakdownView(exercise: exercise)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
                 }
-                .font(.caption2)
-                .foregroundStyle(.purple)
+
+                if exercise.supersetID != nil, exercise.supersetID == pendingSupersetID {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.down.to.line")
+                        Text("Drag an exercise on top to combine")
+                    }
+                    .font(.caption2)
+                    .foregroundStyle(.purple)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                }
             }
         }
-        .padding(.vertical, 14)
-        .padding(.horizontal, 14)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16))
         .overlay(alignment: .leading) {
             if exercise.supersetID != nil {
@@ -590,67 +731,34 @@ struct WorkoutDetailView: View {
             }
         }
 
-        let card = Group {
-            if isEditing {
-                let row = HStack(spacing: 10) {
-                    Image(systemName: "line.3.horizontal")
-                        .foregroundStyle(.secondary)
-                        .frame(width: 20)
-
-                    cardContent
-                }
-                .draggable(exercise.id.uuidString)
-                .dropDestination(for: String.self) { items, _ in
-                    handleDrop(draggedID: items.first, onto: exercise.id)
-                    return true
-                }
-
-                if pendingSupersetID != nil, exercise.supersetID == pendingSupersetID {
-                    row.popoverTip(supersetDragTip)
-                } else {
-                    row
-                }
+        if isEditing {
+            if pendingSupersetID != nil, exercise.supersetID == pendingSupersetID {
+                return AnyView(
+                    card
+                        .draggable(exercise.id.uuidString)
+                        .dropDestination(for: String.self) { items, _ in
+                            handleDrop(draggedID: items.first, onto: exercise.id)
+                            return true
+                        }
+                        .popoverTip(supersetDragTip)
+                        .askVector(topicForExercise(exercise))
+                )
             } else {
-                cardContent
+                return AnyView(
+                    card
+                        .draggable(exercise.id.uuidString)
+                        .dropDestination(for: String.self) { items, _ in
+                            handleDrop(draggedID: items.first, onto: exercise.id)
+                            return true
+                        }
+                        .askVector(topicForExercise(exercise))
+                )
             }
+        } else {
+            return AnyView(card.askVector(topicForExercise(exercise)))
         }
-
-        return card.askVector(topicForExercise(exercise))
     }
 
-    private func restIndicator(seconds: Int) -> some View {
-        HStack(spacing: 6) {
-            VStack { Divider() }
-                .frame(width: 24)
-            Image(systemName: "timer")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-            Text("\(seconds)s rest")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-            VStack { Divider() }
-                .frame(width: 24)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 6)
-    }
-
-    private var supersetConnector: some View {
-        HStack(spacing: 6) {
-            VStack { Divider() }
-                .frame(width: 24)
-            Image(systemName: "link")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-            Text("superset — no rest")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-            VStack { Divider() }
-                .frame(width: 24)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 6)
-    }
 
     // MARK: - Advisor Topics
 
@@ -738,21 +846,33 @@ struct WorkoutDetailView: View {
     private var bottomBar: some View {
         VStack(spacing: 0) {
             if isEditing {
-                Button {
-                    pendingSupersetID = nil
-                    normalizeSupersets()
-                    WorkoutStorageService.shared.save(workout)
-                    onWorkoutUpdated?(workout)
-                    withAnimation(.spring(duration: 0.35)) {
-                        isEditing = false
+                HStack(spacing: 12) {
+                    Button {
+                        pickerRole = .main
+                    } label: {
+                        Label("Add Exercise", systemImage: "plus")
+                            .font(.headline)
+                            .padding(.vertical, 14)
+                            .padding(.horizontal, 18)
                     }
-                } label: {
-                    Label("Save Changes", systemImage: "checkmark.circle.fill")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
+                    .buttonStyle(.glass)
+
+                    Button {
+                        pendingSupersetID = nil
+                        normalizeSupersets()
+                        WorkoutStorageService.shared.save(workout)
+                        onWorkoutUpdated?(workout)
+                        withAnimation(.spring(duration: 0.35)) {
+                            isEditing = false
+                        }
+                    } label: {
+                        Label("Save Changes", systemImage: "checkmark.circle.fill")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                    }
+                    .buttonStyle(.glassProminent)
                 }
-                .buttonStyle(.glassProminent)
                 .padding(.horizontal, 20)
                 .padding(.bottom, 8)
             } else {
@@ -779,6 +899,10 @@ struct WorkoutDetailView: View {
             )
             .ignoresSafeArea()
         )
+        // Slide the bar out of the way while the progression review sheet is up.
+        .opacity(showingProgressionReview ? 0 : 1)
+        .offset(y: showingProgressionReview ? 80 : 0)
+        .animation(.spring(duration: 0.25), value: showingProgressionReview)
         .sensoryFeedback(.success, trigger: showingProgressionApplied)
     }
 }
@@ -1024,7 +1148,7 @@ private struct ProgressionAppliedSheet: View {
 
     return Color.black.opacity(0.001)
         .ignoresSafeArea()
-        .sheet(isPresented: .constant(true)) {
+        .vectorSheet(isPresented: .constant(true)) {
             WorkoutDetailView(workout: workout, onStartWorkout: { _ in })
         }
 }

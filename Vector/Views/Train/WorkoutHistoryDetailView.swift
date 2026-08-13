@@ -19,6 +19,7 @@ struct WorkoutHistoryDetailView: View {
     @State private var showingExerciseEditor = false
     @State private var localExercises: [ManualExerciseEntry]? = nil
     @State private var effortScore: Double? = nil
+    @State private var strainPoints: Double? = nil
 
     var body: some View {
         ScrollView {
@@ -199,7 +200,7 @@ struct WorkoutHistoryDetailView: View {
                 totalDistance: workout.totalDistance?.doubleValue(for: .meter()) ?? 0
             )
         }
-        .sheet(isPresented: $showingExerciseEditor) {
+        .vectorSheet(isPresented: $showingExerciseEditor) {
             StrengthExerciseEditorView(workout: workout, initial: displayedExercises) { edited in
                 localExercises = edited
                 WorkoutCompletionStore.shared.annotate(workout: workout, exercises: edited)
@@ -215,6 +216,7 @@ struct WorkoutHistoryDetailView: View {
 
             heartRateData = await hr
             routeData = await route
+            strainPoints = healthService.exertionContribution(for: workout, hrSamples: heartRateData)
             // Prefer GPS-route-based splits (matches Apple Fitness); fall back to
             // distance-sample splits only when no route is available.
             if routeData.count >= 2 {
@@ -289,8 +291,18 @@ struct WorkoutHistoryDetailView: View {
                              value: totalSets > 0 ? "\(totalSets)" : formatDuration(workout.duration),
                              icon: totalSets > 0 ? "list.number" : "clock.fill", iconColor: .green)
                 }
-                if let effort = effortScore {
-                    StatCard(label: "Effort", value: "\(Int(effort)) of 10", icon: "gauge.with.needle", iconColor: .cyan)
+                if effortScore != nil || strainPoints != nil {
+                    HStack(spacing: 12) {
+                        if let effort = effortScore {
+                            StatCard(label: "Effort", value: effortLabel(for: effort),
+                                     icon: "gauge.with.needle", iconColor: effortColor(for: effort),
+                                     valueColor: effortColor(for: effort))
+                        }
+                        if let strain = strainPoints, strain >= 0.5 {
+                            StatCard(label: "Strain", value: "+\(Int(strain.rounded())) Exertion",
+                                     icon: "bolt.fill", iconColor: .purple)
+                        }
+                    }
                 }
             } else {
                 HStack(spacing: 12) {
@@ -305,8 +317,18 @@ struct WorkoutHistoryDetailView: View {
                     StatCard(label: "Avg Pace", value: formatPace(averagePacePerKm),
                              icon: "speedometer", iconColor: .green)
                 }
-                if let effort = effortScore {
-                    StatCard(label: "Effort", value: "\(Int(effort)) of 10", icon: "gauge.with.needle", iconColor: .cyan)
+                if effortScore != nil || strainPoints != nil {
+                    HStack(spacing: 12) {
+                        if let effort = effortScore {
+                            StatCard(label: "Effort", value: effortLabel(for: effort),
+                                     icon: "gauge.with.needle", iconColor: effortColor(for: effort),
+                                     valueColor: effortColor(for: effort))
+                        }
+                        if let strain = strainPoints, strain >= 0.5 {
+                            StatCard(label: "Strain", value: "+\(Int(strain.rounded())) Exertion",
+                                     icon: "bolt.fill", iconColor: .purple)
+                        }
+                    }
                 }
             }
         }
@@ -819,6 +841,24 @@ struct WorkoutHistoryDetailView: View {
         return formatter.string(from: date)
     }
 
+    private func effortLabel(for effort: Double) -> String {
+        switch Int(effort) {
+        case ..<4: return "Easy"
+        case ..<7: return "Moderate"
+        case ..<9: return "Hard"
+        default: return "All Out"
+        }
+    }
+
+    private func effortColor(for effort: Double) -> Color {
+        switch Int(effort) {
+        case ..<4: return .green
+        case ..<7: return .yellow
+        case ..<9: return .orange
+        default: return .red
+        }
+    }
+
     private func secondsPerKmForSplit(_ split: (splitIndex: Int, duration: TimeInterval, avgHeartRate: Double?)) -> Double {
         split.duration
     }
@@ -863,6 +903,7 @@ private struct StatCard: View {
     let value: String
     let icon: String
     let iconColor: Color
+    var valueColor: Color = .primary
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -872,6 +913,7 @@ private struct StatCard: View {
             Text(value)
                 .font(.system(size: 20, weight: .bold, design: .rounded))
                 .monospacedDigit()
+                .foregroundStyle(valueColor)
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.secondary)

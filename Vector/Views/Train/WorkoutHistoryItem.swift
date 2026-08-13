@@ -275,17 +275,17 @@ struct StrengthExerciseEditorView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 8)
             }
-            .sheet(isPresented: $showingExercisePicker) {
+            .vectorSheet(isPresented: $showingExercisePicker) {
                 ExercisePickerView { new in
                     exercises.append(contentsOf: new)
                 }
             }
-            .sheet(isPresented: $showingTemplatePicker) {
+            .vectorSheet(isPresented: $showingTemplatePicker) {
                 TemplatePickerView { templateExercises in
                     exercises.append(contentsOf: templateExercises)
                 }
             }
-            .sheet(item: $editingExercise) { exercise in
+            .vectorSheet(item: $editingExercise) { exercise in
                 ExerciseEntryEditor(entry: exercise) { updated in
                     if let idx = exercises.firstIndex(where: { $0.id == updated.id }) {
                         exercises[idx] = updated

@@ -73,7 +73,7 @@ struct WorkoutFullHistoryView: View {
                         .fontWeight(.semibold)
                 }
             }
-            .sheet(item: $selectedWorkout) { workout in
+            .vectorSheet(item: $selectedWorkout) { workout in
                 NavigationStack {
                     WorkoutHistoryDetailView(workout: workout)
                         .navigationBarTitleDisplayMode(.inline)
