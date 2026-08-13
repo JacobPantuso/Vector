@@ -277,6 +277,17 @@ struct WorkoutDetailView: View {
         return lower...upper
     }
 
+    /// Y-axis labels sized to the visible range rather than the raw magnitude.
+    /// A template creeping from 12,180 to 12,550 lbs sits entirely inside one
+    /// thousand, so a flat `Int(v / 1000)` renders every tick as "12k".
+    private func volumeAxisLabel(_ v: Double) -> String {
+        guard v >= 1000 else { return "\(Int(v))" }
+        let span = volumeYDomain.upperBound - volumeYDomain.lowerBound
+        if span >= 20000 { return "\(Int(v / 1000))k" }
+        if span >= 2000 { return String(format: "%.1fk", v / 1000) }
+        return v.formatted(.number.precision(.fractionLength(0)))
+    }
+
     private var volumeTrend: (text: String, icon: String, color: Color)? {
         guard let first = completions.first?.totalVolume,
               let last = completions.last?.totalVolume,
@@ -460,7 +471,7 @@ struct WorkoutDetailView: View {
                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [3, 3]))
                 AxisValueLabel {
                     if let v = value.as(Double.self) {
-                        Text(v >= 1000 ? "\(Int(v/1000))k" : "\(Int(v))")
+                        Text(volumeAxisLabel(v))
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
