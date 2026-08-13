@@ -4,15 +4,12 @@ import SwiftUI
 /// Lets the user pick which weight changes to apply before committing.
 struct ProgressionReviewSheet: View {
     let changes: [ProgressionChange]
-    /// Advisor headline per exercise ID (e.g. "Ready to progress"), optional.
-    var headlines: [UUID: String] = [:]
     let onConfirm: ([ProgressionChange]) -> Void
 
     @State private var selectedIDs: Set<UUID>
 
-    init(changes: [ProgressionChange], headlines: [UUID: String] = [:], onConfirm: @escaping ([ProgressionChange]) -> Void) {
+    init(changes: [ProgressionChange], onConfirm: @escaping ([ProgressionChange]) -> Void) {
         self.changes = changes
-        self.headlines = headlines
         self.onConfirm = onConfirm
         // All selected by default.
         self._selectedIDs = State(initialValue: Set(changes.map(\.id)))
@@ -109,14 +106,6 @@ struct ProgressionReviewSheet: View {
                             .foregroundStyle(deltaColor)
                             .clipShape(Capsule())
                     }
-
-                    if let headline = headlines[change.id] {
-                        Label(headline, systemImage: "sparkles")
-                            .font(.caption2.weight(.medium))
-                            .foregroundStyle(
-                                LinearGradient(colors: [.indigo, .purple], startPoint: .leading, endPoint: .trailing)
-                            )
-                    }
                 }
 
                 Spacer(minLength: 0)
@@ -151,8 +140,7 @@ struct ProgressionReviewSheet: View {
                 ProgressionChange(id: a, name: "Barbell Back Squat", oldWeightKg: 185, newWeightKg: 195),
                 ProgressionChange(id: b, name: "Bench Press", oldWeightKg: 135, newWeightKg: 140),
                 ProgressionChange(id: c, name: "Romanian Deadlift", oldWeightKg: 150, newWeightKg: 135)
-            ],
-            headlines: [a: "Ready to progress", b: "Break the plateau", c: "Back off to break through"]
+            ]
         ) { _ in }
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)

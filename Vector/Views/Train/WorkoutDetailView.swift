@@ -138,8 +138,7 @@ struct WorkoutDetailView: View {
             }
             .vectorSheet(isPresented: $showingProgressionReview, style: .half) {
                 ProgressionReviewSheet(
-                    changes: pendingProgressionChanges,
-                    headlines: progressionHeadlines
+                    changes: pendingProgressionChanges
                 ) { selected in
                     showingProgressionReview = false
                     // Wait for the review sheet to finish dismissing before
@@ -233,17 +232,6 @@ struct WorkoutDetailView: View {
             guard abs(newWeight - old) > 0.01 else { return nil }
             return ProgressionChange(id: ex.id, name: ex.name, oldWeightKg: old, newWeightKg: newWeight)
         }
-    }
-
-    /// Advisor headlines keyed by exercise ID, for the review sheet.
-    private var progressionHeadlines: [UUID: String] {
-        var result: [UUID: String] = [:]
-        for ex in workout.exercises {
-            if let insight = ProgressionAdvisor.insight(for: ex) {
-                result[ex.id] = insight.headline
-            }
-        }
-        return result
     }
 
     private func applyProgression(_ changes: [ProgressionChange]) {
