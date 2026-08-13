@@ -18,6 +18,12 @@ struct HomeView: View {
     @State private var headerScroll = HeaderScrollState()
     @State private var vitalsLayout = VitalsLayoutStore.shared
     @State private var vitalsSeries = VitalsSeriesStore()
+    @State private var bodySignals = BodySignalMonitor.shared
+    @State private var checkInQueue: [StrainPatternDetector.StrainEpisode] = []
+    @State private var showingBodyCheckIn = false
+    /// Episode keys already offered this session, so a swipe-dismiss doesn't
+    /// immediately re-present the same prompt.
+    @State private var promptedKeys: Set<String> = []
     @State private var showingVitalsCustomize = false
     @State private var vitalsContentWidth: CGFloat = 0
 
@@ -85,6 +91,7 @@ struct HomeView: View {
                         gradientOverviewHeader
                     }
                     summaryGrid
+                    bodyPatternsSection
                     todaySection
                 }
                 .padding(.horizontal, 20)
@@ -100,6 +107,7 @@ struct HomeView: View {
                 await service.refreshToday()
                 await generateOverview(force: true)
                 await vitalsSeries.load(service: service, force: true)
+                await bodySignals.refresh(service: service, force: true)
             }
             .toolbar(.hidden, for: .navigationBar)
             .scrollEdgeEffectStyle(.soft, for: .all)
@@ -126,10 +134,21 @@ struct HomeView: View {
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
             }
+            .vectorSheet(isPresented: $showingBodyCheckIn, style: .half) {
+                BodyCheckInSheet(episodes: checkInQueue) {
+                    showingBodyCheckIn = false
+                }
+            }
             .task {
                 await service.refreshIfStale()
                 await generateOverview()
                 await vitalsSeries.load(service: service)
+                await bodySignals.refresh(service: service)
+                if let live = bodySignals.liveEpisode, !promptedKeys.contains(live.key) {
+                    promptedKeys.insert(live.key)
+                    checkInQueue = [live]
+                    showingBodyCheckIn = true
+                }
             }
             .onReceive(timer) { now = $0 }
         }
@@ -514,6 +533,17 @@ struct HomeView: View {
                 ],
                 suggestedPrompt: "Explain my stress level today and what's contributing to it."
             ))
+        }
+    }
+
+    @ViewBuilder
+    private var bodyPatternsSection: some View {
+        let reviewable = bodySignals.reviewableEpisodes
+        if !reviewable.isEmpty {
+            BodyPatternsCard(pendingCount: reviewable.count) {
+                checkInQueue = reviewable
+                showingBodyCheckIn = true
+            }
         }
     }
 

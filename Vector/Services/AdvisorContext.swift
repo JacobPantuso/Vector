@@ -162,6 +162,36 @@ enum AdvisorContext {
             lines.append("Progression: " + Array(Set(highlights)).prefix(6).joined(separator: ", "))
         }
 
+        // MARK: Body patterns
+        let checkIns = BodyCheckInStore.shared
+        var bodyPatternLines: [String] = []
+
+        if let summary = checkIns.patternSummary {
+            bodyPatternLines.append(summary)
+            // The three most recent answers, so the model can reference a specific
+            // window rather than only the aggregate.
+            for entry in checkIns.checkIns.prefix(3) {
+                var line = "\(entry.startDate.formatted(date: .abbreviated, time: .omitted)): felt \(entry.feeling.label.lowercased())"
+                if !entry.contexts.isEmpty {
+                    line += " — attributed to \(entry.contexts.map(\.label).joined(separator: ", ").lowercased())"
+                }
+                if let note = entry.note, !note.isEmpty {
+                    line += " (\"\(note)\")"
+                }
+                bodyPatternLines.append(line)
+            }
+        }
+
+        if let current = BodySignalMonitor.shared.episodes.first,
+           Calendar.current.dateComponents([.day], from: current.endDate, to: Date()).day ?? 99 <= 2 {
+            bodyPatternLines.append("Right now several signals are off baseline (\(current.dateRangeLabel), \(current.severity.label)): \(current.signalSummaries.joined(separator: "; ")). The user has not said how they feel about this yet.")
+        }
+
+        if !bodyPatternLines.isEmpty {
+            lines.append("\n--- What the user has told us about their body ---")
+            lines.append(contentsOf: bodyPatternLines)
+        }
+
         // MARK: Profile
         let goal = FitnessGoal(rawValue: defaults.string(forKey: UserProfileStorage.goal) ?? "") ?? UserProfile.defaultGoal
         let days = defaults.object(forKey: UserProfileStorage.trainingDays) as? Int ?? UserProfile.defaultTrainingDays
