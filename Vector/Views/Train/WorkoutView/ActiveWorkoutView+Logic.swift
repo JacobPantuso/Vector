@@ -215,17 +215,14 @@ extension ActiveWorkoutView {
         guard !session.hasRecordedCompletion else { return }
         guard !devModeEnabled else { return }
         session.hasRecordedCompletion = true
-        // Use the user's actually-logged weights/reps; fall back to the template when nothing was logged.
+        // Only sets the user actually logged count toward volume — an exercise
+        // that was skipped contributes nothing and never reaches history.
+        let performed = performedExercises()
         let library = ExerciseLibrary.shared
         var volume = 0.0
         var muscleVolumes: [String: Double] = [:]
-        for exercise in session.workout.exercises where exercise.inputType == .reps {
-            let weights = session.loggedSetWeights[exercise.id] ?? exercise.resolvedSetDetails.map { $0.weightKg ?? 0 }
-            let reps = session.loggedSetReps[exercise.id] ?? exercise.resolvedSetDetails.map { $0.reps }
-            var exVolume = 0.0
-            for i in 0..<min(weights.count, reps.count) {
-                exVolume += Double(reps[i]) * weights[i]
-            }
+        for exercise in performed where exercise.inputType == .reps {
+            let exVolume = exercise.totalVolumeKg
             volume += exVolume
             guard exVolume > 0 else { continue }
             if let lib = library.exercises.first(where: { $0.name.lowercased() == exercise.name.lowercased() }) {
@@ -239,7 +236,7 @@ extension ActiveWorkoutView {
             durationMinutes: minutes,
             muscleVolumes: muscleVolumes,
             title: session.workout.title,
-            performedExercises: loggedExercises(),
+            performedExercises: performed,
             expectsHealthSync: watchSync.isWatchAppInstalled
         )
         // Seed the perceived effort from a heuristic
@@ -252,29 +249,36 @@ extension ActiveWorkoutView {
         guard !devModeEnabled else { return }
         session.hasRecordedProgression = true
         for ex in session.workout.exercises {
-            let resolved = ex.resolvedSetDetails
-            let weights = session.loggedSetWeights[ex.id] ?? resolved.map { $0.weightKg ?? 0 }
-            let repsArr = session.loggedSetReps[ex.id] ?? resolved.map { $0.reps }
-            // Record the heaviest working set as the representative performance.
-            let topIdx = weights.indices.max(by: { weights[$0] < weights[$1] }) ?? 0
-            let topWeight = weights.indices.contains(topIdx) ? weights[topIdx] : (ex.weightKg ?? 0)
-            let topReps = repsArr.indices.contains(topIdx) ? repsArr[topIdx] : ex.reps
-            let targetReps = resolved.indices.contains(topIdx) ? resolved[topIdx].reps : ex.reps
+            // An exercise the user never logged a set of isn't a performance —
+            // recording it would poison the progression history with untouched
+            // template values and skew the next session's suggestion.
+            let done = session.completedSetIndices[ex.id] ?? []
+            guard !done.isEmpty else { continue }
 
-            // Build per-set detail from logged weights/reps
-            let setCount = min(weights.count, repsArr.count, resolved.count)
-            var sets: [SetPerformance]? = nil
-            if setCount > 0 {
-                sets = (0..<setCount).map { idx in
-                    SetPerformance(
-                        weightKg: weights[idx],
-                        reps: repsArr[idx],
-                        targetReps: resolved[idx].reps
-                    )
-                }
+            let resolved = ex.resolvedSetDetails
+            let allWeights = session.loggedSetWeights[ex.id] ?? resolved.map { $0.weightKg ?? 0 }
+            let allReps = session.loggedSetReps[ex.id] ?? resolved.map { $0.reps }
+            let limit = min(allWeights.count, allReps.count, resolved.count)
+            let indices = done.sorted().filter { $0 >= 0 && $0 < limit }
+            guard !indices.isEmpty else { continue }
+
+            let weights = indices.map { allWeights[$0] }
+            let repsArr = indices.map { allReps[$0] }
+            let targets = indices.map { resolved[$0].reps }
+
+            // Record the heaviest completed set as the representative performance.
+            let topIdx = weights.indices.max(by: { weights[$0] < weights[$1] }) ?? 0
+            let sets = weights.indices.map { idx in
+                SetPerformance(weightKg: weights[idx], reps: repsArr[idx], targetReps: targets[idx])
             }
 
-            ExerciseProgressionStore.shared.record(entry: ex, weightKg: topWeight, reps: topReps, targetReps: targetReps, sets: sets)
+            ExerciseProgressionStore.shared.record(
+                entry: ex,
+                weightKg: weights[topIdx],
+                reps: repsArr[topIdx],
+                targetReps: targets[topIdx],
+                sets: sets
+            )
         }
     }
 
@@ -320,6 +324,46 @@ extension ActiveWorkoutView {
         }
     }
 
+    /// Only the exercises the user actually logged at least one set of, trimmed to
+    /// just those completed sets. Skipped exercises and untouched sets are excluded
+    /// so history, Health, and volume reflect what was done — not what was planned.
+    /// `loggedExercises()` stays unfiltered because the saved template must keep
+    /// every exercise the user planned, whether or not they got to it.
+    func performedExercises() -> [ManualExerciseEntry] {
+        session.workout.exercises.compactMap { ex in
+            let done = session.completedSetIndices[ex.id] ?? []
+            guard !done.isEmpty else { return nil }
+
+            guard ex.inputType == .reps else {
+                var updated = ex
+                updated.sets = min(done.count, max(ex.sets, 1))
+                return updated
+            }
+
+            let weights = session.loggedSetWeights[ex.id] ?? ex.resolvedSetDetails.map { $0.weightKg ?? 0 }
+            let repsArr = session.loggedSetReps[ex.id] ?? ex.resolvedSetDetails.map { $0.reps }
+            let limit = min(weights.count, repsArr.count)
+            let indices = done.sorted().filter { $0 >= 0 && $0 < limit }
+            guard !indices.isEmpty else { return nil }
+
+            let w = indices.map { weights[$0] }
+            let r = indices.map { repsArr[$0] }
+            var updated = ex
+            updated.sets = indices.count
+            let varied = Set(w).count > 1 || Set(r).count > 1
+            if varied {
+                updated.setDetails = zip(w, r).map { SetDetail(weightKg: $0, reps: $1) }
+                updated.weightKg = w.max()
+                updated.reps = r.max() ?? ex.reps
+            } else {
+                updated.setDetails = nil
+                updated.weightKg = w.first ?? ex.weightKg
+                updated.reps = r.first ?? ex.reps
+            }
+            return updated
+        }
+    }
+
     func saveToHealth() {
         guard !session.hasSavedToHealth else { return }
         guard !devModeEnabled else { return }
@@ -332,7 +376,7 @@ extension ActiveWorkoutView {
                 title: session.workout.title,
                 startDate: session.startedAt,
                 endDate: Date(),
-                exercises: loggedExercises()
+                exercises: performedExercises()
             )
             // Mark the local record as synced so the hourly backfill never re-saves a duplicate.
             if let workout, let recordID {
