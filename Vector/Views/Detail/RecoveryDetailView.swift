@@ -77,7 +77,8 @@ struct RecoveryDetailView: View {
                 contribution: factor.contribution,
                 contributionCaption: "Impact on recovery score",
                 explanation: factor.explanation,
-                actionItem: factor.actionItem
+                actionItem: factor.actionItem,
+                domainLimit: factor.domainLimit
             )
         }
         .onAppear {
@@ -222,6 +223,17 @@ struct RecoveryDetailView: View {
 
     // MARK: - Computed Properties
 
+    /// The Wrist Temperature card reports a deviation from baseline, but HealthKit
+    /// stores absolute sleeping temperature — charting the raw series puts a "+0.2 °C"
+    /// headline over a "34.1" axis. Re-express the series on the same deviation scale.
+    private var wristTempDeviationSeries: [MetricTrendPoint] {
+        guard wristTempSeries.count > 1 else { return [] }
+        let prior = wristTempSeries.dropLast().map(\.value)
+        guard !prior.isEmpty else { return [] }
+        let baseline = prior.reduce(0, +) / Double(prior.count)
+        return wristTempSeries.map { MetricTrendPoint(date: $0.date, value: $0.value - baseline) }
+    }
+
     private func colorForRecoveryFactor(_ name: String) -> Color {
         if name.contains("HRV") { return .indigo }
         if name.contains("Resting") || name.contains("Heart Rate") { return .red }
@@ -347,7 +359,8 @@ struct RecoveryDetailView: View {
                 actionItem: sleepAction,
                 series: ScoreHistoryStore.series(for: .sleep).map { MetricTrendPoint(date: $0.date, value: Double($0.score)) },
                 statusLabel: sleepPositive ? "Supporting recovery" : "Below optimal",
-                unit: "%"
+                unit: "%",
+                domainLimit: 0...100
             )
         ]
 
@@ -388,9 +401,10 @@ struct RecoveryDetailView: View {
                 actionItem: tempPositive
                     ? "Temperature is stable—maintain your routine."
                     : "Monitor for signs of illness, prioritize rest and hydration, and keep training light until it normalizes.",
-                series: wristTempSeries,
+                series: wristTempDeviationSeries,
+                baseline: nil,
                 statusLabel: tempPositive ? "Near baseline" : "Deviating",
-                valueFormat: { String(format: "%.1f", $0) },
+                valueFormat: { String(format: "%+.1f", $0) },
                 unit: "°C"
             ))
         }
@@ -413,7 +427,8 @@ struct RecoveryDetailView: View {
                 series: spo2Series,
                 baseline: score.spo2Baseline,
                 statusLabel: spo2Positive ? "Healthy range" : "Lower than ideal",
-                unit: "%"
+                unit: "%",
+                domainLimit: 0...100
             ))
         }
 
@@ -459,6 +474,7 @@ private struct RecoveryFactor: Identifiable {
     let statusLabel: String
     var valueFormat: (Double) -> String = { String(Int($0)) }
     var unit: String = ""
+    var domainLimit: ClosedRange<Double>? = nil
 }
 
 // MARK: - Resource Row

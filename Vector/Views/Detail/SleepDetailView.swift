@@ -366,7 +366,8 @@ struct SleepDetailView: View {
                     MetricStat(label: "In Bed", value: analysis.formattedDuration)
                 ],
                 explanation: efficiencyInterpretation,
-                actionItem: analysis.efficiency >= 0.85 ? "Your routine is working—keep bedtime and wake time consistent." : "Wind down screen-free before bed and keep your room cool and dark to cut awakenings."
+                actionItem: analysis.efficiency >= 0.85 ? "Your routine is working—keep bedtime and wake time consistent." : "Wind down screen-free before bed and keep your room cool and dark to cut awakenings.",
+                domainLimit: 0...100
             )
 
         case .respiratoryRate:
@@ -402,8 +403,8 @@ struct SleepDetailView: View {
                     icon: "lungs.fill",
                     tint: .cyan,
                     value: "—",
-                    statusLabel: "No data",
-                    isPositive: true,
+                    statusLabel: "Not recorded",
+                    isPositive: nil,
                     series: [],
                     explanation: "Respiratory rate data unavailable.",
                     actionItem: "Wear your watch overnight to capture breathing rate."
@@ -442,8 +443,8 @@ struct SleepDetailView: View {
                     icon: "thermometer.medium",
                     tint: .orange,
                     value: "—",
-                    statusLabel: "No data",
-                    isPositive: true,
+                    statusLabel: "Not recorded",
+                    isPositive: nil,
                     series: [],
                     explanation: "Wrist temperature data unavailable.",
                     actionItem: "Wear your watch overnight to capture temperature."
@@ -456,9 +457,10 @@ struct SleepDetailView: View {
                 icon: "clock.fill",
                 tint: .indigo,
                 value: bedtimeFormatted,
-                statusLabel: "Last night",
-                isPositive: true,
+                statusLabel: MetricStatus.relativeToHistory(series: sleepBedtimeSeries, higherIsBetter: nil)?.label ?? "Last night",
+                isPositive: nil,
                 series: sleepBedtimeSeries,
+                valueFormat: bedtimeAxisLabel,
                 rangeLabel: "Consistency trend",
                 stats: [
                     MetricStat(label: "Bedtime", value: bedtimeFormatted),
@@ -480,7 +482,8 @@ struct SleepDetailView: View {
                 series: qualitySeries,
                 rangeLabel: "Recent nights",
                 explanation: interpretationText,
-                actionItem: sleepPriorities.first ?? "Keep your sleep habits consistent to maintain this quality."
+                actionItem: sleepPriorities.first ?? "Keep your sleep habits consistent to maintain this quality.",
+                domainLimit: 0...100
             )
         }
     }
@@ -683,6 +686,17 @@ struct SleepDetailView: View {
             return .green
         }
         return .orange
+    }
+
+    /// The bedtime series is stored as minutes offset from noon, so a raw axis
+    /// reads "660" where the user expects "11 PM". Convert back to a clock time.
+    private func bedtimeAxisLabel(_ minutesFromNoon: Double) -> String {
+        let minutesSinceMidnight = (Int(minutesFromNoon.rounded()) + 720) % 1440
+        var components = DateComponents()
+        components.hour = minutesSinceMidnight / 60
+        components.minute = minutesSinceMidnight % 60
+        guard let date = Calendar.current.date(from: components) else { return "—" }
+        return date.formatted(.dateTime.hour().minute())
     }
 
     private func stageChartLegend(color: Color, label: String) -> some View {

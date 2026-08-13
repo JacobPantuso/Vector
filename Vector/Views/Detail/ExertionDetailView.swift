@@ -400,19 +400,20 @@ struct ExertionDetailView: View {
             ))
         }
 
-        if let mets = service.todayPhysicalEffort, !service.physicalEffortSeries.isEmpty {
+        let effortSeries = service.physicalEffortSeries.map { MetricTrendPoint(date: $0.date, value: $0.value) }
+        if let latestEffort = effortSeries.last?.value {
             factors.append(ExertionFactor(
                 name: "Physical Effort",
                 icon: "bolt.fill",
                 color: .yellow,
-                value: String(format: "%.1f METs", mets),
+                value: String(format: "%.1f METs", latestEffort),
                 contribution: 0.5,
                 isPositive: nil,
                 explanation: "METs (Metabolic Equivalent of Task) estimate how much energy your body uses versus sitting at rest — this captures strength-training strain that heart rate alone under-counts.",
                 actionItem: "Rising effort with stable recovery is a good sign your fitness is improving.",
-                series: service.physicalEffortSeries.map { MetricTrendPoint(date: $0.date, value: $0.value) },
+                series: effortSeries,
                 baseline: nil,
-                statusLabel: "Measured by Apple Watch",
+                statusLabel: status(for: effortSeries, fallback: "Measured by Apple Watch"),
                 valueFormat: { String(format: "%.1f", $0) },
                 unit: "METs"
             ))
@@ -430,7 +431,7 @@ struct ExertionDetailView: View {
                 actionItem: "Consistent daily activity supports steady training adaptation.",
                 series: caloriesSeries,
                 baseline: nil,
-                statusLabel: "Burned today",
+                statusLabel: status(for: caloriesSeries, fallback: "Today's burn"),
                 valueFormat: { String(Int($0)) },
                 unit: "kcal"
             ))
@@ -448,7 +449,7 @@ struct ExertionDetailView: View {
                 actionItem: "Aim for consistent daily movement alongside structured training.",
                 series: stepsSeries,
                 baseline: nil,
-                statusLabel: "Steps today",
+                statusLabel: status(for: stepsSeries, fallback: "Today's total"),
                 valueFormat: { String(Int($0)) },
                 unit: "steps"
             ))
@@ -466,7 +467,7 @@ struct ExertionDetailView: View {
                 actionItem: "Balance exercise minutes with adequate recovery days.",
                 series: exerciseMinutesSeries,
                 baseline: nil,
-                statusLabel: "Minutes today",
+                statusLabel: status(for: exerciseMinutesSeries, fallback: "Today's total"),
                 valueFormat: { String(Int($0)) },
                 unit: "min"
             ))
@@ -491,7 +492,7 @@ struct ExertionDetailView: View {
                 actionItem: "Zone 2 endurance work and interval training are the most reliable ways to raise VO₂ max over time.",
                 series: vo2Series,
                 baseline: nil,
-                statusLabel: "Estimated by Apple Watch",
+                statusLabel: status(for: vo2Series, fallback: "Estimated by Apple Watch"),
                 valueFormat: { String(format: "%.1f", $0) },
                 unit: "ml/kg·min",
                 contributionCaption: "Relates to physical fitness"
@@ -511,7 +512,7 @@ struct ExertionDetailView: View {
                 actionItem: "Consistent cardio training improves recovery speed — a rising trend is a strong fitness signal.",
                 series: hrrSeries,
                 baseline: service.hrrBaseline,
-                statusLabel: "1-min drop after workouts",
+                statusLabel: status(for: hrrSeries, baseline: service.hrrBaseline, fallback: "1-min drop after workouts"),
                 valueFormat: { String(Int($0)) },
                 unit: "bpm",
                 contributionCaption: "Relates to physical fitness"
@@ -531,7 +532,7 @@ struct ExertionDetailView: View {
                 actionItem: "A gradually declining resting heart rate over months usually indicates improving aerobic fitness.",
                 series: restingHRSeries,
                 baseline: nil,
-                statusLabel: "Daily average",
+                statusLabel: status(for: restingHRSeries, fallback: "Daily average"),
                 valueFormat: { String(Int($0)) },
                 unit: "bpm",
                 contributionCaption: "Relates to physical fitness"
@@ -551,7 +552,7 @@ struct ExertionDetailView: View {
                 actionItem: "Compare against your resting heart rate — a smaller gap over time suggests improving efficiency.",
                 series: walkingHRSeries,
                 baseline: nil,
-                statusLabel: "Average while walking",
+                statusLabel: status(for: walkingHRSeries, fallback: "Average while walking"),
                 valueFormat: { String(Int($0)) },
                 unit: "bpm",
                 contributionCaption: "Relates to physical fitness"
@@ -609,6 +610,13 @@ struct ExertionDetailView: View {
     }
 
     // MARK: - Helpers
+
+    /// A status chip should describe the reading, not restate what the metric is.
+    /// Falls back to the supplied caption when there isn't enough history to
+    /// place today's value against the user's own trend.
+    private func status(for series: [MetricTrendPoint], higherIsBetter: Bool? = nil, baseline: Double? = nil, fallback: String) -> String {
+        MetricStatus.relativeToHistory(series: series, higherIsBetter: higherIsBetter, baseline: baseline)?.label ?? fallback
+    }
 
     private func calculateGaugePosition(_ width: CGFloat) -> CGFloat {
         let clamped = min(max(score.loadRatio, 0.4), 2.0)

@@ -78,7 +78,8 @@ struct StressDetailView: View {
                 contribution: factor.contribution,
                 contributionCaption: "Contribution to stress score",
                 explanation: factor.explanation,
-                actionItem: factor.actionItem
+                actionItem: factor.actionItem,
+                domainLimit: domainLimitForStressFactor(factor.name)
             )
         }
         .vectorSheet(isPresented: $showingStressHistory, style: .half) {
@@ -329,6 +330,17 @@ struct StressDetailView: View {
 
     // MARK: - Computed
 
+    /// The Wrist Temperature card reports a deviation from baseline, but HealthKit
+    /// stores absolute sleeping temperature — charting the raw series puts a "+0.2 °C"
+    /// headline over a "34.1" axis. Re-express the series on the same deviation scale.
+    private var wristTempDeviationSeries: [MetricTrendPoint] {
+        guard wristTempSeries.count > 1 else { return [] }
+        let prior = wristTempSeries.dropLast().map(\.value)
+        guard !prior.isEmpty else { return [] }
+        let baseline = prior.reduce(0, +) / Double(prior.count)
+        return wristTempSeries.map { MetricTrendPoint(date: $0.date, value: $0.value - baseline) }
+    }
+
     private var stressConnections: [ConnectionInsight] {
         CrossEngineInsight.forStress(stress: score, recovery: service.recoveryScore, sleep: service.sleepAnalysis)
     }
@@ -427,8 +439,11 @@ struct StressDetailView: View {
     }
 
     private func formatForStressFactor(_ name: String) -> (Double) -> String {
-        if name.contains("Respiratory") || name.contains("Temp") {
+        if name.contains("Respiratory") {
             return { String(format: "%.1f", $0) }
+        }
+        if name.contains("Temperature") || name.contains("Temp") {
+            return { String(format: "%+.1f", $0) }
         }
         return { String(Int($0)) }
     }
@@ -448,9 +463,14 @@ struct StressDetailView: View {
         if name.contains("Daytime") { return rhrSeries }  // Show resting HR trend as context for daytime elevation
         if name.contains("Heart Rate") || name.contains("Resting") { return rhrSeries }
         if name.contains("Respiratory") { return rrSeries }
-        if name.contains("Temperature") || name.contains("Temp") { return wristTempSeries }
+        if name.contains("Temperature") || name.contains("Temp") { return wristTempDeviationSeries }
         if name.contains("Sleep") { return ScoreHistoryStore.series(for: .sleep).map { MetricTrendPoint(date: $0.date, value: Double($0.score)) } }
         return []
+    }
+
+    /// Percentages and 0–100 scores must not be padded past their own ceiling.
+    private func domainLimitForStressFactor(_ name: String) -> ClosedRange<Double>? {
+        name.contains("Sleep") ? 0...100 : nil
     }
 }
 
