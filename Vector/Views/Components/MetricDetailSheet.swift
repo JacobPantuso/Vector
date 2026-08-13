@@ -28,6 +28,7 @@ struct MetricDetailSheet: View {
     var contributionCaption: String = "Impact on today's score"
     let explanation: String
     let actionItem: String
+    var domainLimit: ClosedRange<Double>? = nil
 
     @Environment(\.dismiss) private var dismiss
     @Environment(AdvisorPresenter.self) private var advisorPresenter: AdvisorPresenter?
@@ -52,6 +53,92 @@ struct MetricDetailSheet: View {
         if abs(pct) < 1 { return ("equal", "steady vs recent days") }
         return (pct > 0 ? "arrow.up.right" : "arrow.down.right",
                 String(format: "%+.0f%% vs recent days", pct))
+    }
+
+    private var historyDigest: String? {
+        guard series.count >= 3 else { return nil }
+
+        var lines: [String] = []
+
+        // Days of data
+        lines.append("Days of data: \(series.count)")
+
+        // Latest
+        if let last = series.last {
+            lines.append("Latest: \(valueFormat(last.value))\(unit.isEmpty ? "" : " " + unit)")
+        }
+
+        // 7-day average
+        let recent = series.suffix(7)
+        if !recent.isEmpty {
+            let avg = recent.map(\.value).reduce(0, +) / Double(recent.count)
+            lines.append("7-day average: \(valueFormat(avg))\(unit.isEmpty ? "" : " " + unit)")
+        }
+
+        // Range over the data window
+        if series.count >= 2 {
+            let values = series.map(\.value)
+            let minValue = values.min() ?? 0
+            let maxValue = values.max() ?? 0
+            lines.append("Range over \(series.count) days: \(valueFormat(minValue))–\(valueFormat(maxValue))\(unit.isEmpty ? "" : " " + unit)")
+        }
+
+        // Direction: compare mean of first half to mean of second half
+        if series.count >= 2 {
+            let mid = series.count / 2
+            let firstHalf = series[..<mid]
+            let secondHalf = series[mid...]
+
+            let firstMean = firstHalf.map(\.value).reduce(0, +) / Double(firstHalf.count)
+            let secondMean = secondHalf.map(\.value).reduce(0, +) / Double(secondHalf.count)
+
+            if firstMean != 0 {
+                let pctChange = (secondMean - firstMean) / abs(firstMean) * 100
+                if pctChange > 1 {
+                    lines.append(String(format: "Direction: rising (+%.0f%% over the window)", pctChange))
+                } else if pctChange < -1 {
+                    lines.append(String(format: "Direction: falling (-%.0f%% over the window)", abs(pctChange)))
+                } else {
+                    lines.append("Direction: steady")
+                }
+            }
+        }
+
+        // Volatility: standard deviation as percentage of mean
+        if series.count >= 2 {
+            let values = series.map(\.value)
+            let mean = values.reduce(0, +) / Double(values.count)
+            if mean != 0 {
+                let variance = values.map { pow($0 - mean, 2) }.reduce(0, +) / Double(values.count)
+                let stdDev = sqrt(variance)
+                let cv = stdDev / abs(mean) * 100
+
+                let volatilityLabel: String
+                if cv < 5 {
+                    volatilityLabel = "steady"
+                } else if cv <= 15 {
+                    volatilityLabel = "moderate"
+                } else {
+                    volatilityLabel = "swingy"
+                }
+                lines.append("Day-to-day variation: \(volatilityLabel)")
+            }
+        }
+
+        // Most recent reading vs the 7-day average
+        if let delta = trendDelta {
+            // delta.text is like "+5% vs recent days" or "-3% vs recent days"
+            if let pctPart = delta.text.split(separator: " ").first {
+                lines.append("Most recent reading vs the 7-day average: \(pctPart)")
+            }
+        }
+
+        // Personal baseline
+        if let baseline = baseline {
+            lines.append("Personal baseline: \(valueFormat(baseline))\(unit.isEmpty ? "" : " " + unit)")
+        }
+
+        return lines.joined(separator: "\n")
     }
 
     private var resolvedStats: [MetricStat] {
@@ -89,15 +176,40 @@ struct MetricDetailSheet: View {
         .task { await generateExplanation() }
     }
 
-    /// Builds a short "what this means" blurb on-device, grounded in whether
-    /// this metric's baseline is favorable (isPositive) so the model doesn't
-    /// guess at a direction that contradicts the UI's own status label.
+    /// The on-device model sometimes prefixes its answer with invented tool-call
+    /// scaffolding ("tool:analyze_hrv_trend", "result: {…}") before the real prose,
+    /// because this throwaway session has no tools to ground it. Keep only what
+    /// the user should read.
+    private func cleanedExplanation(_ raw: String) -> String? {
+        var lines = raw.components(separatedBy: .newlines)
+        // The scaffolding always precedes the answer, so drop through the last
+        // line that looks like scratch work rather than trying to match each form.
+        if let lastScaffold = lines.lastIndex(where: { line in
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            let lower = trimmed.lowercased()
+            return lower.hasPrefix("tool:")
+                || lower.hasPrefix("result:")
+                || lower.hasPrefix("action:")
+                || lower.hasPrefix("thought:")
+                || trimmed.hasPrefix("```")
+                || trimmed.hasSuffix("}")
+        }) {
+            lines = Array(lines.dropFirst(lastScaffold + 1))
+        }
+        let cleaned = lines
+            .joined(separator: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return cleaned.isEmpty ? nil : cleaned
+    }
+
+    /// Builds an on-device explanation grounded in real history and the metric's
+    /// baseline favorability (isPositive) so the model doesn't contradict the UI's status label.
     private func generateExplanation() async {
         guard SystemLanguageModel.default.availability == .available else { return }
+        guard aiExplanation == nil else { return }
         isGeneratingExplanation = true
         defer { isGeneratingExplanation = false }
 
-        let baselineContext = baseline.map { "Baseline for this metric: \(valueFormat($0))." } ?? ""
         let direction = switch isPositive {
         case .some(true): "This reading is currently a POSITIVE signal relative to baseline (status: \(statusLabel))."
         case .some(false): "This reading is currently a NEGATIVE signal relative to baseline (status: \(statusLabel))."
@@ -106,19 +218,28 @@ struct MetricDetailSheet: View {
 
         let session = LanguageModelSession(
             model: SystemLanguageModel.default,
-            instructions: "You are a concise health and fitness coach explaining a single metric inside an app. Write 1-2 short sentences (under 40 words total) explaining what this specific value means for the user right now. Do not restate the number. Do not use markdown."
+            instructions: "You are Vector, a concise on-device health and fitness coach explaining one metric inside the user's app. You are given the user's real measured history for this metric. Write 2-3 short sentences (under 55 words total) that say what this metric's RECENT PATTERN means for the user right now — reference the trend, not just today's number. Never restate the current value verbatim; the app already shows it. Do not use markdown, bullets, or headings. Do not invent numbers that are not in the data given to you. Speak directly to the user as \"you\". Reply with prose only. You have no tools. Never emit tool calls, function names, JSON, key-value pairs, code fences, or lines beginning with 'tool:', 'result:', 'thought:', or 'action:' — output only the sentences the user should read."
         )
 
-        let prompt = """
-        Metric: \(title)
-        Current value: \(value)
-        \(baselineContext)
-        \(direction)
-        """
+        var promptParts: [String] = [
+            "Metric: \(title)",
+            "Current value: \(value)",
+            direction
+        ]
+
+        if let historyDigest = historyDigest {
+            promptParts.append(historyDigest)
+        }
+
+        if !actionItem.isEmpty {
+            promptParts.append("App's guidance for this state: \(actionItem)")
+        }
+
+        let prompt = promptParts.joined(separator: "\n")
 
         do {
             let response = try await session.respond(to: prompt)
-            aiExplanation = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+            aiExplanation = cleanedExplanation(response.content)
         } catch {
             aiExplanation = nil
         }
@@ -210,18 +331,41 @@ struct MetricDetailSheet: View {
                 Text("Trend")
                     .font(.subheadline.weight(.semibold))
                 Spacer()
-                Text(rangeLabel)
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+
+                HStack(spacing: 4) {
+                    Text(rangeLabel)
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+
+                    if let summary = MetricStatus.trendSummary(series: series) {
+                        Text("·")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                        Text(summary)
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                            .lineLimit(1)
+                    }
+                }
             }
+
             MetricTrendChart(
                 points: series,
                 baseline: baseline,
                 tint: tint,
                 valueFormat: valueFormat,
-                modeAnnotations: series.isEmpty ? [] : AppModeHistoryStore.periods(overlapping: (series.first?.date ?? Date())...(series.last?.date ?? Date()))
+                modeAnnotations: series.isEmpty ? [] : AppModeHistoryStore.periods(overlapping: (series.first?.date ?? Date())...(series.last?.date ?? Date())),
+                domainLimit: domainLimit,
+                unit: unit
             )
                 .frame(height: 150)
+
+            if series.count >= 2 {
+                Text("Touch and drag to explore")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
         }
         .padding(16)
         .glassEffect(.regular, in: .rect(cornerRadius: 20))
@@ -258,19 +402,40 @@ struct MetricDetailSheet: View {
     private var insightCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("What this means")
+                Image(systemName: "sparkles")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(LinearGradient(colors: [.indigo, .cyan], startPoint: .leading, endPoint: .trailing))
+
+                Text("Vector Intelligence")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(LinearGradient(colors: [.indigo, .cyan], startPoint: .leading, endPoint: .trailing))
                     .textCase(.uppercase)
+
                 if isGeneratingExplanation && aiExplanation == nil {
                     ProgressView()
                         .controlSize(.mini)
                 }
             }
+
             Text(aiExplanation ?? explanation)
                 .font(.subheadline)
                 .fixedSize(horizontal: false, vertical: true)
                 .animation(.default, value: aiExplanation)
+
+            if !actionItem.isEmpty {
+                Divider().padding(.vertical, 2)
+
+                HStack(alignment: .top, spacing: 6) {
+                    Image(systemName: "arrow.right.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(tint)
+
+                    Text(actionItem)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
