@@ -67,16 +67,16 @@ struct NutritionView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showingLogSheet) {
+            .vectorSheet(isPresented: $showingLogSheet) {
                 FoodLogSheet(foodLogService: foodLogService, initialTab: logSheetInitialTab)
             }
-            .sheet(isPresented: $showingScheduleManager) {
+            .vectorSheet(isPresented: $showingScheduleManager) {
                 NutritionScheduleManager(foodLogService: foodLogService)
             }
-            .sheet(isPresented: $showingTargetsEditor) {
+            .vectorSheet(isPresented: $showingTargetsEditor) {
                 TargetsEditorSheet()
             }
-            .sheet(item: $editingEntry) { entry in
+            .vectorSheet(item: $editingEntry, style: .half) { entry in
                 FoodEntryEditSheet(entry: entry, foodLogService: foodLogService)
             }
             .task {

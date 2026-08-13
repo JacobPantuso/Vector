@@ -55,14 +55,14 @@ struct RecoveryDetailView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingSafari) {
+        .vectorSheet(isPresented: $showingSafari) {
             SafariView(url: safariURL)
                 .ignoresSafeArea()
         }
-        .sheet(isPresented: $showingHelp) {
+        .vectorSheet(isPresented: $showingHelp, style: .half) {
             CardInfoSheet(cardID: "recovery")
         }
-        .sheet(item: $selectedRecoveryFactor) { factor in
+        .vectorSheet(item: $selectedRecoveryFactor, style: .half) { factor in
             MetricDetailSheet(
                 title: factor.name,
                 icon: factor.icon,
@@ -421,7 +421,7 @@ struct RecoveryDetailView: View {
             let hrrPositive = score.hrrBaseline.map { hrr >= $0 * 0.9 } ?? (hrr >= 25)
             factors.append(RecoveryFactor(
                 name: "Heart Rate Recovery",
-                icon: "heart.arrow.up",
+                icon: "arrow.down.heart.fill",
                 value: "\(Int(hrr)) bpm",
                 contribution: min(1, max(0, (hrr - 15) / 20)),
                 isPositive: hrrPositive,

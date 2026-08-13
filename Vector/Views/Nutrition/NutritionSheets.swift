@@ -176,7 +176,7 @@ struct FoodLogSheet: View {
                 }
             }
         }
-        .sheet(isPresented: $showingNewRecipe) { NewRecipeSheet(foodLogService: foodLogService) }
+        .vectorSheet(isPresented: $showingNewRecipe) { NewRecipeSheet(foodLogService: foodLogService) }
     }
 
     private func errorView(_ message: String) -> some View {
@@ -341,7 +341,7 @@ struct NewRecipeSheet: View {
                     .disabled(recipeName.isEmpty || ingredients.isEmpty).fontWeight(.semibold)
                 }
             }
-            .sheet(isPresented: $showingAddIngredient) { addIngredientSheet }
+            .vectorSheet(isPresented: $showingAddIngredient) { addIngredientSheet }
         }
     }
 
@@ -430,7 +430,7 @@ struct NutritionScheduleManager: View {
                     Button { editing = MealSchedule(name: "New Meal") } label: { Image(systemName: "plus") }
                 }
             }
-            .sheet(item: $editing) { schedule in
+            .vectorSheet(item: $editing) { schedule in
                 AddEditScheduleSheet(foodLogService: foodLogService, schedule: schedule)
             }
         }
@@ -503,7 +503,7 @@ private struct AddEditScheduleSheet: View {
                     .fontWeight(.semibold)
                 }
             }
-            .sheet(isPresented: $showingAddItem) { addItemSheet }
+            .vectorSheet(isPresented: $showingAddItem) { addItemSheet }
         }
     }
 
