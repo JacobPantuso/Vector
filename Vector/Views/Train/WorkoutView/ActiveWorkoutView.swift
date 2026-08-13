@@ -17,10 +17,16 @@ struct ActiveWorkoutView: View {
     @State var isPaused = false
     @State var showingExercisePicker = false
     @AppStorage("devModeEnabled") var devModeEnabled = false
+    @AppStorage("warmupDurationMinutes") var warmupMinutes = 5
+    @AppStorage("cooldownDurationMinutes") var cooldownMinutes = 5
 
     var phaseColor: Color {
         if session.isFinished || session.allExercisesComplete { return .green }
-        return session.isResting ? .blue : .red
+        switch session.phase {
+        case .warmup: return .orange
+        case .cooldown: return .blue
+        case .main: return session.isResting ? .blue : .red
+        }
     }
 
     var pagingScrollView: some View {
@@ -75,7 +81,11 @@ struct ActiveWorkoutView: View {
             .animation(.easeInOut, value: session.allExercisesComplete)
 
             VStack(spacing: 0) {
-                if session.isFinished || session.allExercisesComplete {
+                if session.phase == .warmup {
+                    WorkoutPhaseView(role: .warmup, session: session, onFinish: { endWarmupPhase() })
+                } else if session.phase == .cooldown {
+                    WorkoutPhaseView(role: .cooldown, session: session, onFinish: { endCooldownPhase() })
+                } else if session.isFinished || session.allExercisesComplete {
                     completionView
                 } else {
                     topBar
@@ -92,6 +102,18 @@ struct ActiveWorkoutView: View {
             let alreadyActive = WatchSyncService.shared.hasActiveWorkout
             WatchSyncService.shared.hasActiveWorkout = true
             pulse = true
+
+            if !session.hasInitializedPhase {
+                session.hasInitializedPhase = true
+                if warmupMinutes > 0 {
+                    session.phase = .warmup
+                    let total = session.phaseDurationSeconds(for: .warmup, fallbackMinutes: warmupMinutes)
+                    session.phaseTotalSeconds = total
+                    session.phaseSecondsRemaining = total
+                    session.isPhaseTimerRunning = true
+                }
+            }
+
             syncToWatch()
             if !alreadyActive {
                 WorkoutLiveActivityController.shared.start(title: session.workout.title, state: liveActivityState())
@@ -105,18 +127,19 @@ struct ActiveWorkoutView: View {
         .onChange(of: session.isResting) { syncToWatch() }
         .onChange(of: session.completedSetIndices) { syncToWatch() }
         .onChange(of: isPaused) { syncToWatch() }
-        .onChange(of: session.isFinished) {
-            if session.isFinished {
-                handleWorkoutFinished()
-            }
-        }
-        .onChange(of: session.allExercisesComplete) {
-            if session.allExercisesComplete {
-                handleWorkoutFinished()
-            }
-        }
+        .onChange(of: session.isFinished) { handleCompletionTrigger() }
+        .onChange(of: session.allMainExercisesComplete) { handleCompletionTrigger() }
         .onDisappear {
             pulse = false
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .watchCommandSkipPhase)) { _ in
+            withAnimation(.spring(duration: 0.3)) {
+                if session.phase == .warmup {
+                    endWarmupPhase()
+                } else if session.phase == .cooldown {
+                    endCooldownPhase()
+                }
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .watchCommandCompleteSet)) { note in
             let weight = note.userInfo?["weight"] as? Double

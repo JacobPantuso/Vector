@@ -56,7 +56,8 @@ final class CustomExerciseStore {
             mechanics: "Compound",
             force: "Push",
             difficulty: "Beginner",
-            steps: []
+            steps: [],
+            category: nil
         )
     }
 

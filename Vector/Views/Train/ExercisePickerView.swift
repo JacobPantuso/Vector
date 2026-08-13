@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ExercisePickerView: View {
     let onAdd: ([ManualExerciseEntry]) -> Void
+    var role: ExerciseRole = .main
 
     @State private var searchText = ""
     @State private var selectedEquipment: String? = nil
@@ -10,11 +11,15 @@ struct ExercisePickerView: View {
     @Environment(\.dismiss) private var dismiss
 
     private var filteredExercises: [LibraryExercise] {
-        ExerciseLibrary.shared.searchAndFilter(
-            query: searchText,
-            equipment: selectedEquipment,
-            muscleGroup: nil
-        )
+        if role == .main {
+            return ExerciseLibrary.shared.searchAndFilter(
+                query: searchText,
+                equipment: selectedEquipment,
+                muscleGroup: nil
+            )
+        } else {
+            return ExerciseLibrary.shared.search(searchText, in: role)
+        }
     }
 
     private var equipmentFilters: [String] {
@@ -24,18 +29,33 @@ struct ExercisePickerView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                filterChips
-                    .padding(.horizontal, 16)
+                if role == .main {
+                    filterChips
+                        .padding(.horizontal, 16)
+                }
 
                 List {
-                    Button {
-                        showingCreate = true
-                    } label: {
-                        createCustomCard
+                    if role == .main {
+                        Button {
+                            showingCreate = true
+                        } label: {
+                            createCustomCard
+                        }
+                        .buttonStyle(.plain)
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                     }
-                    .buttonStyle(.plain)
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
+
+                    if role != .main {
+                        Button {
+                            addTimedBlock()
+                        } label: {
+                            timedBlockCard
+                        }
+                        .buttonStyle(.plain)
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                    }
 
                     ForEach(filteredExercises) { exercise in
                         Button {
@@ -60,9 +80,9 @@ struct ExercisePickerView: View {
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
             }
-            .navigationTitle("Choose Exercise")
+            .navigationTitle(navTitle)
             .navigationBarTitleDisplayMode(.large)
-            .searchable(text: $searchText, prompt: "Search exercises, muscles...")
+            .searchable(text: $searchText, prompt: role == .warmup ? "Search warm-ups" : role == .cooldown ? "Search cool-downs" : "Search exercises, muscles...")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
@@ -79,7 +99,7 @@ struct ExercisePickerView: View {
                     .disabled(selectedIDs.isEmpty)
                 }
             }
-            .sheet(isPresented: $showingCreate) {
+            .vectorSheet(isPresented: $showingCreate) {
                 CustomExerciseCreationView { newExercise in
                     CustomExerciseStore.shared.add(newExercise)
                     showingCreate = false
@@ -88,6 +108,17 @@ struct ExercisePickerView: View {
                     }
                 }
             }
+        }
+    }
+
+    private var navTitle: String {
+        switch role {
+        case .warmup:
+            return "Add Warm-Up"
+        case .cooldown:
+            return "Add Cool-Down"
+        case .main:
+            return "Choose Exercise"
         }
     }
 
@@ -109,6 +140,42 @@ struct ExercisePickerView: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .glassEffect(in: .rect(cornerRadius: 14))
+    }
+
+    private var timedBlockCard: some View {
+        HStack(spacing: 14) {
+            Image(systemName: "timer")
+                .font(.title2)
+                .foregroundStyle(.orange)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Add Timed Block")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text(role == .warmup ? "A timed warm-up — no exercise needed" : "A timed cool-down — no exercise needed")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .glassEffect(in: .rect(cornerRadius: 14))
+    }
+
+    private func addTimedBlock() {
+        let entry = ManualExerciseEntry(
+            role: role,
+            name: role == .warmup ? "Timed Warm-Up" : "Timed Cool-Down",
+            sets: 1,
+            reps: 0,
+            durationSeconds: 300,
+            inputType: .duration,
+            weightKg: nil,
+            restSeconds: 0,
+            notes: ""
+        )
+        onAdd([entry])
+        dismiss()
     }
 
     private var filterChips: some View {
@@ -160,22 +227,56 @@ struct ExercisePickerView: View {
     }
 
     private func buildEntry(for exercise: LibraryExercise) -> ManualExerciseEntry {
-        ManualExerciseEntry(
-            libraryExerciseId: exercise.id,
-            name: exercise.name,
-            sets: 3,
-            reps: 10,
-            durationSeconds: 30,
-            inputType: .reps,
-            weightKg: nil,
-            restSeconds: 90,
-            notes: ""
-        )
+        switch role {
+        case .warmup:
+            return ManualExerciseEntry(
+                libraryExerciseId: exercise.id,
+                role: .warmup,
+                name: exercise.name,
+                sets: 1,
+                reps: 10,
+                durationSeconds: 45,
+                inputType: .duration,
+                weightKg: nil,
+                restSeconds: 15,
+                notes: ""
+            )
+        case .cooldown:
+            return ManualExerciseEntry(
+                libraryExerciseId: exercise.id,
+                role: .cooldown,
+                name: exercise.name,
+                sets: 1,
+                reps: 10,
+                durationSeconds: 30,
+                inputType: .duration,
+                weightKg: nil,
+                restSeconds: 0,
+                notes: ""
+            )
+        case .main:
+            return ManualExerciseEntry(
+                libraryExerciseId: exercise.id,
+                role: .main,
+                name: exercise.name,
+                sets: 3,
+                reps: 10,
+                durationSeconds: 30,
+                inputType: .reps,
+                weightKg: nil,
+                restSeconds: 90,
+                notes: ""
+            )
+        }
     }
 
     private func confirmAdd() {
         let entries = selectedIDs.compactMap { id in
-            ExerciseLibrary.shared.allExercises.first { $0.id == id }
+            if role == .main {
+                ExerciseLibrary.shared.allExercises.first { $0.id == id }
+            } else {
+                ExerciseLibrary.shared.exercises(for: role).first { $0.id == id }
+            }
         }.map { buildEntry(for: $0) }
         guard !entries.isEmpty else { return }
         onAdd(entries)

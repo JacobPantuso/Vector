@@ -7,7 +7,15 @@ final class ExerciseLibrary {
     private(set) var exercises: [LibraryExercise] = []
 
     var allExercises: [LibraryExercise] {
-        exercises + CustomExerciseStore.shared.customExercises
+        exercises.filter { $0.role == .main } + CustomExerciseStore.shared.customExercises
+    }
+
+    var warmupExercises: [LibraryExercise] {
+        exercises.filter { $0.role == .warmup }
+    }
+
+    var cooldownExercises: [LibraryExercise] {
+        exercises.filter { $0.role == .cooldown }
     }
 
     var allEquipmentTypes: [String] {
@@ -53,6 +61,28 @@ final class ExerciseLibrary {
         if let equipment { result = result.filter { $0.equipment == equipment } }
         if let muscleGroup { result = result.filter { $0.targetMuscleGroup == muscleGroup } }
         return result
+    }
+
+    func exercises(for role: ExerciseRole) -> [LibraryExercise] {
+        switch role {
+        case .warmup:
+            return warmupExercises
+        case .cooldown:
+            return cooldownExercises
+        case .main:
+            return allExercises
+        }
+    }
+
+    func search(_ query: String, in role: ExerciseRole) -> [LibraryExercise] {
+        let candidates = exercises(for: role)
+        guard !query.isEmpty else { return candidates }
+        let q = query.lowercased()
+        return candidates.filter {
+            $0.name.lowercased().contains(q) ||
+            $0.primaryMuscle.lowercased().contains(q) ||
+            $0.aliases.contains(where: { $0.lowercased().contains(q) })
+        }
     }
 
     private func loadExercises() {

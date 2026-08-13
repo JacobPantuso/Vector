@@ -300,7 +300,7 @@ extension ActiveWorkoutView {
                 .foregroundStyle(isOvertime ? .green : .primary)
                 .contentTransition(.numericText())
                 .animation(.spring(duration: 0.3), value: remaining)
-            Text(running ? (isOvertime ? "Overtime" : "Remaining") : "Ready · \(exercise.durationSeconds)s")
+            Text(running ? (isOvertime ? "Overtime" : "Remaining") : "Ready · \(exercise.durationSeconds.durationLabel)")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(isOvertime ? .green : .secondary)
         }
@@ -323,7 +323,7 @@ extension ActiveWorkoutView {
             if let ex = session.currentExercise,
                ex.inputType == .reps,
                !session.appliedOverloadIDs.contains(ex.id),
-               let insight = ProgressionAdvisor.insight(for: ex),
+               let insight = ProgressionAdvisor.insight(for: ex, recoveryScore: healthService.recoveryScore?.score),
                insight.hasSuggestion {
                 WorkoutAdvisorCallout(insight: insight) {
                     if let w = insight.suggestedWeightKg {
@@ -552,7 +552,7 @@ extension ActiveWorkoutView {
             .padding(.horizontal, 20)
             .padding(.bottom, 25)
         }
-        .sheet(isPresented: $showingExercisePicker) {
+        .vectorSheet(isPresented: $showingExercisePicker) {
             ExercisePickerView { entries in
                 session.addExercises(entries)
                 showingExercisePicker = false
@@ -575,8 +575,10 @@ extension ActiveWorkoutView {
     }
 
     var restProgress: Double {
-        guard let exercise = session.currentExercise, exercise.restSeconds > 0 else { return 0 }
-        return Double(exercise.restSeconds - session.restSecondsRemaining) / Double(exercise.restSeconds)
+        guard let exercise = session.currentExercise else { return 0 }
+        let rest = exercise.rest(forSet: session.currentSetIndex)
+        guard rest > 0 else { return 0 }
+        return Double(rest - session.restSecondsRemaining) / Double(rest)
     }
 
     // MARK: - Completion View
@@ -662,9 +664,11 @@ extension ActiveWorkoutView {
                     Text(effortDescription)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .contentTransition(.opacity)
-                        .animation(.easeInOut(duration: 0.2), value: effortLabel)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity, minHeight: 34, alignment: .center)
+                        .id(effortDescription)
+                        .transition(.opacity)
+                        .animation(.easeInOut(duration: 0.25), value: effortDescription)
                 }
                 .padding(16)
                 .glassEffect(.regular.tint(effortColor.opacity(0.08)), in: .rect(cornerRadius: 20))
