@@ -106,6 +106,22 @@ struct SettingsView: View {
                             }
                         }
                     }
+
+                    NavigationLink {
+                        EquipmentPreferencesView()
+                    } label: {
+                        iconTile(icon: "dumbbell.fill", color: .cyan) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Gym & Equipment")
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                Text(EquipmentPreferencesStore.shared.preferences.summaryLine)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                        }
+                    }
                 }
 
                 // MARK: - Health Section
@@ -126,8 +142,8 @@ struct SettingsView: View {
                     }
                 }
 
-                // MARK: - Intelligence Section
-                Section("Intelligence") {
+                // MARK: - Personalization Section
+                Section("Personalization") {
                     NavigationLink {
                         AISettingsView()
                     } label: {
@@ -136,16 +152,28 @@ struct SettingsView: View {
                                 Text("Vector Intelligence")
                                     .font(.subheadline)
                                     .fontWeight(.semibold)
-                                Text("Apple Intelligence settings")
+                                Text("Advisor tone & Apple Intelligence")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
                         }
                     }
-                }
 
-                // MARK: - App Section
-                Section("App") {
+                    NavigationLink {
+                        CapabilitiesView()
+                    } label: {
+                        iconTile(icon: "checkmark.shield.fill", color: .cyan) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Capabilities")
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                Text("Permissions & device features")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+
                     NavigationLink {
                         AppSettingsView()
                     } label: {
@@ -154,7 +182,25 @@ struct SettingsView: View {
                                 Text("App Settings")
                                     .font(.subheadline)
                                     .fontWeight(.semibold)
-                                Text("Notifications & developer")
+                                Text("Onboarding, developer & about")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+
+                // MARK: - Automation Section
+                Section("Automation") {
+                    NavigationLink {
+                        MorningBriefingView()
+                    } label: {
+                        iconTile(icon: "sun.horizon.fill", color: .orange) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Morning Briefing")
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                Text("Daily summary notification")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -211,7 +257,7 @@ struct SettingsView: View {
                 }
             }
             .scrollEdgeEffectStyle(.soft, for: .all)
-            .gradientHeader(base: Color(.systemGray6))
+            .gradientHeader(base: Color(.systemGroupedBackground))
             .listStyle(.insetGrouped)
             .navigationTitle("Profile & Settings")
             .onAppear {
@@ -318,7 +364,17 @@ private struct PersonalDetailsView: View {
     @AppStorage(UserProfileStorage.lastName) private var lastName = ""
     @AppStorage(UserProfileStorage.weightKg) private var weightKg = 0.0
     @AppStorage(UserProfileStorage.heightCm) private var heightCm = 0.0
+    @AppStorage(UserProfileStorage.weightUnit) private var weightUnitRaw = WeightUnit.kilograms.rawValue
     @State private var profileSync = ProfileCloudSync()
+
+    private var weightUnit: WeightUnit { WeightUnit(rawValue: weightUnitRaw) ?? .kilograms }
+
+    private var displayedWeight: Binding<Double> {
+        Binding(
+            get: { (weightUnit.fromKilograms(weightKg) * 10).rounded() / 10 },
+            set: { weightKg = weightUnit.toKilograms($0) }
+        )
+    }
 
     var body: some View {
         List {
@@ -336,12 +392,12 @@ private struct PersonalDetailsView: View {
                     Text("Weight")
                     Spacer()
                     HStack(spacing: 4) {
-                        TextField("0", value: $weightKg, format: .number)
+                        TextField("0", value: displayedWeight, format: .number)
                             .multilineTextAlignment(.trailing)
                             .keyboardType(.decimalPad)
                             .frame(width: 60)
                             .onChange(of: weightKg) { profileSync.push(key: UserProfileStorage.weightKg, value: weightKg) }
-                        Text("kg")
+                        Text(weightUnit.rawValue)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -359,6 +415,13 @@ private struct PersonalDetailsView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+
+                Picker("Weight Unit", selection: $weightUnitRaw) {
+                    ForEach(WeightUnit.allCases, id: \.rawValue) { unit in
+                        Text(unit == .kilograms ? "Kilograms (kg)" : "Pounds (lbs)").tag(unit.rawValue)
+                    }
+                }
+                .onChange(of: weightUnitRaw) { profileSync.push(key: UserProfileStorage.weightUnit, value: weightUnitRaw) }
             }
         }
         .navigationTitle("Personal Details")
@@ -372,6 +435,8 @@ private struct TrainingGoalsView: View {
     @AppStorage(UserProfileStorage.ageRange) private var ageRangeRaw = UserProfile.defaultAgeRange.rawValue
     @AppStorage(UserProfileStorage.trainingDays) private var trainingDays = UserProfile.defaultTrainingDays
     @AppStorage(UserProfileStorage.sleepTargetHours) private var sleepTargetHours = UserProfile.defaultSleepTargetHours
+    @AppStorage(UserProfileStorage.warmupMinutes) private var warmupMinutes = UserProfile.defaultWarmupMinutes
+    @AppStorage(UserProfileStorage.cooldownMinutes) private var cooldownMinutes = UserProfile.defaultCooldownMinutes
     @State private var profileSync = ProfileCloudSync()
 
     private var profile: UserProfile {
@@ -386,54 +451,181 @@ private struct TrainingGoalsView: View {
         )
     }
 
+    private var goal: Binding<FitnessGoal> {
+        Binding(
+            get: { FitnessGoal(rawValue: goalRaw) ?? UserProfile.defaultGoal },
+            set: { goalRaw = $0.rawValue }
+        )
+    }
+
+    private var ageRange: Binding<AgeRange> {
+        Binding(
+            get: { AgeRange(rawValue: ageRangeRaw) ?? UserProfile.defaultAgeRange },
+            set: { ageRangeRaw = $0.rawValue }
+        )
+    }
+
     var body: some View {
-        List {
-            Section("Fitness Goals") {
-                Picker("Goal", selection: $goalRaw) {
-                    ForEach(FitnessGoal.allCases, id: \.rawValue) { goal in
-                        Text(goal.rawValue).tag(goal.rawValue)
-                    }
-                }
-                .onChange(of: goalRaw) { profileSync.push(key: UserProfileStorage.goal, value: goalRaw) }
-
-                if let goal = FitnessGoal(rawValue: goalRaw) {
-                    Text(goal.subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 28) {
+                goalSection
+                ageSection
+                trainingSection
+                estimateCard
             }
-
-            Section("Age Range") {
-                Picker("Age Range", selection: $ageRangeRaw) {
-                    ForEach(AgeRange.allCases, id: \.rawValue) { ageRange in
-                        Text(ageRange.rawValue).tag(ageRange.rawValue)
-                    }
-                }
-                .onChange(of: ageRangeRaw) { profileSync.push(key: UserProfileStorage.ageRange, value: ageRangeRaw) }
-
-                if let ageRange = AgeRange(rawValue: ageRangeRaw) {
-                    Text(ageRange.subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Section("Training") {
-                Stepper("Training Days: \(trainingDays)/week", value: $trainingDays, in: 1...7)
-                    .onChange(of: trainingDays) { profileSync.push(key: UserProfileStorage.trainingDays, value: trainingDays) }
-
-                Stepper(String(format: "Sleep Target: %.1f h", sleepTargetHours), value: $sleepTargetHours, in: 4...12, step: 0.5)
-                    .onChange(of: sleepTargetHours) { profileSync.push(key: UserProfileStorage.sleepTargetHours, value: sleepTargetHours) }
-
-                HStack {
-                    Text("Estimated Calories")
-                    Spacer()
-                    Text("\(profile.calorieTargetEstimate) kcal")
-                        .foregroundStyle(.secondary)
-                }
-            }
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
+            .padding(.bottom, 40)
         }
         .navigationTitle("Training & Goals")
+        .gradientHeader()
+    }
+
+    // MARK: Sections
+
+    private var goalSection: some View {
+        section("Primary Goal", subtitle: goal.wrappedValue.subtitle) {
+            OptionCardPicker(
+                options: FitnessGoal.allCases,
+                columns: 2,
+                title: { $0.rawValue },
+                subtitle: { $0.subtitle },
+                icon: { $0.icon },
+                tint: { $0.tint },
+                selection: goal
+            )
+            .onChange(of: goalRaw) { profileSync.push(key: UserProfileStorage.goal, value: goalRaw) }
+        }
+    }
+
+    private var ageSection: some View {
+        section("Age Range", subtitle: ageRange.wrappedValue.subtitle) {
+            ChipPicker(
+                options: AgeRange.allCases,
+                title: { $0.rawValue },
+                tint: .purple,
+                selection: ageRange
+            )
+            .onChange(of: ageRangeRaw) { profileSync.push(key: UserProfileStorage.ageRange, value: ageRangeRaw) }
+        }
+    }
+
+    private var trainingSection: some View {
+        section(
+            "Training",
+            subtitle: "Warm-up and cool-down guide the preparation and recovery screens around your workouts. Set either to 0 to skip that screen."
+        ) {
+            VStack(spacing: 22) {
+                TickSlider(
+                    title: "Training Days",
+                    systemImage: "calendar",
+                    tint: .cyan,
+                    value: $trainingDays,
+                    in: 1...7,
+                    valueText: { "\($0)/week" }
+                )
+                .onChange(of: trainingDays) { profileSync.push(key: UserProfileStorage.trainingDays, value: trainingDays) }
+
+                TickSlider(
+                    title: "Sleep Target",
+                    systemImage: "moon.zzz.fill",
+                    tint: .blue,
+                    value: $sleepTargetHours,
+                    in: 4...12,
+                    step: 0.5,
+                    labelStride: 2,
+                    valueText: { String(format: "%.1f h", $0) },
+                    tickText: { "\(Int($0))" }
+                )
+                .onChange(of: sleepTargetHours) { profileSync.push(key: UserProfileStorage.sleepTargetHours, value: sleepTargetHours) }
+
+                TickSlider(
+                    title: "Warm-Up",
+                    systemImage: "figure.cooldown",
+                    tint: .orange,
+                    value: $warmupMinutes,
+                    in: 0...15,
+                    labelStride: 5,
+                    valueText: { durationLabel(minutes: $0) }
+                )
+                .onChange(of: warmupMinutes) { profileSync.push(key: UserProfileStorage.warmupMinutes, value: warmupMinutes) }
+
+                TickSlider(
+                    title: "Cool-Down",
+                    systemImage: "wind",
+                    tint: .green,
+                    value: $cooldownMinutes,
+                    in: 0...15,
+                    labelStride: 5,
+                    valueText: { durationLabel(minutes: $0) }
+                )
+                .onChange(of: cooldownMinutes) { profileSync.push(key: UserProfileStorage.cooldownMinutes, value: cooldownMinutes) }
+            }
+            .padding(16)
+            .glassEffect(.regular, in: .rect(cornerRadius: 20))
+        }
+    }
+
+    private var estimateCard: some View {
+        HStack(spacing: 14) {
+            Image(systemName: "flame.fill")
+                .font(.title3)
+                .foregroundStyle(.orange)
+                .frame(width: 42, height: 42)
+                .background(Color.orange.opacity(0.16), in: .circle)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Estimated Calories")
+                    .font(.subheadline.weight(.semibold))
+                Text("Based on your goal and age range")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 8)
+
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text("\(profile.calorieTargetEstimate)")
+                    .font(.title2.weight(.bold).monospacedDigit())
+                    .foregroundStyle(VectorTheme.brandForeground)
+                    .contentTransition(.numericText(value: Double(profile.calorieTargetEstimate)))
+                    .animation(.snappy(duration: 0.25), value: profile.calorieTargetEstimate)
+
+                Text("kcal")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(16)
+        .glassEffect(.regular, in: .rect(cornerRadius: 20))
+    }
+
+    // MARK: Helpers
+
+    @ViewBuilder
+    private func section(
+        _ title: String,
+        subtitle: String?,
+        @ViewBuilder content: () -> some View
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title)
+                .font(.headline)
+
+            content()
+
+            if let subtitle {
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .animation(.snappy(duration: 0.2), value: subtitle)
+            }
+        }
+    }
+
+    private func durationLabel(minutes: Int) -> String {
+        minutes == 0 ? "Off" : "\(minutes) min"
     }
 }
 
@@ -624,48 +816,15 @@ private struct AISettingsView: View {
 
 private struct AppSettingsView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage("hasCompletedEquipmentSetup") private var hasCompletedEquipmentSetup = false
     @AppStorage("devModeEnabled") private var devModeEnabled = false
-    @AppStorage(NotificationSettings.enabledKey) private var notificationsEnabled = false
-    @State private var notifyTime = Date()
-    @State private var insightEngine = InsightEngine()
-    @Environment(WatchSyncService.self) private var watchSync
-    @State private var notifAuthorized = false
 
     var body: some View {
         List {
-            Section("Notifications") {
-                Toggle(isOn: $notificationsEnabled) {
-                    Label("Morning Briefing", systemImage: "bell.fill")
-                }
-                .onChange(of: notificationsEnabled) { _, on in
-                    if on {
-                        Task {
-                            _ = await NotificationService.shared.requestAuthorization()
-                        }
-                    }
-                }
-
-                if notificationsEnabled {
-                    DatePicker("Briefing time", selection: $notifyTime, displayedComponents: .hourAndMinute)
-                        .onChange(of: notifyTime) {
-                            let comps = Calendar.current.dateComponents([.hour, .minute], from: notifyTime)
-                            if let h = comps.hour {
-                                UserDefaults.standard.set(h, forKey: NotificationSettings.hourKey)
-                            }
-                            if let m = comps.minute {
-                                UserDefaults.standard.set(m, forKey: NotificationSettings.minuteKey)
-                            }
-                        }
-
-                    Text("Fires near your wake time and is skipped on days when nothing meaningful changed.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
             Section("Onboarding") {
                 Button {
                     hasCompletedOnboarding = false
+                    hasCompletedEquipmentSetup = false
                 } label: {
                     Label("Replay Onboarding", systemImage: "arrow.counterclockwise")
                 }
@@ -682,13 +841,6 @@ private struct AppSettingsView: View {
                 }
             }
 
-            Section("Device Capabilities") {
-                capabilityRow("Apple Intelligence", insightEngine.isOnDeviceAvailable)
-                capabilityRow("Apple Health", HKHealthStore.isHealthDataAvailable())
-                capabilityRow("Notifications", notifAuthorized)
-                capabilityRow("Apple Watch", watchSync.isPaired)
-            }
-
             Section("About") {
                 HStack {
                     Text("Version")
@@ -702,6 +854,132 @@ private struct AppSettingsView: View {
             }
         }
         .navigationTitle("App Settings")
+    }
+}
+
+// MARK: - Morning Briefing View
+
+private struct MorningBriefingView: View {
+    @AppStorage(NotificationSettings.enabledKey) private var notificationsEnabled = false
+    @State private var notifyTime = Date()
+
+    var body: some View {
+        List {
+            Section {
+                VStack(spacing: 12) {
+                    Image(systemName: "sun.horizon.fill")
+                        .font(.system(size: 64, weight: .thin))
+                        .foregroundStyle(LinearGradient(colors: [.orange, .yellow], startPoint: .top, endPoint: .bottom))
+                        .padding(.vertical, 8)
+                    Text("Morning Briefing")
+                        .font(.title2.bold())
+                    Text("Start your day with a summary of your recovery, sleep, and readiness — delivered right when you wake up.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .listRowBackground(Color.clear)
+            }
+
+            Section("Schedule") {
+                Toggle(isOn: $notificationsEnabled) {
+                    Label("Enabled", systemImage: "bell.fill")
+                }
+                .onChange(of: notificationsEnabled) { _, on in
+                    if on {
+                        Task {
+                            _ = await NotificationService.shared.requestAuthorization()
+                        }
+                    }
+                }
+
+                if notificationsEnabled {
+                    DatePicker("Delivery time", selection: $notifyTime, displayedComponents: .hourAndMinute)
+                        .onChange(of: notifyTime) {
+                            let comps = Calendar.current.dateComponents([.hour, .minute], from: notifyTime)
+                            if let h = comps.hour {
+                                UserDefaults.standard.set(h, forKey: NotificationSettings.hourKey)
+                            }
+                            if let m = comps.minute {
+                                UserDefaults.standard.set(m, forKey: NotificationSettings.minuteKey)
+                            }
+                        }
+                }
+            }
+
+            Section("How it works") {
+                HStack(alignment: .top, spacing: 12) {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.indigo.opacity(0.15))
+                        .frame(width: 40, height: 40)
+                        .overlay {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundStyle(.indigo)
+                        }
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Personalized")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                        Text("Built from your overnight recovery, sleep quality, and training load.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+                }
+                .padding(.vertical, 4)
+
+                HStack(alignment: .top, spacing: 12) {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.purple.opacity(0.15))
+                        .frame(width: 40, height: 40)
+                        .overlay {
+                            Image(systemName: "moon.zzz.fill")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundStyle(.purple)
+                        }
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Wake-aware")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                        Text("Fires near your usual wake time so it's ready when you are.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+                }
+                .padding(.vertical, 4)
+
+                HStack(alignment: .top, spacing: 12) {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.teal.opacity(0.15))
+                        .frame(width: 40, height: 40)
+                        .overlay {
+                            Image(systemName: "line.3.horizontal.decrease.circle")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundStyle(.teal)
+                        }
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("No noise")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                        Text("Skipped on days when nothing meaningful changed.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+                }
+                .padding(.vertical, 4)
+            }
+        }
         .onAppear {
             let h = UserDefaults.standard.object(forKey: NotificationSettings.hourKey) as? Int ?? NotificationSettings.defaultHour
             let m = UserDefaults.standard.object(forKey: NotificationSettings.minuteKey) as? Int ?? NotificationSettings.defaultMinute
@@ -710,18 +988,162 @@ private struct AppSettingsView: View {
             comps.minute = m
             notifyTime = Calendar.current.date(from: comps) ?? Date()
         }
+    }
+}
+
+// MARK: - Capabilities View
+
+private struct CapabilitiesView: View {
+    @Environment(HealthKitService.self) var healthService
+    @Environment(WatchSyncService.self) var watchSync
+    @State private var insightEngine = InsightEngine()
+    @State private var notifAuthorized = false
+    @State private var isRequestingHealth = false
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        List {
+            Section {
+                VStack(spacing: 12) {
+                    Image(systemName: "checkmark.shield.fill")
+                        .font(.system(size: 64, weight: .thin))
+                        .foregroundStyle(LinearGradient(colors: [.cyan, .indigo], startPoint: .top, endPoint: .bottom))
+                        .padding(.vertical, 8)
+                    Text("Capabilities")
+                        .font(.title2.bold())
+                    Text("Grant Vector access to the features that power your scores and coaching.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .listRowBackground(Color.clear)
+            }
+
+            Section("Health") {
+                if isRequestingHealth {
+                    HStack(spacing: 14) {
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color.red.opacity(0.15))
+                            .frame(width: 40, height: 40)
+                            .overlay {
+                                Image(systemName: "heart.fill")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundStyle(.red)
+                            }
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Apple Health")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                            Text("Powers recovery, sleep, exertion, and stress scores.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        Spacer()
+                        ProgressView()
+                    }
+                    .padding(.vertical, 4)
+                } else {
+                    capabilityCard(icon: "heart.fill", tint: .red, title: "Apple Health", subtitle: "Powers recovery, sleep, exertion, and stress scores.", granted: healthService.isAuthorized, actionTitle: "Grant") {
+                        isRequestingHealth = true
+                        Task {
+                            await healthService.requestAuthorization()
+                            await healthService.refreshToday()
+                            isRequestingHealth = false
+                        }
+                    }
+                }
+            }
+
+            Section("Notifications") {
+                capabilityCard(icon: "bell.badge.fill", tint: .orange, title: "Notifications", subtitle: "Morning briefings and coaching nudges.", granted: notifAuthorized, actionTitle: "Grant") {
+                    Task {
+                        let ok = await NotificationService.shared.requestAuthorization()
+                        notifAuthorized = ok
+                    }
+                }
+
+                if !notifAuthorized {
+                    HStack(spacing: 8) {
+                        Text("If previously declined, enable notifications in the Settings app.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Open Settings") {
+                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                                openURL(url)
+                            }
+                        }
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.blue)
+                    }
+                }
+            }
+
+            Section("Intelligence") {
+                capabilityCard(icon: "sparkles", tint: .indigo, title: "Apple Intelligence", subtitle: "On-device AI for insights and workout planning.", granted: insightEngine.isOnDeviceAvailable, actionTitle: nil, action: nil)
+            }
+
+            Section("Apple Watch") {
+                capabilityCard(icon: "applewatch", tint: .cyan, title: "Apple Watch", subtitle: "Live workout tracking and scores on your wrist.", granted: watchSync.isPaired, actionTitle: nil, action: nil)
+            }
+        }
         .task {
+            healthService.refreshAuthorizationStatus()
             notifAuthorized = await NotificationService.shared.authorizationStatus() == .authorized
         }
     }
 
-    private func capabilityRow(_ label: String, _ available: Bool) -> some View {
-        HStack {
-            Text(label)
+    private func capabilityCard(icon: String, tint: Color, title: String, subtitle: String, granted: Bool, actionTitle: String?, action: (() -> Void)?) -> some View {
+        HStack(spacing: 14) {
+            RoundedRectangle(cornerRadius: 10)
+                .fill(tint.opacity(0.15))
+                .frame(width: 40, height: 40)
+                .overlay {
+                    Image(systemName: icon)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(tint)
+                }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             Spacer()
-            Image(systemName: available ? "checkmark.circle.fill" : "xmark.circle")
-                .foregroundStyle(available ? .green : .secondary)
+
+            if granted {
+                HStack(spacing: 4) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                    Text("On")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.green)
+                }
+            } else if let actionTitle = actionTitle, let action = action {
+                Button(actionTitle, action: action)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(tint, in: Capsule())
+                    .buttonStyle(.plain)
+            } else {
+                Text("Unavailable")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
+        .padding(.vertical, 4)
     }
 }
 
