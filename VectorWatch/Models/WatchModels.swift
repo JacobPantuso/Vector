@@ -289,9 +289,14 @@ struct WatchWorkoutState: Codable {
 	var currentWeight: Double = 0
 	var currentReps: Int = 0
 	var isPaused: Bool = false
+	var phase: String = "main"
+	var phaseSecondsRemaining: Int = 0
 
 	var isResting: Bool { status == "resting" }
 	var isFinished: Bool { status == "finished" }
+	var isWarmup: Bool { phase == "warmup" }
+	var isCooldown: Bool { phase == "cooldown" }
+	var isInPhase: Bool { isWarmup || isCooldown }
 
 	var formattedElapsed: String {
 		let m = elapsedSeconds / 60
@@ -319,6 +324,8 @@ struct WatchWorkoutState: Codable {
 		currentWeight = try container.decodeIfPresent(Double.self, forKey: .currentWeight) ?? 0
 		currentReps = try container.decodeIfPresent(Int.self, forKey: .currentReps) ?? 0
 		isPaused = try container.decodeIfPresent(Bool.self, forKey: .isPaused) ?? false
+		phase = try container.decodeIfPresent(String.self, forKey: .phase) ?? "main"
+		phaseSecondsRemaining = try container.decodeIfPresent(Int.self, forKey: .phaseSecondsRemaining) ?? 0
 	}
 
 	enum CodingKeys: String, CodingKey {
@@ -335,6 +342,8 @@ struct WatchWorkoutState: Codable {
 		case currentWeight
 		case currentReps
 		case isPaused
+		case phase
+		case phaseSecondsRemaining
 	}
 
 	func encode(to encoder: Encoder) throws {
@@ -352,6 +361,8 @@ struct WatchWorkoutState: Codable {
 		try container.encode(currentWeight, forKey: .currentWeight)
 		try container.encode(currentReps, forKey: .currentReps)
 		try container.encode(isPaused, forKey: .isPaused)
+		try container.encode(phase, forKey: .phase)
+		try container.encode(phaseSecondsRemaining, forKey: .phaseSecondsRemaining)
 	}
 
 	init(
@@ -367,7 +378,9 @@ struct WatchWorkoutState: Codable {
 		exercises: [WorkoutExerciseLite] = [],
 		currentWeight: Double = 0,
 		currentReps: Int = 0,
-		isPaused: Bool = false
+		isPaused: Bool = false,
+		phase: String = "main",
+		phaseSecondsRemaining: Int = 0
 	) {
 		self.status = status
 		self.title = title
@@ -382,5 +395,7 @@ struct WatchWorkoutState: Codable {
 		self.currentWeight = currentWeight
 		self.currentReps = currentReps
 		self.isPaused = isPaused
+		self.phase = phase
+		self.phaseSecondsRemaining = phaseSecondsRemaining
 	}
 }
