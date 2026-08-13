@@ -21,124 +21,132 @@ struct VectorApp: App {
 
     var body: some Scene {
         WindowGroup {
-            Group {
-                if !hasCompletedOnboarding {
-                    OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding, hasCompletedEquipmentSetup: $hasCompletedEquipmentSetup)
-                } else {
-                    TabView(selection: $selectedTab) {
-                        Tab("Home", systemImage: "house.fill", value: 0) {
-                            HomeView()
-                                .tint(nil)
-                                .tabCrossFade(gradientHeight: 460)
-                        }
-
-                        Tab("Train", systemImage: "dumbbell.fill", value: 1) {
-                            TrainView(activeSession: $activeSession, showingWorkout: $showingWorkout)
-                                .tint(nil)
-                                .tabCrossFade()
-                        }
-
-                        if FeatureFlags.nutritionEnabled {
-                            Tab("Nutrition", systemImage: "fork.knife", value: 2) {
-                                NutritionView()
-                                    .tint(nil)
-                                    .tabCrossFade()
-                            }
-                        }
-
-                        Tab("Profile", systemImage: "person.crop.circle", value: 3) {
-                            SettingsView()
-                                .tint(nil)
-                                .tabCrossFade(base: Color(.systemGroupedBackground))
-                        }
-
+            rootContent
+                .sheetBackdropScaling()
+                .environment(healthKitService)
+                .environment(watchSync)
+                .environment(FoodLogService.shared)
+                .environment(advisorPresenter)
+                .environment(appModeStore)
+                .task {
+                    #if DEBUG && targetEnvironment(simulator)
+                    if activeSession == nil {
+                        hasCompletedOnboarding = true
+                        hasCompletedEquipmentSetup = true
+                        healthKitService.applyMockData()
+                        activeSession = VectorApp.makeMockSession()
+                    }
+                    #endif
+                    healthKitService.refreshAuthorizationStatus()
+                    VectorAdvisor.shared.prewarm(healthService: healthKitService)
+                    try? Tips.configure([.displayFrequency(.immediate), .datastoreLocation(.applicationDefault)])
+                    profileSync.pullFromCloud()
+                    profileSync.pushAllLocalToCloud()
+                    VectorShortcuts.updateAppShortcutParameters()
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .watchRequestedSync)) { _ in
+                    syncToWatch()
+                }
+                .onChange(of: advisorPresenter.isPresented) {
+                    if advisorPresenter.isPresented {
                         if isAdvisorSupported {
-                            if #available(iOS 27.0, *) {
-                                Tab("Vector", image: "VectorMark", value: 4, role: .prominent) {
-                                    AdvisorView()
-                                        .tint(nil)
-                                        .tabCrossFade(gradientHeight: 0)
-                                }
-                            } else {
-                                Tab("Vector", image: "VectorMark", value: 4, role: .search) {
-                                    AdvisorView()
-                                        .tint(nil)
-                                        .tabCrossFade(gradientHeight: 0)
-                                }
-                            }
+                            selectedTab = 4
                         }
+                        advisorPresenter.isPresented = false
                     }
-                    .tint(.purple)
-                    .miniWorkoutBar(session: activeSession) {
-                        showingWorkout = true
-                    } onEnd: {
-                        endActiveWorkoutTeardown()
-                        activeSession = nil
+                }
+                .onChange(of: advisorPresenter.wantsProfileTab) {
+                    if advisorPresenter.wantsProfileTab {
+                        selectedTab = 3
+                        advisorPresenter.wantsProfileTab = false
                     }
-                    .vectorSheet(isPresented: $showingWorkout) {
-                        if let session = activeSession {
-                            ActiveWorkoutView(session: session) {
-                                endActiveWorkoutTeardown()
-                                activeSession = nil
-                                showingWorkout = false
-                            }
-                            .presentationDetents([.large])
-                            .presentationDragIndicator(.hidden)
-                            .presentationCornerRadius(32)
-                        }
+                }
+                .onChange(of: healthKitService.recoveryScore) { syncToWatch() }
+                .onChange(of: healthKitService.exertionScore) { syncToWatch() }
+                .onChange(of: healthKitService.sleepAnalysis) { syncToWatch() }
+                .onChange(of: healthKitService.stressScore) { syncToWatch() }
+                .onChange(of: scenePhase) { _, newPhase in
+                    guard newPhase == .active else { return }
+                    Task { await healthKitService.refreshIfStale() }
+                }
+        }
+    }
+
+    @ViewBuilder
+    private var rootContent: some View {
+        if !hasCompletedOnboarding {
+            OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding, hasCompletedEquipmentSetup: $hasCompletedEquipmentSetup)
+        } else {
+            mainTabView
+        }
+    }
+
+    @ViewBuilder
+    private var mainTabView: some View {
+        TabView(selection: $selectedTab) {
+            Tab("Home", systemImage: "house.fill", value: 0) {
+                HomeView()
+                    .tint(nil)
+                    .tabCrossFade(gradientHeight: 460)
+            }
+
+            Tab("Train", systemImage: "dumbbell.fill", value: 1) {
+                TrainView(activeSession: $activeSession, showingWorkout: $showingWorkout)
+                    .tint(nil)
+                    .tabCrossFade()
+            }
+
+            if FeatureFlags.nutritionEnabled {
+                Tab("Nutrition", systemImage: "fork.knife", value: 2) {
+                    NutritionView()
+                        .tint(nil)
+                        .tabCrossFade()
+                }
+            }
+
+            Tab("Profile", systemImage: "person.crop.circle", value: 3) {
+                SettingsView()
+                    .tint(nil)
+                    .tabCrossFade(base: Color(.systemGroupedBackground))
+            }
+
+            if isAdvisorSupported {
+                if #available(iOS 27.0, *) {
+                    Tab("Vector", image: "VectorMark", value: 4, role: .prominent) {
+                        AdvisorView()
+                            .tint(nil)
+                            .tabCrossFade(gradientHeight: 0)
                     }
-                    .vectorSheet(isPresented: showingEquipmentSetup) {
-                        EquipmentSetupSheet(hasCompletedEquipmentSetup: $hasCompletedEquipmentSetup)
+                } else {
+                    Tab("Vector", image: "VectorMark", value: 4, role: .search) {
+                        AdvisorView()
+                            .tint(nil)
+                            .tabCrossFade(gradientHeight: 0)
                     }
                 }
             }
-            .sheetBackdropScaling()
-            .environment(healthKitService)
-            .environment(watchSync)
-            .environment(FoodLogService.shared)
-            .environment(advisorPresenter)
-            .environment(appModeStore)
-            .task {
-                #if DEBUG && targetEnvironment(simulator)
-                if activeSession == nil {
-                    hasCompletedOnboarding = true
-                    hasCompletedEquipmentSetup = true
-                    healthKitService.applyMockData()
-                    activeSession = VectorApp.makeMockSession()
+        }
+        .tint(.purple)
+        .miniWorkoutBar(session: activeSession) {
+            showingWorkout = true
+        } onEnd: {
+            endActiveWorkoutTeardown()
+            activeSession = nil
+        }
+        .vectorSheet(isPresented: $showingWorkout) {
+            if let session = activeSession {
+                ActiveWorkoutView(session: session) {
+                    endActiveWorkoutTeardown()
+                    activeSession = nil
+                    showingWorkout = false
                 }
-                #endif
-                healthKitService.refreshAuthorizationStatus()
-                VectorAdvisor.shared.prewarm(healthService: healthKitService)
-                try? Tips.configure([.displayFrequency(.immediate), .datastoreLocation(.applicationDefault)])
-                profileSync.pullFromCloud()
-                profileSync.pushAllLocalToCloud()
-                VectorShortcuts.updateAppShortcutParameters()
+                .presentationDetents([.large])
+                .presentationDragIndicator(.hidden)
+                .presentationCornerRadius(32)
             }
-            .onReceive(NotificationCenter.default.publisher(for: .watchRequestedSync)) { _ in
-                syncToWatch()
-            }
-            .onChange(of: advisorPresenter.isPresented) {
-                if advisorPresenter.isPresented {
-                    if isAdvisorSupported {
-                        selectedTab = 4
-                    }
-                    advisorPresenter.isPresented = false
-                }
-            }
-            .onChange(of: advisorPresenter.wantsProfileTab) {
-                if advisorPresenter.wantsProfileTab {
-                    selectedTab = 3
-                    advisorPresenter.wantsProfileTab = false
-                }
-            }
-            .onChange(of: healthKitService.recoveryScore) { syncToWatch() }
-            .onChange(of: healthKitService.exertionScore) { syncToWatch() }
-            .onChange(of: healthKitService.sleepAnalysis) { syncToWatch() }
-            .onChange(of: healthKitService.stressScore) { syncToWatch() }
-            .onChange(of: scenePhase) { _, newPhase in
-                guard newPhase == .active else { return }
-                Task { await healthKitService.refreshIfStale() }
-            }
+        }
+        .vectorSheet(isPresented: showingEquipmentSetup) {
+            EquipmentSetupSheet(hasCompletedEquipmentSetup: $hasCompletedEquipmentSetup)
         }
     }
 
