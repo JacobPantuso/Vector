@@ -165,8 +165,10 @@ struct HomeView: View {
         )
     }
 
+    /// Only show the skeleton when there is nothing to show yet. A background
+    /// regeneration must never replace text that is already on screen.
     private var isOverviewLoading: Bool {
-        service.isGeneratingOverview
+        service.isGeneratingOverview && service.generatedOverview == nil
     }
 
     private var headerStatusControls: some View {
@@ -230,7 +232,7 @@ struct HomeView: View {
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
 
-            if !service.isGeneratingOverview {
+            if !isOverviewLoading {
                 HStack(spacing: 6) {
                     Group {
                         sourceChip(icon: "moon.fill", label: "Sleep", color: .blue)
@@ -252,7 +254,7 @@ struct HomeView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .animation(.smooth(duration: 0.35), value: isOverviewLoading)
-        .animation(.spring(duration: 0.3), value: service.isGeneratingOverview)
+        .animation(.spring(duration: 0.3), value: isOverviewLoading)
         .askVector(AdvisorTopic(
             title: "Today's Overview",
             icon: "sparkles",
@@ -342,8 +344,12 @@ struct HomeView: View {
     }
 
     private func generateOverview(force: Bool = false) async {
+        guard !service.isGeneratingOverview else { return }
         guard force || service.generatedOverview == nil else { return }
-        guard force || !service.isGeneratingOverview else { return }
+        // A tab return re-runs this view's `.task`; without this an attempt that
+        // bailed early (no data, model unavailable, error) would re-fire the
+        // skeleton every time Home reappears.
+        guard force || !service.hasAttemptedOverviewToday else { return }
         guard SystemLanguageModel.default.availability == .available else { return }
         guard recovery.score > 0 || sleep.totalDuration > 0 || exertion.todayStrain > 0 else { return }
 
@@ -392,6 +398,7 @@ struct HomeView: View {
         // .task) doesn't cancel an in-flight generation and force a restart.
         let generation = Task {
             service.isGeneratingOverview = true
+            service.markOverviewAttempted()
             defer { service.isGeneratingOverview = false }
             do {
                 let nutritionNote = FeatureFlags.nutritionEnabled

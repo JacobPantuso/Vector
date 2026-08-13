@@ -26,6 +26,11 @@ class HealthKitService {
     var isSyncing: Bool = false
     var generatedOverview: GeneratedOverview?
     var isGeneratingOverview: Bool = false
+    /// Day we last attempted an AI overview generation. Tab returns re-run the
+    /// dashboard's `.task`, so this keeps a failed or skipped attempt from
+    /// re-triggering the skeleton every time Home reappears. Pull-to-refresh
+    /// forces a regeneration regardless.
+    var lastOverviewAttemptDay: Date?
     var latestVO2Max: Double?
     var latestWristTempDeviation: Double?  // overnight wrist-temp deviation from baseline (°C)
     var latestSpO2: Double?                // overnight average blood oxygen %
@@ -713,6 +718,16 @@ class HealthKitService {
     }
 
     // MARK: - Persistence
+
+    /// True when an overview generation was already attempted today.
+    var hasAttemptedOverviewToday: Bool {
+        guard let day = lastOverviewAttemptDay else { return false }
+        return Calendar.current.isDateInToday(day)
+    }
+
+    func markOverviewAttempted() {
+        lastOverviewAttemptDay = Date()
+    }
 
     /// Persists the current dashboard state to disk so the home cards can render real values
     /// on a cold launch instead of placeholders. Called both after `refreshToday()` completes
