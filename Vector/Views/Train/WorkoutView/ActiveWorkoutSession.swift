@@ -1,6 +1,12 @@
 import SwiftUI
 import HealthKit
 
+enum WorkoutPhase {
+    case warmup
+    case main
+    case cooldown
+}
+
 @Observable final class ActiveWorkoutSession: Identifiable {
     let id = UUID()
     var workout: SavedWorkout
@@ -11,6 +17,14 @@ import HealthKit
     var exerciseSecondsRemaining: Int = 0
     var isExerciseTimerRunning: Bool = false
     let startedAt: Date = Date()
+
+    // Phase tracking
+    var phase: WorkoutPhase = .main
+    var phaseSecondsRemaining: Int = 0
+    var phaseTotalSeconds: Int = 0
+    var isPhaseTimerRunning: Bool = false
+    var hasRunCooldown: Bool = false
+    var hasInitializedPhase: Bool = false
 
     // PART A: Progression tracking (per-set)
     var completedSetIndices: [UUID: Set<Int>] = [:]
@@ -115,6 +129,10 @@ import HealthKit
     func completedCount(for ex: ManualExerciseEntry) -> Int { completedSetIndices[ex.id]?.count ?? 0 }
     func isExerciseComplete(_ ex: ManualExerciseEntry) -> Bool { completedCount(for: ex) >= ex.sets }
     var allExercisesComplete: Bool { workout.exercises.allSatisfy { isExerciseComplete($0) } }
+    var allMainExercisesComplete: Bool {
+        let mainExercises = workout.mainExercises
+        return mainExercises.isEmpty || mainExercises.allSatisfy { isExerciseComplete($0) }
+    }
 
     // PART B: Exercise mutation helpers
     private func updateExercise(_ id: UUID, _ mutate: (inout ManualExerciseEntry) -> Void) {
@@ -376,6 +394,45 @@ import HealthKit
 
         // No incomplete exercise found — mark as finished
         currentExerciseIndex = workout.exercises.count
+    }
+
+    func markRoleComplete(_ role: ExerciseRole) {
+        for entry in workout.exercises where entry.resolvedRole == role {
+            completedSetIndices[entry.id] = Set(0..<max(entry.sets, 1))
+        }
+    }
+
+    /// Total seconds for a warm-up/cool-down phase: the sum of its exercises' durations,
+    /// falling back to the user's fixed phase length when no durations are available.
+    func phaseDurationSeconds(for role: ExerciseRole, fallbackMinutes: Int) -> Int {
+        let sum = phaseExercises(for: role).reduce(0) { $0 + $1.durationSeconds }
+        return sum > 0 ? sum : fallbackMinutes * 60
+    }
+
+    func phaseExercises(for role: ExerciseRole) -> [ManualExerciseEntry] {
+        let entries = workout.exercises.filter { $0.resolvedRole == role }
+        if !entries.isEmpty { return entries }
+
+        let library = ExerciseLibrary.shared
+        let libraryExercises = role == .warmup ? library.warmupExercises : library.cooldownExercises
+        let selected = Array(libraryExercises.prefix(3))
+
+        return selected.map { lib in
+            ManualExerciseEntry(
+                id: UUID(),
+                supersetID: nil,
+                libraryExerciseId: lib.id,
+                role: role,
+                name: lib.name,
+                sets: 1,
+                reps: 0,
+                durationSeconds: 60,
+                inputType: .duration,
+                weightKg: nil,
+                restSeconds: 0,
+                notes: ""
+            )
+        }
     }
 }
 

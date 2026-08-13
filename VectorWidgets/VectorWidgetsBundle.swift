@@ -5,5 +5,11 @@ import SwiftUI
 struct VectorWidgetsBundle: WidgetBundle {
     var body: some Widget {
         WorkoutLiveActivity()
+        VectorRingsWidget()
+        VectorMetricWidget()
+        VectorLockCircularWidget()
+        VectorLockRingsWidget()
+        VectorLockRectangularWidget()
+        VectorLockInlineWidget()
     }
 }

@@ -10,40 +10,62 @@ struct VectorApp: App {
     @State private var profileSync = ProfileCloudSync()
     @State private var watchSync = WatchSyncService.shared
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage("hasCompletedEquipmentSetup") private var hasCompletedEquipmentSetup = false
     @State private var activeSession: ActiveWorkoutSession?
     @State private var showingWorkout = false
     @State private var selectedTab = 0
     @State private var advisorPresenter = AdvisorPresenter()
-    @State private var advisorDetent: PresentationDetent = .medium
     @State private var appModeStore = AppModeStore.shared
+    @State private var isAdvisorSupported = VectorAdvisor.isSupported
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
             Group {
                 if !hasCompletedOnboarding {
-                    OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
+                    OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding, hasCompletedEquipmentSetup: $hasCompletedEquipmentSetup)
                 } else {
                     TabView(selection: $selectedTab) {
                         Tab("Home", systemImage: "house.fill", value: 0) {
                             HomeView()
                                 .tint(nil)
+                                .tabCrossFade(gradientHeight: 460)
                         }
 
                         Tab("Train", systemImage: "dumbbell.fill", value: 1) {
                             TrainView(activeSession: $activeSession, showingWorkout: $showingWorkout)
                                 .tint(nil)
+                                .tabCrossFade()
                         }
 
                         if FeatureFlags.nutritionEnabled {
                             Tab("Nutrition", systemImage: "fork.knife", value: 2) {
                                 NutritionView()
                                     .tint(nil)
+                                    .tabCrossFade()
                             }
                         }
 
                         Tab("Profile", systemImage: "person.crop.circle", value: 3) {
                             SettingsView()
                                 .tint(nil)
+                                .tabCrossFade(base: Color(.systemGroupedBackground))
+                        }
+
+                        if isAdvisorSupported {
+                            if #available(iOS 27.0, *) {
+                                Tab("Vector", image: "VectorMark", value: 4, role: .prominent) {
+                                    AdvisorView()
+                                        .tint(nil)
+                                        .tabCrossFade(gradientHeight: 0)
+                                }
+                            } else {
+                                Tab("Vector", image: "VectorMark", value: 4, role: .search) {
+                                    AdvisorView()
+                                        .tint(nil)
+                                        .tabCrossFade(gradientHeight: 0)
+                                }
+                            }
                         }
                     }
                     .tint(.purple)
@@ -53,7 +75,7 @@ struct VectorApp: App {
                         endActiveWorkoutTeardown()
                         activeSession = nil
                     }
-                    .sheet(isPresented: $showingWorkout) {
+                    .vectorSheet(isPresented: $showingWorkout) {
                         if let session = activeSession {
                             ActiveWorkoutView(session: session) {
                                 endActiveWorkoutTeardown()
@@ -65,15 +87,12 @@ struct VectorApp: App {
                             .presentationCornerRadius(32)
                         }
                     }
-                    .sheet(isPresented: Binding(get: { advisorPresenter.isPresented }, set: { advisorPresenter.isPresented = $0 })) {
-                        AdvisorView(isMinimized: advisorDetent == .medium)
-                            .presentationDetents([.medium, .large], selection: $advisorDetent)
-                            .presentationDragIndicator(.visible)
-                            .environment(healthKitService)
-                            .environment(advisorPresenter)
+                    .vectorSheet(isPresented: showingEquipmentSetup) {
+                        EquipmentSetupSheet(hasCompletedEquipmentSetup: $hasCompletedEquipmentSetup)
                     }
                 }
             }
+            .sheetBackdropScaling()
             .environment(healthKitService)
             .environment(watchSync)
             .environment(FoodLogService.shared)
@@ -83,6 +102,7 @@ struct VectorApp: App {
                 #if DEBUG && targetEnvironment(simulator)
                 if activeSession == nil {
                     hasCompletedOnboarding = true
+                    hasCompletedEquipmentSetup = true
                     healthKitService.applyMockData()
                     activeSession = VectorApp.makeMockSession()
                 }
@@ -97,11 +117,36 @@ struct VectorApp: App {
             .onReceive(NotificationCenter.default.publisher(for: .watchRequestedSync)) { _ in
                 syncToWatch()
             }
+            .onChange(of: advisorPresenter.isPresented) {
+                if advisorPresenter.isPresented {
+                    if isAdvisorSupported {
+                        selectedTab = 4
+                    }
+                    advisorPresenter.isPresented = false
+                }
+            }
+            .onChange(of: advisorPresenter.wantsProfileTab) {
+                if advisorPresenter.wantsProfileTab {
+                    selectedTab = 3
+                    advisorPresenter.wantsProfileTab = false
+                }
+            }
             .onChange(of: healthKitService.recoveryScore) { syncToWatch() }
             .onChange(of: healthKitService.exertionScore) { syncToWatch() }
             .onChange(of: healthKitService.sleepAnalysis) { syncToWatch() }
             .onChange(of: healthKitService.stressScore) { syncToWatch() }
+            .onChange(of: scenePhase) { _, newPhase in
+                guard newPhase == .active else { return }
+                Task { await healthKitService.refreshIfStale() }
+            }
         }
+    }
+
+    private var showingEquipmentSetup: Binding<Bool> {
+        Binding(
+            get: { hasCompletedOnboarding && !hasCompletedEquipmentSetup },
+            set: { _ in }
+        )
     }
 
     private func syncToWatch() {
@@ -111,6 +156,71 @@ struct VectorApp: App {
             sleep: healthKitService.sleepAnalysis,
             stress: healthKitService.stressScore
         )
+        publishWidgetSnapshot()
+    }
+
+    private func publishWidgetSnapshot() {
+        let exertionTargetLow: Int?
+        let exertionTargetHigh: Int?
+        if let targetRange = healthKitService.exertionScore?.optimalTargetRange {
+            exertionTargetLow = Int(targetRange.lowerBound.rounded())
+            exertionTargetHigh = Int(targetRange.upperBound.rounded())
+        } else {
+            exertionTargetLow = nil
+            exertionTargetHigh = nil
+        }
+
+        let sleepQuality: Int?
+        let sleepAsleepSeconds: Double?
+        let sleepDeepSeconds: Double?
+        let sleepRemSeconds: Double?
+        let sleepCoreSeconds: Double?
+        let sleepAwakeSeconds: Double?
+        if let sleep = healthKitService.sleepAnalysis {
+            sleepQuality = Int((sleep.quality * 100).rounded())
+            sleepAsleepSeconds = sleep.asleepDuration
+            sleepDeepSeconds = sleep.deepDuration
+            sleepRemSeconds = sleep.remDuration
+            sleepCoreSeconds = sleep.coreDuration
+            sleepAwakeSeconds = sleep.awakeDuration
+        } else {
+            sleepQuality = nil
+            sleepAsleepSeconds = nil
+            sleepDeepSeconds = nil
+            sleepRemSeconds = nil
+            sleepCoreSeconds = nil
+            sleepAwakeSeconds = nil
+        }
+
+        let recoveryHistorySeries = ScoreHistoryStore.series(for: .recovery)
+        let recoveryHistory = recoveryHistorySeries.suffix(7).map { $0.score }
+
+        let firstName: String? = {
+            let rawName = UserDefaults.standard.string(forKey: UserProfileStorage.firstName)
+            let trimmed = rawName?.trimmingCharacters(in: .whitespaces) ?? ""
+            return trimmed.isEmpty ? nil : trimmed
+        }()
+
+        let snapshot = VectorWidgetSnapshot(
+            updated: .now,
+            recovery: healthKitService.recoveryScore?.score,
+            exertion: healthKitService.exertionScore?.score,
+            exertionTargetLow: exertionTargetLow,
+            exertionTargetHigh: exertionTargetHigh,
+            sleep: sleepQuality,
+            sleepAsleepSeconds: sleepAsleepSeconds,
+            stress: healthKitService.stressScore?.score,
+            hrv: healthKitService.latestHRV,
+            restingHR: healthKitService.latestRestingHR,
+            steps: Int(healthKitService.todaySteps),
+            recoveryHistory: Array(recoveryHistory),
+            name: firstName,
+            sleepDeepSeconds: sleepDeepSeconds,
+            sleepRemSeconds: sleepRemSeconds,
+            sleepCoreSeconds: sleepCoreSeconds,
+            sleepAwakeSeconds: sleepAwakeSeconds
+        )
+        VectorWidgetStore.save(snapshot)
     }
 
     private func endActiveWorkoutTeardown() {
@@ -241,3 +351,48 @@ extension VectorApp {
     }
 }
 #endif
+
+/// Fades tab content in when it becomes selected. `TabView` swaps its children
+/// instantly, so this is what makes switching tabs a cross-fade instead of a cut.
+/// The backdrop mirrors the tab's own `gradientHeader` so only foreground content
+/// fades — without it the page background dissolves to white mid-transition.
+private struct TabCrossFade: ViewModifier {
+    var base: Color
+    var gradientHeight: CGFloat
+    @State private var opacity: Double = 0
+
+    func body(content: Content) -> some View {
+        ZStack {
+            base
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+
+            if gradientHeight > 0 {
+                VStack(spacing: 0) {
+                    VectorTheme.brandGradient
+                        .frame(maxWidth: .infinity)
+                        .frame(height: gradientHeight)
+                    Spacer(minLength: 0)
+                }
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+            }
+
+            content
+                .opacity(opacity)
+        }
+        .onAppear {
+            opacity = 0
+            withAnimation(.easeOut(duration: 0.22)) { opacity = 1 }
+        }
+        .onDisappear { opacity = 0 }
+    }
+}
+
+private extension View {
+    /// - Parameters must match the tab root's own `gradientHeader(base:height:)`
+    ///   call, otherwise the backdrop shows a seam while the content fades in.
+    func tabCrossFade(base: Color = Color(.systemBackground), gradientHeight: CGFloat = 360) -> some View {
+        modifier(TabCrossFade(base: base, gradientHeight: gradientHeight))
+    }
+}

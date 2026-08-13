@@ -120,14 +120,21 @@ struct LibraryExercise: Codable, Identifiable, Sendable {
     let force: String
     let difficulty: String
     let steps: [String]
+    let category: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, name, aliases, equipment
+        case id, name, aliases, equipment, category
         case targetMuscleGroup = "target_muscle_group"
         case movementPattern = "movement_pattern"
         case primaryMuscle = "primary_muscle"
         case secondaryMuscles = "secondary_muscles"
         case mechanics, force, difficulty, steps
+    }
+
+    var role: ExerciseRole {
+        if category == "warmup" { return .warmup }
+        if category == "cooldown" { return .cooldown }
+        return .main
     }
 }
 
@@ -166,21 +173,42 @@ extension LibraryExercise {
 
 // MARK: - Manual Workout Building
 
+enum ExerciseRole: String, CaseIterable, Codable, Sendable, Identifiable {
+    case warmup = "Warm-Up"
+    case main = "Main"
+    case cooldown = "Cool-Down"
+
+    var id: String { rawValue }
+}
+
 enum ExerciseInputType: String, CaseIterable, Codable, Sendable {
     case reps = "Reps"
     case duration = "Duration"
+}
+
+extension Int {
+    /// Compact duration label from a seconds count: 45 → "45s", 300 → "5m", 330 → "5m 30s".
+    var durationLabel: String {
+        if self < 60 { return "\(self)s" }
+        let m = self / 60
+        let s = self % 60
+        return s == 0 ? "\(m)m" : "\(m)m \(s)s"
+    }
 }
 
 /// Per-set weight and rep target. Used when an exercise varies load/reps across sets.
 struct SetDetail: Codable, Sendable, Hashable {
     var weightKg: Double?
     var reps: Int
+    /// Per-set rest override in seconds. nil = fall back to the exercise's `restSeconds`.
+    var restSeconds: Int? = nil
 }
 
 struct ManualExerciseEntry: Codable, Identifiable, Sendable {
     var id: UUID = UUID()
     var supersetID: UUID? = nil
     var libraryExerciseId: String?
+    var role: ExerciseRole? = nil
     var name: String
     var sets: Int
     var reps: Int
@@ -191,6 +219,22 @@ struct ManualExerciseEntry: Codable, Identifiable, Sendable {
     var notes: String
     /// Optional per-set overrides. When non-nil, each entry corresponds to one set.
     var setDetails: [SetDetail]? = nil
+
+    /// Persisted as nil for pre-existing workouts, which are all main-block exercises.
+    var resolvedRole: ExerciseRole { role ?? .main }
+
+    /// Rest after the given set index, honoring a per-set override.
+    func rest(forSet index: Int) -> Int {
+        let details = resolvedSetDetails
+        guard details.indices.contains(index), let r = details[index].restSeconds else { return restSeconds }
+        return r
+    }
+
+    /// Total rest across all sets — used for duration estimates.
+    var totalRestSeconds: Int {
+        guard sets > 0 else { return 0 }
+        return (0..<max(sets - 1, 0)).reduce(0) { $0 + rest(forSet: $1) }
+    }
 
     /// Per-set targets resolved to always have length == `sets`.
     /// Uses `setDetails` when present; otherwise repeats the uniform `weightKg`/`reps`.
@@ -277,6 +321,10 @@ struct SavedWorkout: Codable, Identifiable, Sendable {
     var muscleGroupSummary: String {
         exercises.prefix(3).map(\.name).joined(separator: ", ")
     }
+
+    var warmups: [ManualExerciseEntry] { exercises.filter { $0.resolvedRole == .warmup } }
+    var mainExercises: [ManualExerciseEntry] { exercises.filter { $0.resolvedRole == .main } }
+    var cooldowns: [ManualExerciseEntry] { exercises.filter { $0.resolvedRole == .cooldown } }
 }
 
 // MARK: - Superset Grouping

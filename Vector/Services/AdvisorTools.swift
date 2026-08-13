@@ -21,6 +21,34 @@ struct AdvisorAction: Identifiable {
     let undo: @MainActor () -> Void
 }
 
+/// A workout the Advisor suggests but does NOT auto-apply. The user Adds or Dismisses it in the UI.
+struct AdvisorRecommendation: Identifiable {
+    let id = UUID()
+    let title: String
+    let focus: String
+    let durationMinutes: Int
+    let exerciseCount: Int
+    let effort: Int
+    let exerciseNames: [String]
+    let add: @MainActor () -> Void
+}
+
+/// One saved workout that contains an exercise to progress, with a proposed heavier target.
+struct AdvisorWorkoutMatch: Identifiable {
+    let id: UUID              // the SavedWorkout's id
+    let title: String
+    let currentWeightKg: Double
+    let newWeightKg: Double
+    let apply: @MainActor () -> Void
+}
+
+/// A suggestion to bump an exercise's load across the user's existing saved workouts.
+struct AdvisorExerciseUpdate: Identifiable {
+    let id = UUID()
+    let exerciseName: String
+    let matches: [AdvisorWorkoutMatch]
+}
+
 /// MainActor-isolated singleton the tools report into while a turn runs.
 /// The view observes this live; `InsightEngine` snapshots it onto the message at the end.
 @MainActor
@@ -30,12 +58,16 @@ final class AdvisorActivity {
 
     var steps: [AdvisorStep] = []
     var actions: [AdvisorAction] = []
+    var recommendations: [AdvisorRecommendation] = []
+    var exerciseUpdates: [AdvisorExerciseUpdate] = []
     /// The model's reasoning, streamed live during the current turn.
     var liveReasoning: String = ""
 
     func reset() {
         steps = []
         actions = []
+        recommendations = []
+        exerciseUpdates = []
         liveReasoning = ""
     }
 
@@ -68,6 +100,14 @@ final class AdvisorActivity {
 
     func recordAction(_ summary: String, editTargetMealID: UUID? = nil, undo: @escaping @MainActor () -> Void) {
         actions.append(AdvisorAction(summary: summary, editTargetMealID: editTargetMealID, undo: undo))
+    }
+
+    func recordRecommendation(_ recommendation: AdvisorRecommendation) {
+        recommendations.append(recommendation)
+    }
+
+    func recordExerciseUpdate(_ update: AdvisorExerciseUpdate) {
+        exerciseUpdates.append(update)
     }
 }
 
@@ -190,10 +230,10 @@ struct EditMealTool: Tool {
     }
 }
 
-/// Generate a structured workout and save it to the user's library (appears in Train).
+/// Generate a structured workout and present it to the user as a recommendation card they can Add or Dismiss.
 struct GenerateWorkoutTool: Tool {
     let name = "generateWorkout"
-    let description = "Generate a structured strength or conditioning workout tailored to the user and save it to their library so it appears in the Train tab."
+    let description = "Build a BRAND-NEW workout from scratch, shown as an Add/Dismiss card (NOT saved automatically). Use this ONLY when the user wants a new workout. If the user wants to progress, add weight to, or break a plateau on a specific exercise they ALREADY train, do NOT use this — use updateExerciseLoad instead."
 
     let profile: UserProfile
     let recovery: RecoveryScore?
@@ -209,7 +249,7 @@ struct GenerateWorkoutTool: Tool {
 
     func call(arguments args: Arguments) async throws -> String {
         let stepID = await MainActor.run {
-            AdvisorActivity.shared.beginStep("Generating \(args.focus) workout…")
+            AdvisorActivity.shared.beginStep("Preparing workout…")
         }
         let prompt = "\(args.focus), about \(args.durationMinutes) minutes"
         let plan = await WorkoutPlanningEngine.generatePlan(
@@ -233,7 +273,7 @@ struct GenerateWorkoutTool: Tool {
         }
         let saved = SavedWorkout(
             title: plan.title,
-            focus: plan.focus,
+            focus: "Generated Workout",
             source: .ai,
             aiPlan: plan,
             exercises: entries,
@@ -241,13 +281,20 @@ struct GenerateWorkoutTool: Tool {
             effort: plan.effort
         )
         await MainActor.run {
-            WorkoutStorageService.shared.save(saved)
-            AdvisorActivity.shared.finishStep(stepID, result: "Saved '\(plan.title)' to your library")
-            AdvisorActivity.shared.recordAction("Saved workout '\(plan.title)'") {
-                WorkoutStorageService.shared.delete(saved)
-            }
+            AdvisorActivity.shared.finishStep(stepID, result: "Strength workout")
+            AdvisorActivity.shared.recordRecommendation(
+                AdvisorRecommendation(
+                    title: plan.title,
+                    focus: plan.focus,
+                    durationMinutes: plan.durationMinutes,
+                    exerciseCount: plan.exercises.count,
+                    effort: plan.effort,
+                    exerciseNames: entries.map { $0.name },
+                    add: { WorkoutStorageService.shared.save(saved) }
+                )
+            )
         }
-        return ("Created and saved '\(plan.title)' (\(plan.exercises.count) exercises, ~\(plan.durationMinutes) min) to the Train library.")
+        return "Prepared a recommended workout '\(plan.title)' (\(plan.exercises.count) exercises, ~\(plan.durationMinutes) min). A card is shown below this message for the user to Add or Dismiss — it has NOT been saved. In your reply, briefly explain HOW this workout addresses the user's question. If you reference it, call it 'the card below' (never 'in your app' or 'in the app'). Do not claim it was saved or added."
     }
 }
 
@@ -428,6 +475,7 @@ struct GetWorkoutHistoryTool: Tool {
 struct GetProgressionTool: Tool {
     let name = "getExerciseProgression"
     let description = "Look up the user's recent performance and progressive-overload recommendation for a specific exercise by name."
+    let recoveryScore: Int?
 
     @Generable
     struct Arguments {
@@ -454,10 +502,84 @@ struct GetProgressionTool: Tool {
             } else {
                 parts.append("No logged history yet.")
             }
-            if let insight = ProgressionAdvisor.insight(for: entry) {
+            if let insight = ProgressionAdvisor.insight(for: entry, recoveryScore: recoveryScore) {
                 parts.append("Coach: \(insight.headline) — \(insight.detail)")
             }
             return "\(args.exerciseName): " + parts.joined(separator: " ")
+        }
+    }
+}
+
+/// Find the user's saved workouts containing an exercise and propose bumping its load to the next progressive-overload step.
+struct UpdateExerciseLoadTool: Tool {
+    let name = "updateExerciseLoad"
+    let description = "For an exercise the user is plateaued on or wants to push heavier, find their saved workouts that already contain it and propose increasing its weight to the next progressive-overload step. PREFER THIS over generateWorkout when the exercise already appears in one of the user's saved workouts. If none are found, it returns a note telling you to call generateWorkout instead."
+    let recoveryScore: Int?
+
+    @Generable
+    struct Arguments {
+        @Guide(description: "Exercise name to progress, e.g. 'Dumbbell Curl'")
+        var exerciseName: String
+    }
+
+    func call(arguments args: Arguments) async throws -> String {
+        await MainActor.run {
+            let checkStep = AdvisorActivity.shared.beginStep("Reading your workout data…")
+            let name = args.exerciseName.trimmingCharacters(in: .whitespaces).lowercased()
+            let templates = WorkoutStorageService.shared.savedWorkouts
+            let prefs = EquipmentPreferencesStore.shared.preferences
+            var matches: [AdvisorWorkoutMatch] = []
+
+            for template in templates {
+                guard let entry = template.exercises.first(where: { $0.name.lowercased() == name }) else { continue }
+                let current = entry.weightKg ?? 0
+                guard current > 0 else { continue }
+
+                let insight = ProgressionAdvisor.insight(for: entry, recoveryScore: recoveryScore)
+                let libExercise = ExerciseLibrary.shared.allExercises.first { $0.name.lowercased() == entry.name.lowercased() }
+                let equipKind = libExercise.map { EquipmentKind.classify(equipment: $0.equipment, name: $0.name) }
+                    ?? EquipmentKind.classify(equipment: "", name: entry.name)
+                let step = prefs.increment(for: equipKind)
+
+                var newWeight = insight?.suggestedWeightKg ?? (current + step)
+                if newWeight <= current { newWeight = current + step }
+
+                let workoutID = template.id
+                let exName = entry.name
+                let target = newWeight
+                matches.append(
+                    AdvisorWorkoutMatch(
+                        id: workoutID,
+                        title: template.title,
+                        currentWeightKg: current,
+                        newWeightKg: newWeight,
+                        apply: {
+                            guard var wo = WorkoutStorageService.shared.savedWorkouts.first(where: { $0.id == workoutID }) else { return }
+                            for i in wo.exercises.indices where wo.exercises[i].name.lowercased() == exName.lowercased() {
+                                wo.exercises[i].weightKg = target
+                                wo.exercises[i].setDetails = nil
+                            }
+                            WorkoutStorageService.shared.save(wo)
+                        }
+                    )
+                )
+            }
+
+            if matches.isEmpty {
+                AdvisorActivity.shared.finishStep(checkStep, result: "No saved workouts found")
+                return "The user has no saved workout containing '\(args.exerciseName)'. Call generateWorkout to build a new, heavier-focused workout instead."
+            }
+
+            AdvisorActivity.shared.finishStep(checkStep, result: "Found \(matches.count) workout\(matches.count == 1 ? "" : "s")")
+
+            let analyzeStep = AdvisorActivity.shared.beginStep("Analyzing progression data…")
+            AdvisorActivity.shared.finishStep(analyzeStep, result: "Progression analyzed")
+
+            AdvisorActivity.shared.recordExerciseUpdate(
+                AdvisorExerciseUpdate(exerciseName: args.exerciseName, matches: matches)
+            )
+            let list = matches.map { $0.title }.joined(separator: ", ")
+            return "Found \(matches.count) of the user's EXISTING workout(s) that include '\(args.exerciseName)': \(list). A card below this message lets them pick which of these workouts to bump to the next progressive-overload weight. In your reply: (1) briefly explain that progressive overload — small weight increases — is what breaks the plateau, and (2) say you found their existing workouts and can bump the weight in the card below. Do NOT describe or offer a brand-new routine, and do NOT call generateWorkout. Refer to it as 'the card below' or 'your workouts below' (never 'in your app'). Do not claim you changed anything — the user chooses on the card."
         }
     }
 }

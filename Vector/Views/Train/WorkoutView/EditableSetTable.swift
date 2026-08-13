@@ -170,7 +170,7 @@ struct EditableSetTable: View {
 
 // MARK: - Swipe to Delete
 
-private struct SwipeToDelete<Content: View>: View {
+struct SwipeToDelete<Content: View>: View {
     let onDelete: () -> Void
     let content: Content
 
@@ -197,7 +197,7 @@ private struct SwipeToDelete<Content: View>: View {
                 .onTapGesture { onDelete() }
 
             content
-                .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
+                .background(Color(.secondarySystemBackground))
                 .offset(x: offset)
                 .gesture(
                     DragGesture(minimumDistance: 14)

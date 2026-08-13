@@ -74,7 +74,137 @@ import SwiftUI
 
     return Color.black.opacity(0.001)
         .ignoresSafeArea()
-        .sheet(isPresented: .constant(true)) {
+        .vectorSheet(isPresented: .constant(true)) {
+            ActiveWorkoutView(session: session, onFinish: {})
+                .environment(HealthKitService())
+                .environment(watchSync)
+        }
+}
+
+#Preview("Warm-Up Phase") {
+    // Mock workout with warmup mobility exercises followed by main strength exercises.
+    let jumpingJacks = ManualExerciseEntry(
+        role: .warmup,
+        name: "Jumping Jacks",
+        sets: 1, reps: 0, durationSeconds: 45,
+        inputType: .duration, weightKg: nil, restSeconds: 0, notes: ""
+    )
+    let armCircles = ManualExerciseEntry(
+        role: .warmup,
+        name: "Arm Circles",
+        sets: 1, reps: 0, durationSeconds: 60,
+        inputType: .duration, weightKg: nil, restSeconds: 0, notes: ""
+    )
+    let bodyweightSquats = ManualExerciseEntry(
+        role: .warmup,
+        name: "Bodyweight Squats",
+        sets: 1, reps: 0, durationSeconds: 45,
+        inputType: .duration, weightKg: nil, restSeconds: 0, notes: ""
+    )
+    let benchPress = ManualExerciseEntry(
+        role: .main,
+        name: "Barbell Bench Press",
+        sets: 4, reps: 8, durationSeconds: 0,
+        inputType: .reps, weightKg: 135, restSeconds: 90, notes: ""
+    )
+    let shoulderPress = ManualExerciseEntry(
+        role: .main,
+        name: "Shoulder Press",
+        sets: 3, reps: 10, durationSeconds: 0,
+        inputType: .reps, weightKg: 60, restSeconds: 90, notes: ""
+    )
+
+    let workout = SavedWorkout(
+        title: "Warmup Strength Session",
+        focus: "Upper Body",
+        source: .manual,
+        aiPlan: nil,
+        exercises: [jumpingJacks, armCircles, bodyweightSquats, benchPress, shoulderPress],
+        durationMinutes: 50,
+        effort: 6
+    )
+
+    let session = ActiveWorkoutSession(workout: workout)
+    session.hasInitializedPhase = true
+    session.phase = .warmup
+    // Total = sum of the warm-up exercises' durations (45 + 60 + 45 = 150), same as the live app.
+    let total = session.phaseDurationSeconds(for: .warmup, fallbackMinutes: 5)
+    session.phaseTotalSeconds = total
+    session.phaseSecondsRemaining = total
+    session.isPhaseTimerRunning = true
+
+    let watchSync = WatchSyncService()
+    watchSync.liveWatchHeartRate = 95
+
+    return Color.black.opacity(0.001)
+        .ignoresSafeArea()
+        .vectorSheet(isPresented: .constant(true)) {
+            ActiveWorkoutView(session: session, onFinish: {})
+                .environment(HealthKitService())
+                .environment(watchSync)
+        }
+}
+
+#Preview("Cool-Down Phase") {
+    // Mock workout with main strength exercises followed by cooldown stretches.
+    let benchPress = ManualExerciseEntry(
+        role: .main,
+        name: "Barbell Bench Press",
+        sets: 4, reps: 8, durationSeconds: 0,
+        inputType: .reps, weightKg: 135, restSeconds: 90, notes: ""
+    )
+    let shoulderPress = ManualExerciseEntry(
+        role: .main,
+        name: "Shoulder Press",
+        sets: 3, reps: 10, durationSeconds: 0,
+        inputType: .reps, weightKg: 60, restSeconds: 90, notes: ""
+    )
+    let hamstringStretch = ManualExerciseEntry(
+        role: .cooldown,
+        name: "Hamstring Stretch",
+        sets: 1, reps: 0, durationSeconds: 60,
+        inputType: .duration, weightKg: nil, restSeconds: 0, notes: ""
+    )
+    let childsPose = ManualExerciseEntry(
+        role: .cooldown,
+        name: "Child's Pose",
+        sets: 1, reps: 0, durationSeconds: 45,
+        inputType: .duration, weightKg: nil, restSeconds: 0, notes: ""
+    )
+    let chestStretch = ManualExerciseEntry(
+        role: .cooldown,
+        name: "Chest Stretch",
+        sets: 1, reps: 0, durationSeconds: 45,
+        inputType: .duration, weightKg: nil, restSeconds: 0, notes: ""
+    )
+
+    let workout = SavedWorkout(
+        title: "Cooldown Strength Session",
+        focus: "Upper Body",
+        source: .manual,
+        aiPlan: nil,
+        exercises: [benchPress, shoulderPress, hamstringStretch, childsPose, chestStretch],
+        durationMinutes: 50,
+        effort: 6
+    )
+
+    let session = ActiveWorkoutSession(workout: workout)
+    session.hasInitializedPhase = true
+    session.hasRunCooldown = true
+    session.phase = .cooldown
+    // Total = sum of the cool-down exercises' durations (60 + 45 + 45 = 150), same as the live app.
+    let total = session.phaseDurationSeconds(for: .cooldown, fallbackMinutes: 5)
+    session.phaseTotalSeconds = total
+    session.phaseSecondsRemaining = total
+    session.isPhaseTimerRunning = true
+    session.currentExerciseIndex = workout.exercises.count
+
+    let watchSync = WatchSyncService()
+    watchSync.liveWatchHeartRate = 75
+
+    return Color.black.opacity(0.001)
+        .ignoresSafeArea()
+        .vectorSheet(isPresented: .constant(true)) {
             ActiveWorkoutView(session: session, onFinish: {})
                 .environment(HealthKitService())
                 .environment(watchSync)

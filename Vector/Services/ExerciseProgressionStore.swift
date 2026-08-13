@@ -1,11 +1,28 @@
 import Foundation
 import SwiftUI
 
+struct SetPerformance: Codable, Sendable {
+    var weightKg: Double   // pounds, legacy name
+    var reps: Int
+    var targetReps: Int
+}
+
 struct ExercisePerformance: Codable, Sendable {
     var weightKg: Double
     var reps: Int
     var targetReps: Int
     var date: Date
+    var sets: [SetPerformance]?   // per-set detail; nil for legacy records
+
+    var hitAllTargets: Bool {
+        if let sets, !sets.isEmpty {
+            return sets.allSatisfy { set in
+                set.weightKg <= 0 || set.reps >= set.targetReps
+            }
+        }
+        // Legacy fallback: just top-set semantics
+        return reps >= targetReps
+    }
 }
 
 @Observable
@@ -60,29 +77,22 @@ final class ExerciseProgressionStore {
     }
 
     func suggestedWeight(for entry: ManualExerciseEntry) -> Double {
-        guard let last = lastPerformance(for: entry) else {
-            return entry.weightKg ?? 0
-        }
-        if last.weightKg > 0 && last.reps >= last.targetReps {
-            return last.weightKg + 5
-        }
-        return last.weightKg
+        ProgressionAdvisor.insight(for: entry, store: self)?.suggestedWeightKg ?? lastPerformance(for: entry)?.weightKg ?? entry.weightKg ?? 0
     }
 
     func hasProgression(for entry: ManualExerciseEntry) -> Bool {
-        guard lastPerformance(for: entry) != nil else {
-            return false
-        }
-        return suggestedWeight(for: entry) > (entry.weightKg ?? 0)
+        guard let i = ProgressionAdvisor.insight(for: entry, store: self) else { return false }
+        return i.hasSuggestion && i.deltaKg > 0
     }
 
-    func record(entry: ManualExerciseEntry, weightKg: Double, reps: Int, targetReps: Int? = nil) {
+    func record(entry: ManualExerciseEntry, weightKg: Double, reps: Int, targetReps: Int? = nil, sets: [SetPerformance]? = nil) {
         let key = Self.key(for: entry)
         let perf = ExercisePerformance(
             weightKg: weightKg,
             reps: reps,
             targetReps: targetReps ?? entry.reps,
-            date: Date()
+            date: Date(),
+            sets: sets
         )
         performances[key] = perf
         var arr = histories[key] ?? []

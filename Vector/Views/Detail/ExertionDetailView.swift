@@ -13,6 +13,10 @@ struct ExertionDetailView: View {
     @State private var caloriesSeries: [MetricTrendPoint] = []
     @State private var stepsSeries: [MetricTrendPoint] = []
     @State private var exerciseMinutesSeries: [MetricTrendPoint] = []
+    @State private var vo2Series: [MetricTrendPoint] = []
+    @State private var hrrSeries: [MetricTrendPoint] = []
+    @State private var restingHRSeries: [MetricTrendPoint] = []
+    @State private var walkingHRSeries: [MetricTrendPoint] = []
     @State private var selectedExertionFactor: ExertionFactor? = nil
     @State private var showingSafari = false
     @State private var safariURL: URL = URL(string: "https://www.nsca.com")!
@@ -26,9 +30,12 @@ struct ExertionDetailView: View {
                 trainingLoadInsight
                 loadRatioGaugeSection
                 exertionFactorsSection
+                if !physicalFitnessFactors.isEmpty {
+                    physicalFitnessSection
+                }
                 resourcesSection
 
-                Text("Exertion is measured on a scale of 100")
+                Text("Exertion is measured on a 0–100+ scale")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
@@ -56,23 +63,23 @@ struct ExertionDetailView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingSafari) {
+        .vectorSheet(isPresented: $showingSafari) {
             SafariView(url: safariURL)
                 .ignoresSafeArea()
         }
-        .sheet(isPresented: $showingHelp) {
+        .vectorSheet(isPresented: $showingHelp, style: .half) {
             CardInfoSheet(cardID: "exertion")
         }
-        .sheet(isPresented: $showingEffortInfo) {
+        .vectorSheet(isPresented: $showingEffortInfo, style: .half) {
             PhysicalEffortInfoSheet()
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
         }
-        .sheet(item: $selectedExertionFactor) { factor in
+        .vectorSheet(item: $selectedExertionFactor, style: .half) { factor in
             MetricDetailSheet(
                 title: factor.name,
                 icon: factor.icon,
-                tint: .orange,
+                tint: factor.color,
                 value: factor.value,
                 statusLabel: factor.statusLabel,
                 isPositive: factor.isPositive,
@@ -81,7 +88,7 @@ struct ExertionDetailView: View {
                 valueFormat: factor.valueFormat,
                 unit: factor.unit,
                 contribution: factor.contribution,
-                contributionCaption: "Impact on exertion score",
+                contributionCaption: factor.contributionCaption,
                 explanation: factor.explanation,
                 actionItem: factor.actionItem
             )
@@ -99,10 +106,18 @@ struct ExertionDetailView: View {
             async let calories = service.dailySumSeries(for: .activeEnergyBurned, unit: .kilocalorie(), days: 14)
             async let steps = service.dailySumSeries(for: .stepCount, unit: .count(), days: 14)
             async let exercise = service.dailySumSeries(for: .appleExerciseTime, unit: .minute(), days: 14)
-            let (cal, stp, ex) = await (calories, steps, exercise)
+            async let vo2 = service.dailyAverageSeries(for: .vo2Max, unit: HKUnit(from: "ml/kg·min"), days: 90)
+            async let hrr = service.dailyAverageSeries(for: .heartRateRecoveryOneMinute, unit: HKUnit.count().unitDivided(by: .minute()), days: 60)
+            async let restingHR = service.dailyAverageSeries(for: .restingHeartRate, unit: HKUnit.count().unitDivided(by: .minute()), days: 21)
+            async let walkingHR = service.dailyAverageSeries(for: .walkingHeartRateAverage, unit: HKUnit.count().unitDivided(by: .minute()), days: 21)
+            let (cal, stp, ex, vo2Data, hrrData, restingHRData, walkingHRData) = await (calories, steps, exercise, vo2, hrr, restingHR, walkingHR)
             caloriesSeries = cal.map { MetricTrendPoint(date: $0.date, value: $0.value) }
             stepsSeries = stp.map { MetricTrendPoint(date: $0.date, value: $0.value) }
             exerciseMinutesSeries = ex.map { MetricTrendPoint(date: $0.date, value: $0.value) }
+            vo2Series = vo2Data.map { MetricTrendPoint(date: $0.date, value: $0.value) }
+            hrrSeries = hrrData.map { MetricTrendPoint(date: $0.date, value: $0.value) }
+            restingHRSeries = restingHRData.map { MetricTrendPoint(date: $0.date, value: $0.value) }
+            walkingHRSeries = walkingHRData.map { MetricTrendPoint(date: $0.date, value: $0.value) }
         }
     }
 
@@ -327,9 +342,33 @@ struct ExertionDetailView: View {
                         MetricStatusCard(
                             title: factor.name,
                             status: factor.value,
-                            statusColor: factor.isPositive ? .green : .orange,
+                            statusColor: .primary,
                             icon: factor.icon,
-                            color: .orange,
+                            color: factor.color,
+                            series: factor.series.map(\.value)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .askVector(topicForExertionFactor(factor))
+                }
+            }
+        }
+    }
+
+    private var physicalFitnessSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Physical Fitness")
+                .font(.title3).bold()
+
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)], spacing: 14) {
+                ForEach(physicalFitnessFactors) { factor in
+                    Button { selectedExertionFactor = factor } label: {
+                        MetricStatusCard(
+                            title: factor.name,
+                            status: factor.value,
+                            statusColor: .primary,
+                            icon: factor.icon,
+                            color: factor.color,
                             series: factor.series.map(\.value)
                         )
                     }
@@ -347,9 +386,10 @@ struct ExertionDetailView: View {
             factors.append(ExertionFactor(
                 name: "Exertion Trend",
                 icon: "chart.line.uptrend.xyaxis",
+                color: .orange,
                 value: "\(score.score)",
                 contribution: 0.5,
-                isPositive: exertionAverageIndicator.color != .orange,
+                isPositive: nil,
                 explanation: "Your exertion trend reflects how your daily training strain is tracking over the past two weeks relative to your average.",
                 actionItem: "Review your Load Ratio below for detraining/overtraining risk.",
                 series: strainSeries,
@@ -364,9 +404,10 @@ struct ExertionDetailView: View {
             factors.append(ExertionFactor(
                 name: "Physical Effort",
                 icon: "bolt.fill",
+                color: .yellow,
                 value: String(format: "%.1f METs", mets),
                 contribution: 0.5,
-                isPositive: true,
+                isPositive: nil,
                 explanation: "METs (Metabolic Equivalent of Task) estimate how much energy your body uses versus sitting at rest — this captures strength-training strain that heart rate alone under-counts.",
                 actionItem: "Rising effort with stable recovery is a good sign your fitness is improving.",
                 series: service.physicalEffortSeries.map { MetricTrendPoint(date: $0.date, value: $0.value) },
@@ -381,9 +422,10 @@ struct ExertionDetailView: View {
             factors.append(ExertionFactor(
                 name: "Active Calories",
                 icon: "flame.fill",
+                color: .red,
                 value: "\(Int(service.todayActiveCalories)) kcal",
                 contribution: 0.5,
-                isPositive: true,
+                isPositive: nil,
                 explanation: "Active calories reflect energy burned above your resting baseline today, driven by movement and workouts.",
                 actionItem: "Consistent daily activity supports steady training adaptation.",
                 series: caloriesSeries,
@@ -398,9 +440,10 @@ struct ExertionDetailView: View {
             factors.append(ExertionFactor(
                 name: "Steps",
                 icon: "figure.walk",
+                color: .green,
                 value: "\(Int(service.todaySteps))",
                 contribution: 0.5,
-                isPositive: true,
+                isPositive: nil,
                 explanation: "Step count captures overall daily movement, a component of non-exercise activity that contributes to total strain.",
                 actionItem: "Aim for consistent daily movement alongside structured training.",
                 series: stepsSeries,
@@ -415,9 +458,10 @@ struct ExertionDetailView: View {
             factors.append(ExertionFactor(
                 name: "Exercise Minutes",
                 icon: "stopwatch.fill",
+                color: .mint,
                 value: "\(Int(exerciseMinutesSeries.last?.value ?? 0)) min",
                 contribution: 0.5,
-                isPositive: true,
+                isPositive: nil,
                 explanation: "Apple's Exercise minutes count time spent at a brisk pace or higher, a proxy for meaningful training volume.",
                 actionItem: "Balance exercise minutes with adequate recovery days.",
                 series: exerciseMinutesSeries,
@@ -425,6 +469,92 @@ struct ExertionDetailView: View {
                 statusLabel: "Minutes today",
                 valueFormat: { String(Int($0)) },
                 unit: "min"
+            ))
+        }
+
+        return factors
+    }
+
+    private var physicalFitnessFactors: [ExertionFactor] {
+        var factors: [ExertionFactor] = []
+
+        if !vo2Series.isEmpty {
+            let vo2Value = service.latestVO2Max ?? vo2Series.last?.value ?? 0
+            factors.append(ExertionFactor(
+                name: "Cardio Fitness (VO₂ Max)",
+                icon: "figure.run",
+                color: .cyan,
+                value: String(format: "%.1f VO₂max", vo2Value),
+                contribution: 0.5,
+                isPositive: nil,
+                explanation: "VO₂ max estimates the maximum oxygen your body can use during exercise — the gold-standard measure of cardiorespiratory fitness. Higher values mean workouts at the same intensity feel easier.",
+                actionItem: "Zone 2 endurance work and interval training are the most reliable ways to raise VO₂ max over time.",
+                series: vo2Series,
+                baseline: nil,
+                statusLabel: "Estimated by Apple Watch",
+                valueFormat: { String(format: "%.1f", $0) },
+                unit: "ml/kg·min",
+                contributionCaption: "Relates to physical fitness"
+            ))
+        }
+
+        if !hrrSeries.isEmpty {
+            let hrrValue = service.latestHRR ?? hrrSeries.last?.value ?? 0
+            factors.append(ExertionFactor(
+                name: "Heart Rate Recovery",
+                icon: "arrow.down.heart.fill",
+                color: .pink,
+                value: "\(Int(hrrValue)) bpm",
+                contribution: 0.5,
+                isPositive: nil,
+                explanation: "Heart rate recovery measures how quickly your heart rate falls in the minute after exercise stops. A faster drop reflects a stronger, more responsive cardiovascular system.",
+                actionItem: "Consistent cardio training improves recovery speed — a rising trend is a strong fitness signal.",
+                series: hrrSeries,
+                baseline: service.hrrBaseline,
+                statusLabel: "1-min drop after workouts",
+                valueFormat: { String(Int($0)) },
+                unit: "bpm",
+                contributionCaption: "Relates to physical fitness"
+            ))
+        }
+
+        if !restingHRSeries.isEmpty {
+            let restingHRValue = restingHRSeries.last?.value ?? 0
+            factors.append(ExertionFactor(
+                name: "Resting Heart Rate",
+                icon: "heart.fill",
+                color: .blue,
+                value: "\(Int(restingHRValue)) bpm",
+                contribution: 0.5,
+                isPositive: nil,
+                explanation: "Resting heart rate reflects your baseline cardiovascular load. As fitness improves, your heart pumps more blood per beat, so it beats less often at rest.",
+                actionItem: "A gradually declining resting heart rate over months usually indicates improving aerobic fitness.",
+                series: restingHRSeries,
+                baseline: nil,
+                statusLabel: "Daily average",
+                valueFormat: { String(Int($0)) },
+                unit: "bpm",
+                contributionCaption: "Relates to physical fitness"
+            ))
+        }
+
+        if !walkingHRSeries.isEmpty {
+            let walkingHRValue = walkingHRSeries.last?.value ?? 0
+            factors.append(ExertionFactor(
+                name: "Walking Heart Rate",
+                icon: "figure.walk.motion",
+                color: .teal,
+                value: "\(Int(walkingHRValue)) bpm",
+                contribution: 0.5,
+                isPositive: nil,
+                explanation: "Your average heart rate during walks. Lower walking heart rate at a similar pace means everyday activity costs your body less effort — a practical marker of fitness.",
+                actionItem: "Compare against your resting heart rate — a smaller gap over time suggests improving efficiency.",
+                series: walkingHRSeries,
+                baseline: nil,
+                statusLabel: "Average while walking",
+                valueFormat: { String(Int($0)) },
+                unit: "bpm",
+                contributionCaption: "Relates to physical fitness"
             ))
         }
 
@@ -510,9 +640,10 @@ private struct ExertionFactor: Identifiable {
     var id: String { name }
     let name: String
     let icon: String
+    let color: Color
     let value: String
     let contribution: Double
-    let isPositive: Bool
+    let isPositive: Bool?
     let explanation: String
     let actionItem: String
     var series: [MetricTrendPoint] = []
@@ -520,6 +651,7 @@ private struct ExertionFactor: Identifiable {
     let statusLabel: String
     var valueFormat: (Double) -> String = { String(Int($0)) }
     var unit: String = ""
+    var contributionCaption: String = "Impact on exertion score"
 }
 
 // MARK: - Resource Row

@@ -40,8 +40,6 @@ struct MetricStatusCard: View {
             if hasSparkline {
                 Spacer(minLength: 8)
                 MetricMiniSparkline(values: series, color: color)
-                    .padding(.bottom, 14)
-                    .padding(.horizontal, 2)
             }
         }
         .frame(maxWidth: .infinity, minHeight: hasSparkline ? 132 : nil, alignment: .topLeading)
@@ -58,8 +56,9 @@ struct MetricMiniSparkline: View {
         let maxV = values.max() ?? 0
         let minV = values.min() ?? 0
         let span = max(maxV - minV, 1)
+        let domainMin = minV - span * 0.18
         return Chart(Array(values.enumerated()), id: \.offset) { idx, v in
-            AreaMark(x: .value("i", idx), y: .value("v", v))
+            AreaMark(x: .value("i", idx), yStart: .value("base", domainMin), yEnd: .value("v", v))
                 .foregroundStyle(LinearGradient(colors: [color.opacity(0.35), color.opacity(0)], startPoint: .top, endPoint: .bottom))
                 .interpolationMethod(.catmullRom)
             LineMark(x: .value("i", idx), y: .value("v", v))
@@ -67,7 +66,7 @@ struct MetricMiniSparkline: View {
                 .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round))
                 .interpolationMethod(.catmullRom)
         }
-        .chartYScale(domain: (minV - span * 0.18)...(maxV + span * 0.1))
+        .chartYScale(domain: domainMin...(maxV + span * 0.1))
         .chartXAxis(.hidden)
         .chartYAxis(.hidden)
         .chartLegend(.hidden)

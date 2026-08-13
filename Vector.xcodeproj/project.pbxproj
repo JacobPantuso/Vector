@@ -11,8 +11,15 @@
 		000000000000000160000001 /* VectorWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 000000000000000000000420 /* VectorWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		000000000000000160000010 /* WorkoutActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000410 /* WorkoutActivityAttributes.swift */; };
 		000000000000000160000011 /* WorkoutLiveActivityIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000411 /* WorkoutLiveActivityIntents.swift */; };
+		000000000000000160000012 /* VectorWidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000412 /* VectorWidgetData.swift */; };
+		000000000000000250000001 /* VectorWatchWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 000000000000000000000520 /* VectorWatchWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		000000000000000260000012 /* VectorWidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000412 /* VectorWidgetData.swift */; };
 		000000000000000460000010 /* WorkoutActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000410 /* WorkoutActivityAttributes.swift */; };
 		000000000000000460000011 /* WorkoutLiveActivityIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000411 /* WorkoutLiveActivityIntents.swift */; };
+		000000000000000460000012 /* VectorWidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000412 /* VectorWidgetData.swift */; };
+		000000000000000460000013 /* VectorRingDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000413 /* VectorRingDesign.swift */; };
+		000000000000000560000012 /* VectorWidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000412 /* VectorWidgetData.swift */; };
+		000000000000000560000013 /* VectorRingDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000413 /* VectorRingDesign.swift */; };
 		BEAEC70E2FECB6E6003DC68C /* MuscleMap in Frameworks */ = {isa = PBXBuildFile; productRef = BEAEC70D2FECB6E6003DC68C /* MuscleMap */; };
 /* End PBXBuildFile section */
 
@@ -30,6 +37,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 000000000000000400000000;
 			remoteInfo = VectorWidgets;
+		};
+		000000000000000510000010 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 000000000000000500000000;
+			remoteInfo = VectorWatchWidgets;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -52,6 +66,15 @@
 			);
 			name = "Embed Foundation Extensions";
 		};
+		000000000000000250000000 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "";
+			dstSubfolder = PlugIns;
+			files = (
+				000000000000000250000001 /* VectorWatchWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -59,7 +82,10 @@
 		000000000000000000000220 /* VectorWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VectorWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		000000000000000000000410 /* WorkoutActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutActivityAttributes.swift; sourceTree = "<group>"; };
 		000000000000000000000411 /* WorkoutLiveActivityIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutLiveActivityIntents.swift; sourceTree = "<group>"; };
+		000000000000000000000412 /* VectorWidgetData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VectorWidgetData.swift; sourceTree = "<group>"; };
+		000000000000000000000413 /* VectorRingDesign.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VectorRingDesign.swift; sourceTree = "<group>"; };
 		000000000000000000000420 /* VectorWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = VectorWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		000000000000000000000520 /* VectorWatchWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = VectorWatchWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -69,6 +95,13 @@
 				Info.plist,
 			);
 			target = 000000000000000400000000 /* VectorWidgets */;
+		};
+		000000000000000000000051 /* Exceptions for "VectorWatchWidgets" folder in "VectorWatchWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 000000000000000500000000 /* VectorWatchWidgets */;
 		};
 		BEBEFE822FF70F6D00953834 /* Exceptions for "VectorWatch" folder in "VectorWatch" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -101,6 +134,14 @@
 			path = VectorWidgets;
 			sourceTree = "<group>";
 		};
+		000000000000000000000050 /* VectorWatchWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				000000000000000000000051 /* Exceptions for "VectorWatchWidgets" folder in "VectorWatchWidgets" target */,
+			);
+			path = VectorWatchWidgets;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -120,6 +161,11 @@
 			files = (
 			);
 		};
+		000000000000000530000000 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -129,6 +175,7 @@
 				000000000000000000000010 /* Vector */,
 				000000000000000000000030 /* VectorWatch */,
 				000000000000000000000040 /* VectorWidgets */,
+				000000000000000000000050 /* VectorWatchWidgets */,
 				000000000000000000000400 /* Shared */,
 				000000000000000000000020 /* Products */,
 			);
@@ -140,6 +187,7 @@
 				000000000000000000000120 /* Vector.app */,
 				000000000000000000000220 /* VectorWatch.app */,
 				000000000000000000000420 /* VectorWidgets.appex */,
+				000000000000000000000520 /* VectorWatchWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -149,6 +197,8 @@
 			children = (
 				000000000000000000000410 /* WorkoutActivityAttributes.swift */,
 				000000000000000000000411 /* WorkoutLiveActivityIntents.swift */,
+				000000000000000000000412 /* VectorWidgetData.swift */,
+				000000000000000000000413 /* VectorRingDesign.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -190,8 +240,12 @@
 				000000000000000220000000 /* Sources */,
 				000000000000000230000000 /* Frameworks */,
 				000000000000000240000000 /* Resources */,
+				000000000000000250000000 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
+			);
+			dependencies = (
+				000000000000000500000010 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				000000000000000000000030 /* VectorWatch */,
@@ -219,6 +273,24 @@
 			productReference = 000000000000000000000420 /* VectorWidgets.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		000000000000000500000000 /* VectorWatchWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 000000000000000510000000 /* Build configuration list for PBXNativeTarget "VectorWatchWidgets" */;
+			buildPhases = (
+				000000000000000520000000 /* Sources */,
+				000000000000000530000000 /* Frameworks */,
+				000000000000000540000000 /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				000000000000000000000050 /* VectorWatchWidgets */,
+			);
+			name = VectorWatchWidgets;
+			productName = VectorWatchWidgets;
+			productReference = 000000000000000000000520 /* VectorWatchWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -236,6 +308,9 @@
 						CreatedOnToolsVersion = 26.3;
 					};
 					000000000000000400000000 = {
+						CreatedOnToolsVersion = 26.3;
+					};
+					000000000000000500000000 = {
 						CreatedOnToolsVersion = 26.3;
 					};
 				};
@@ -260,6 +335,7 @@
 				000000000000000100000000 /* Vector */,
 				000000000000000200000000 /* VectorWatch */,
 				000000000000000400000000 /* VectorWidgets */,
+				000000000000000500000000 /* VectorWatchWidgets */,
 			);
 		};
 /* End PBXProject section */
@@ -280,6 +356,11 @@
 			files = (
 			);
 		};
+		000000000000000540000000 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -288,11 +369,13 @@
 			files = (
 				000000000000000160000010 /* WorkoutActivityAttributes.swift in Sources */,
 				000000000000000160000011 /* WorkoutLiveActivityIntents.swift in Sources */,
+				000000000000000160000012 /* VectorWidgetData.swift in Sources */,
 			);
 		};
 		000000000000000220000000 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
+				000000000000000260000012 /* VectorWidgetData.swift in Sources */,
 			);
 		};
 		000000000000000420000000 /* Sources */ = {
@@ -300,6 +383,15 @@
 			files = (
 				000000000000000460000010 /* WorkoutActivityAttributes.swift in Sources */,
 				000000000000000460000011 /* WorkoutLiveActivityIntents.swift in Sources */,
+				000000000000000460000012 /* VectorWidgetData.swift in Sources */,
+				000000000000000460000013 /* VectorRingDesign.swift in Sources */,
+			);
+		};
+		000000000000000520000000 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+				000000000000000560000012 /* VectorWidgetData.swift in Sources */,
+				000000000000000560000013 /* VectorRingDesign.swift in Sources */,
 			);
 		};
 /* End PBXSourcesBuildPhase section */
@@ -314,6 +406,11 @@
 			isa = PBXTargetDependency;
 			target = 000000000000000400000000 /* VectorWidgets */;
 			targetProxy = 000000000000000410000010 /* PBXContainerItemProxy */;
+		};
+		000000000000000500000010 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 000000000000000500000000 /* VectorWatchWidgets */;
+			targetProxy = 000000000000000510000010 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -564,6 +661,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jacobpantuso.Vector.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -600,6 +698,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jacobpantuso.Vector.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -617,6 +716,7 @@
 		000000000000000411000000 /* Debug configuration for PBXNativeTarget "VectorWidgets" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = VectorWidgets/VectorWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = UN939ZPX52;
@@ -628,6 +728,11 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					AppIntents,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.jacobpantuso.Vector.VectorWidgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -645,6 +750,7 @@
 		000000000000000412000000 /* Release configuration for PBXNativeTarget "VectorWidgets" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = VectorWidgets/VectorWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = UN939ZPX52;
@@ -656,6 +762,11 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-framework",
+					AppIntents,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.jacobpantuso.Vector.VectorWidgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -667,6 +778,70 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		000000000000000511000000 /* Debug configuration for PBXNativeTarget "VectorWatchWidgets" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = VectorWatchWidgets/VectorWatchWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = UN939ZPX52;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = VectorWatchWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Vector;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jacobpantuso.Vector.watchkitapp.VectorWatchWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		000000000000000512000000 /* Release configuration for PBXNativeTarget "VectorWatchWidgets" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = VectorWatchWidgets/VectorWatchWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = UN939ZPX52;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = VectorWatchWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Vector;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jacobpantuso.Vector.watchkitapp.VectorWatchWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Release;
 		};
@@ -702,6 +877,14 @@
 			buildConfigurations = (
 				000000000000000411000000 /* Debug configuration for PBXNativeTarget "VectorWidgets" */,
 				000000000000000412000000 /* Release configuration for PBXNativeTarget "VectorWidgets" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		000000000000000510000000 /* Build configuration list for PBXNativeTarget "VectorWatchWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				000000000000000511000000 /* Debug configuration for PBXNativeTarget "VectorWatchWidgets" */,
+				000000000000000512000000 /* Release configuration for PBXNativeTarget "VectorWatchWidgets" */,
 			);
 			defaultConfigurationName = Release;
 		};

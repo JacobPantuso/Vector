@@ -61,6 +61,13 @@ enum CrossEngineInsight {
         guard let sleep, sleep.totalDuration > 0 else { return [] }
         var out: [ConnectionInsight] = []
 
+        if let flag = sleep.disruption, flag.isTrainingExplained {
+            let descriptor = flag.trainingDescriptor ?? "high"
+            out.append(.init(icon: "figure.run",
+                text: "Some vitals deviated from your baselines due to yesterday's \(descriptor) exertion. Take some extra care today.",
+                tint: .blue, sentiment: .caution))
+        }
+
         if let recovery, recovery.score > 0 {
             if sleep.quality >= 0.65 {
                 out.append(.init(icon: "heart.fill",

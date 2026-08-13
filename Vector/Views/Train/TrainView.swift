@@ -194,13 +194,13 @@ struct TrainView: View {
                     .foregroundStyle(.secondary)
                 }
             }
-            .sheet(isPresented: $showingCreation) {
+            .vectorSheet(isPresented: $showingCreation) {
                 WorkoutCreationView { savedWorkout in
                     WorkoutStorageService.shared.save(savedWorkout)
                     showingCreation = false
                 }
             }
-            .sheet(item: $selectedWorkout) { workout in
+            .vectorSheet(item: $selectedWorkout) { workout in
                 WorkoutDetailView(workout: workout, onStartWorkout: { session in
                     activeSession = session
                     selectedWorkout = nil
@@ -209,22 +209,22 @@ struct TrainView: View {
                     selectedWorkout = updated
                 })
             }
-            .sheet(item: $selectedHistoryWorkout) { workout in
+            .vectorSheet(item: $selectedHistoryWorkout) { workout in
                 NavigationStack {
                     WorkoutHistoryDetailView(workout: workout)
                         .navigationBarTitleDisplayMode(.inline)
                 }
             }
-            .sheet(item: $selectedProcessingRecord) { record in
+            .vectorSheet(item: $selectedProcessingRecord) { record in
                 NavigationStack {
                     ProcessingWorkoutDetailView(record: record)
                         .navigationBarTitleDisplayMode(.inline)
                 }
             }
-            .sheet(isPresented: $showingAllHistory) {
+            .vectorSheet(isPresented: $showingAllHistory) {
                 WorkoutFullHistoryView(workouts: service.recentWorkouts)
             }
-            .sheet(isPresented: $showingTrainingLoadDetail) {
+            .vectorSheet(isPresented: $showingTrainingLoadDetail, style: .half) {
                 LoadDetailView(
                     type: .training,
                     workouts: service.recentWorkouts,
@@ -234,7 +234,7 @@ struct TrainView: View {
                 .presentationDragIndicator(.visible)
                 .presentationCornerRadius(28)
             }
-            .sheet(isPresented: $showingCardioLoadDetail) {
+            .vectorSheet(isPresented: $showingCardioLoadDetail, style: .half) {
                 LoadDetailView(
                     type: .cardio,
                     workouts: service.recentWorkouts,
@@ -537,12 +537,11 @@ struct TrainView: View {
                     Text("No activity today")
                         .font(.headline)
                         .foregroundStyle(.secondary)
-                    Text("Your training history is below")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
+                    Spacer()
                     Button("See All History") { showingAllHistory = true }
                         .buttonStyle(.glassProminent)
                         .padding(.top, 4)
+                    Spacer()
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 28)
@@ -658,8 +657,9 @@ private struct MiniSparkline: View {
         let maxV = values.max() ?? 0
         let minV = values.min() ?? 0
         let span = max(maxV - minV, 1)
+        let domainMin = minV - span * 0.18
         return Chart(Array(values.enumerated()), id: \.offset) { idx, v in
-            AreaMark(x: .value("i", idx), y: .value("v", v))
+            AreaMark(x: .value("i", idx), yStart: .value("base", domainMin), yEnd: .value("v", v))
                 .foregroundStyle(LinearGradient(colors: [color.opacity(0.35), color.opacity(0)], startPoint: .top, endPoint: .bottom))
                 .interpolationMethod(.catmullRom)
             LineMark(x: .value("i", idx), y: .value("v", v))
@@ -667,7 +667,7 @@ private struct MiniSparkline: View {
                 .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round))
                 .interpolationMethod(.catmullRom)
         }
-        .chartYScale(domain: (minV - span * 0.18)...(maxV + span * 0.1))
+        .chartYScale(domain: domainMin...(maxV + span * 0.1))
         .chartXAxis(.hidden)
         .chartYAxis(.hidden)
         .chartLegend(.hidden)
@@ -718,7 +718,6 @@ private struct LoadStatusCard: View {
 
             if series.contains(where: { $0 > 0 }) {
                 MiniSparkline(values: series, color: color)
-                    .padding(.bottom, 14)
             }
         }
         .frame(maxWidth: .infinity, minHeight: 132, alignment: .topLeading)

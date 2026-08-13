@@ -10,6 +10,7 @@ struct WatchWorkoutView: View {
     @State private var displayRest: Int = 0
     @State private var durationTimerActive = false
     @State private var durationRemaining = 0
+    @State private var phaseRemaining = 0
     @State private var showSetConfirmation = false
     private let restTicker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -17,7 +18,9 @@ struct WatchWorkoutView: View {
         NavigationStack {
             Group {
                 if let workout = connectivity.activeWorkout {
-                    if workout.isFinished {
+                    if workout.isInPhase {
+                        phaseView(workout: workout)
+                    } else if workout.isFinished {
                         finishedView
                     } else if workout.isResting {
                         restView(workout: workout)
@@ -47,9 +50,16 @@ struct WatchWorkoutView: View {
             .onAppear {
                 pulse = true
                 displayRest = connectivity.activeWorkout?.restSecondsRemaining ?? 0
+                phaseRemaining = connectivity.activeWorkout?.phaseSecondsRemaining ?? 0
             }
             .onChange(of: connectivity.activeWorkout?.restSecondsRemaining) { _, newValue in
                 displayRest = newValue ?? 0
+            }
+            .onChange(of: connectivity.activeWorkout?.phaseSecondsRemaining) { _, newValue in
+                phaseRemaining = newValue ?? 0
+            }
+            .onChange(of: connectivity.activeWorkout?.phase) { _, _ in
+                phaseRemaining = connectivity.activeWorkout?.phaseSecondsRemaining ?? 0
             }
             .onChange(of: connectivity.activeWorkout?.setIndex) { _, _ in
                 durationTimerActive = false
@@ -76,6 +86,12 @@ struct WatchWorkoutView: View {
                         WKInterfaceDevice.current().play(.stop)
                     } else if durationRemaining <= 5 {
                         WKInterfaceDevice.current().play(.click)
+                    }
+                }
+                if let w = connectivity.activeWorkout, w.isInPhase, !w.isPaused, phaseRemaining > 0 {
+                    phaseRemaining -= 1
+                    if phaseRemaining == 0 {
+                        WKInterfaceDevice.current().play(.stop)
                     }
                 }
             }
@@ -345,6 +361,53 @@ struct WatchWorkoutView: View {
             .padding(12)
         }
         .containerBackground(Color.black.gradient, for: .navigation)
+    }
+
+    // MARK: - Phase View (Warm-Up / Cool-Down)
+
+    private func phaseView(workout: WatchWorkoutState) -> some View {
+        let tint: Color = workout.isWarmup ? .orange : .blue
+        let title = workout.isWarmup ? "Warm-Up" : "Cool-Down"
+        let skipLabel = workout.isWarmup ? "Skip Warmup" : "Skip Cooldown"
+
+        return VStack(alignment: .center, spacing: 0) {
+            Text(title)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .padding(.top, 12)
+
+            Spacer()
+
+            VStack(spacing: 0) {
+                Text(formatDuration(phaseRemaining))
+                    .font(.system(size: 60, weight: .bold, design: .rounded))
+                    .foregroundStyle(tint)
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+                    .animation(.snappy, value: phaseRemaining)
+                Text("remaining")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+            }
+
+            Spacer()
+
+            Button {
+                WKInterfaceDevice.current().play(.click)
+                connectivity.sendSkipPhase()
+            } label: {
+                Text(skipLabel)
+                    .font(.system(size: 15, weight: .semibold))
+                    .frame(maxWidth: .infinity)
+            }
+            .glassEffect(.regular.tint(tint.opacity(0.8)))
+            .clipShape(Capsule())
+            .handGestureShortcut(.primaryAction)
+            .padding(.bottom, 6)
+        }
+        .padding(.horizontal, 12)
+        .containerBackground(tint.opacity(0.15).gradient, for: .navigation)
     }
 
     // MARK: - Rest View
@@ -689,6 +752,37 @@ struct WatchWorkoutView: View {
     )
 
     healthStore.heartRate = 142
+
+    return NavigationStack {
+        WatchWorkoutView()
+            .environment(connectivity)
+            .environment(healthStore)
+    }
+}
+
+#Preview("Warm-Up") {
+    let connectivity = WatchConnectivityService()
+    let healthStore = WatchHealthStore()
+
+    connectivity.activeWorkout = WatchWorkoutState(
+        status: "active",
+        title: "Chest & Triceps",
+        exerciseName: "",
+        exerciseIndex: 0,
+        totalExercises: 4,
+        setIndex: 0,
+        totalSets: 4,
+        restSecondsRemaining: 0,
+        elapsedSeconds: 20,
+        exercises: [],
+        currentWeight: 0,
+        currentReps: 0,
+        isPaused: false,
+        phase: "warmup",
+        phaseSecondsRemaining: 251
+    )
+
+    healthStore.heartRate = 96
 
     return NavigationStack {
         WatchWorkoutView()

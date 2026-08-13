@@ -2067,6 +2067,446 @@
         "Walk forward for a prescribed distance or time, maintaining an upright posture.",
         "Keep your shoulders back and core tight throughout the movement."
       ]
+    },
+    {
+      "id": "wu_001",
+      "name": "Arm Circles",
+      "aliases": ["Shoulder Circles"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Warm-Up",
+      "movement_pattern": "Dynamic Stretch",
+      "primary_muscle": "Anterior Deltoids",
+      "secondary_muscles": ["Posterior Deltoids", "Rotator Cuff"],
+      "mechanics": "Isolation",
+      "force": "Dynamic",
+      "difficulty": "Beginner",
+      "category": "warmup",
+      "steps": [
+        "Stand with feet shoulder-width apart and extend both arms out to the sides.",
+        "Make small forward circles with your arms, gradually increasing the circle size.",
+        "Perform 15–20 forward circles, then reverse direction for 15–20 backward circles.",
+        "Move with control and feel the shoulder joint warm up."
+      ]
+    },
+    {
+      "id": "wu_002",
+      "name": "Leg Swings",
+      "aliases": ["Dynamic Leg Swings"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Warm-Up",
+      "movement_pattern": "Dynamic Stretch",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": ["Quadriceps", "Hip Flexors", "Glutes"],
+      "mechanics": "Compound",
+      "force": "Dynamic",
+      "difficulty": "Beginner",
+      "category": "warmup",
+      "steps": [
+        "Stand on one leg near a wall or rail for balance.",
+        "Swing the other leg forward and backward in a smooth, controlled motion.",
+        "Perform 10–12 swings per leg, gradually increasing range of motion.",
+        "Keep your core engaged and move rhythmically."
+      ]
+    },
+    {
+      "id": "wu_003",
+      "name": "Cat-Cow",
+      "aliases": ["Cat Cow Stretch", "Spinal Flow"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Warm-Up",
+      "movement_pattern": "Dynamic Stretch",
+      "primary_muscle": "Spinal Erectors",
+      "secondary_muscles": ["Core", "Chest", "Shoulders"],
+      "mechanics": "Compound",
+      "force": "Dynamic",
+      "difficulty": "Beginner",
+      "category": "warmup",
+      "steps": [
+        "Start on hands and knees with a neutral spine.",
+        "Inhale and lower your belly, raising your head and chest (Cow pose).",
+        "Exhale and round your spine, tucking your chin and tailbone (Cat pose).",
+        "Flow smoothly between positions for 8–10 repetitions."
+      ]
+    },
+    {
+      "id": "wu_004",
+      "name": "World's Greatest Stretch",
+      "aliases": ["WGS"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Warm-Up",
+      "movement_pattern": "Dynamic Stretch",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": ["Hip Flexors", "Chest", "Shoulders", "Core"],
+      "mechanics": "Compound",
+      "force": "Dynamic",
+      "difficulty": "Beginner",
+      "category": "warmup",
+      "steps": [
+        "From standing, hinge at the hips and place hands on the floor.",
+        "Step one leg back into a lunge, then rotate the torso toward the front leg.",
+        "Reach the arm toward the sky, opening your chest.",
+        "Return to center and repeat on the other side for 5–6 repetitions per leg."
+      ]
+    },
+    {
+      "id": "wu_005",
+      "name": "Hip Circles",
+      "aliases": ["Hip Rotation", "Pelvic Circles"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Warm-Up",
+      "movement_pattern": "Activation",
+      "primary_muscle": "Hip Flexors",
+      "secondary_muscles": ["Glutes", "Hip Abductors", "Core"],
+      "mechanics": "Isolation",
+      "force": "Dynamic",
+      "difficulty": "Beginner",
+      "category": "warmup",
+      "steps": [
+        "Stand with feet hip-width apart and place hands on your hips.",
+        "Make slow, deliberate circles with your hips, moving clockwise.",
+        "Perform 8–10 circles in each direction.",
+        "Maintain an upright posture and engage your core throughout."
+      ]
+    },
+    {
+      "id": "wu_006",
+      "name": "Bodyweight Squat (Warm-Up)",
+      "aliases": ["Air Squat Warm-Up"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Warm-Up",
+      "movement_pattern": "Activation",
+      "primary_muscle": "Quadriceps",
+      "secondary_muscles": ["Glutes", "Hamstrings", "Core"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "category": "warmup",
+      "steps": [
+        "Stand with feet shoulder-width apart, toes slightly outward.",
+        "Keeping your chest up, lower your body as if sitting in a chair.",
+        "Descend to a comfortable depth while maintaining neutral spine.",
+        "Drive through your heels to return to standing; perform 8–10 repetitions."
+      ]
+    },
+    {
+      "id": "wu_007",
+      "name": "Band Pull-Apart",
+      "aliases": ["Resistance Band Pull-Apart"],
+      "equipment": "Band",
+      "target_muscle_group": "Warm-Up",
+      "movement_pattern": "Activation",
+      "primary_muscle": "Rear Deltoids",
+      "secondary_muscles": ["Rhomboids", "Middle Back"],
+      "mechanics": "Isolation",
+      "force": "Pull",
+      "difficulty": "Beginner",
+      "category": "warmup",
+      "steps": [
+        "Hold a light resistance band at chest height with arms extended.",
+        "Pull the band apart by moving your hands outward in a wide arc.",
+        "Squeeze your shoulder blades together at full extension.",
+        "Slowly return to the starting position; perform 12–15 repetitions."
+      ]
+    },
+    {
+      "id": "wu_008",
+      "name": "Shoulder Dislocates (Band)",
+      "aliases": ["Band Shoulder Dislocates", "PVC Shoulder Dislocates"],
+      "equipment": "Band",
+      "target_muscle_group": "Warm-Up",
+      "movement_pattern": "Mobility",
+      "primary_muscle": "Anterior Deltoids",
+      "secondary_muscles": ["Rotator Cuff", "Chest"],
+      "mechanics": "Isolation",
+      "force": "Dynamic",
+      "difficulty": "Beginner",
+      "category": "warmup",
+      "steps": [
+        "Hold a light band at arm's length in front of your chest with a wide grip.",
+        "Keeping your arms straight, rotate the band overhead and behind your body.",
+        "Gently stretch at the bottom while maintaining control.",
+        "Reverse the motion to return to the starting position; perform 8–10 repetitions."
+      ]
+    },
+    {
+      "id": "wu_009",
+      "name": "Jumping Jacks",
+      "aliases": ["Star Jumps"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Warm-Up",
+      "movement_pattern": "Activation",
+      "primary_muscle": "Quadriceps",
+      "secondary_muscles": ["Shoulders", "Core", "Calves"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "category": "warmup",
+      "steps": [
+        "Stand upright with feet together and arms at your sides.",
+        "Jump while simultaneously spreading your feet shoulder-width apart and raising your arms overhead.",
+        "Jump again to return your feet together and lower your arms.",
+        "Perform 15–20 repetitions at a moderate, sustainable pace."
+      ]
+    },
+    {
+      "id": "wu_010",
+      "name": "High Knees",
+      "aliases": ["Running High Knees"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Warm-Up",
+      "movement_pattern": "Activation",
+      "primary_muscle": "Hip Flexors",
+      "secondary_muscles": ["Quadriceps", "Core"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "category": "warmup",
+      "steps": [
+        "Stand upright with feet hip-width apart.",
+        "Drive one knee up toward your chest, then quickly switch legs.",
+        "Maintain a running motion with your arms and stay upright.",
+        "Perform 15–20 rapid alternating movements to elevate heart rate."
+      ]
+    },
+    {
+      "id": "wu_011",
+      "name": "Inchworm",
+      "aliases": ["Inchworm Stretch", "Inchworm with Push-Up"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Warm-Up",
+      "movement_pattern": "Dynamic Stretch",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": ["Chest", "Shoulders", "Spinal Erectors"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "category": "warmup",
+      "steps": [
+        "From standing, hinge at the hips and place hands on the floor.",
+        "Walk your hands forward into a plank position without lowering your hips.",
+        "Walk your feet back to your hands in a smooth motion.",
+        "Perform 6–8 repetitions, moving with control throughout."
+      ]
+    },
+    {
+      "id": "wu_012",
+      "name": "Glute Bridge (Warm-Up)",
+      "aliases": ["Single-Leg Bridge Warm-Up"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Warm-Up",
+      "movement_pattern": "Activation",
+      "primary_muscle": "Glutes",
+      "secondary_muscles": ["Hamstrings", "Core", "Lower Back"],
+      "mechanics": "Compound",
+      "force": "Push",
+      "difficulty": "Beginner",
+      "category": "warmup",
+      "steps": [
+        "Lie on your back with knees bent and feet flat on the floor.",
+        "Drive through your heels to lift your hips, forming a straight line from knees to shoulders.",
+        "Squeeze your glutes at the top and hold for a brief pause.",
+        "Lower back down with control; perform 10–12 repetitions."
+      ]
+    },
+    {
+      "id": "cd_001",
+      "name": "Child's Pose",
+      "aliases": ["Restorative Pose"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Cool-Down",
+      "movement_pattern": "Static Stretch",
+      "primary_muscle": "Spinal Erectors",
+      "secondary_muscles": ["Glutes", "Shoulders", "Back"],
+      "mechanics": "Isolation",
+      "force": "Static",
+      "difficulty": "Beginner",
+      "category": "cooldown",
+      "steps": [
+        "Start on hands and knees, then lower your hips toward your heels.",
+        "Extend your arms forward on the floor, resting your forehead.",
+        "Relax your shoulders and breathe deeply.",
+        "Hold for 20–30 seconds while focusing on slow, steady breathing."
+      ]
+    },
+    {
+      "id": "cd_002",
+      "name": "Hamstring Stretch (Seated)",
+      "aliases": ["Seated Toe Touch", "Forward Fold Seated"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Cool-Down",
+      "movement_pattern": "Static Stretch",
+      "primary_muscle": "Hamstrings",
+      "secondary_muscles": ["Gastrocnemius", "Spinal Erectors"],
+      "mechanics": "Isolation",
+      "force": "Static",
+      "difficulty": "Beginner",
+      "category": "cooldown",
+      "steps": [
+        "Sit on the floor with legs extended in front of you.",
+        "Hinge at the hips and reach toward your toes, maintaining a straight back.",
+        "Lower your torso only as far as comfort allows without forcing.",
+        "Hold for 20–30 seconds, breathing steadily throughout."
+      ]
+    },
+    {
+      "id": "cd_003",
+      "name": "Quad Stretch (Standing)",
+      "aliases": ["Quadriceps Stretch"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Cool-Down",
+      "movement_pattern": "Static Stretch",
+      "primary_muscle": "Quadriceps",
+      "secondary_muscles": ["Hip Flexors"],
+      "mechanics": "Isolation",
+      "force": "Static",
+      "difficulty": "Beginner",
+      "category": "cooldown",
+      "steps": [
+        "Stand upright and pull one foot toward your glutes.",
+        "Keep your knees aligned and avoid twisting your torso.",
+        "Feel the stretch along the front of your thigh.",
+        "Hold for 20–30 seconds per leg, breathing steadily."
+      ]
+    },
+    {
+      "id": "cd_004",
+      "name": "Pigeon Pose",
+      "aliases": ["Pigeon Hip Stretch"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Cool-Down",
+      "movement_pattern": "Static Stretch",
+      "primary_muscle": "Glutes",
+      "secondary_muscles": ["Hip External Rotators", "Piriformis"],
+      "mechanics": "Isolation",
+      "force": "Static",
+      "difficulty": "Beginner",
+      "category": "cooldown",
+      "steps": [
+        "Start on hands and knees, then bring one knee forward behind your hands.",
+        "Straighten your back leg behind you and lower your torso toward the front leg.",
+        "Keep your hips level and avoid forcing the stretch.",
+        "Hold for 20–30 seconds per side, breathing deeply."
+      ]
+    },
+    {
+      "id": "cd_005",
+      "name": "Chest Doorway Stretch",
+      "aliases": ["Doorway Pec Stretch", "Corner Chest Stretch"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Cool-Down",
+      "movement_pattern": "Static Stretch",
+      "primary_muscle": "Chest",
+      "secondary_muscles": ["Anterior Deltoids"],
+      "mechanics": "Isolation",
+      "force": "Static",
+      "difficulty": "Beginner",
+      "category": "cooldown",
+      "steps": [
+        "Stand in a doorway with one arm raised to 90 degrees, palm against the frame.",
+        "Step forward slightly, feeling the stretch across your chest and shoulder.",
+        "Keep your shoulders down and avoid leaning too far forward.",
+        "Hold for 20–30 seconds per side, breathing steadily."
+      ]
+    },
+    {
+      "id": "cd_006",
+      "name": "Triceps Overhead Stretch",
+      "aliases": ["Overhead Triceps Stretch", "Arm Behind Head Stretch"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Cool-Down",
+      "movement_pattern": "Static Stretch",
+      "primary_muscle": "Triceps",
+      "secondary_muscles": ["Shoulders", "Lats"],
+      "mechanics": "Isolation",
+      "force": "Static",
+      "difficulty": "Beginner",
+      "category": "cooldown",
+      "steps": [
+        "Stand or sit upright and bring one arm overhead, bending at the elbow.",
+        "Use your other hand to gently press the bent arm further back.",
+        "Keep your spine neutral and avoid leaning to one side.",
+        "Hold for 20–30 seconds per arm, breathing steadily."
+      ]
+    },
+    {
+      "id": "cd_007",
+      "name": "Figure-Four Glute Stretch",
+      "aliases": ["Figure 4 Hip Stretch", "Supine Figure-Four"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Cool-Down",
+      "movement_pattern": "Static Stretch",
+      "primary_muscle": "Glutes",
+      "secondary_muscles": ["Hip External Rotators"],
+      "mechanics": "Isolation",
+      "force": "Static",
+      "difficulty": "Beginner",
+      "category": "cooldown",
+      "steps": [
+        "Lie on your back with both knees bent and feet on the floor.",
+        "Cross one ankle over the opposite knee, forming a figure-four shape.",
+        "Pull the bottom thigh toward your chest, feeling the stretch in the glute.",
+        "Hold for 20–30 seconds per side, maintaining steady breathing."
+      ]
+    },
+    {
+      "id": "cd_008",
+      "name": "Cobra / Upward Dog",
+      "aliases": ["Cobra Pose", "Upward Facing Dog"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Cool-Down",
+      "movement_pattern": "Static Stretch",
+      "primary_muscle": "Chest",
+      "secondary_muscles": ["Spinal Erectors", "Core", "Hip Flexors"],
+      "mechanics": "Isolation",
+      "force": "Static",
+      "difficulty": "Beginner",
+      "category": "cooldown",
+      "steps": [
+        "Lie face-down with hands under your shoulders.",
+        "Push your torso upward, straightening your arms and opening your chest.",
+        "Keep your hips and legs relaxed against the floor.",
+        "Hold for 15–20 seconds, breathing steadily and avoiding neck strain."
+      ]
+    },
+    {
+      "id": "cd_009",
+      "name": "Calf Stretch (Wall)",
+      "aliases": ["Wall Calf Stretch"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Cool-Down",
+      "movement_pattern": "Static Stretch",
+      "primary_muscle": "Gastrocnemius",
+      "secondary_muscles": ["Soleus"],
+      "mechanics": "Isolation",
+      "force": "Static",
+      "difficulty": "Beginner",
+      "category": "cooldown",
+      "steps": [
+        "Stand facing a wall with one foot forward and one foot back.",
+        "Keep your back heel on the ground and lean into the wall.",
+        "Feel the stretch in the calf of the back leg.",
+        "Hold for 20–30 seconds per leg, breathing steadily throughout."
+      ]
+    },
+    {
+      "id": "cd_010",
+      "name": "Neck Rolls / Upper-Trap Stretch",
+      "aliases": ["Neck Rolls", "Upper Trap Stretch"],
+      "equipment": "Bodyweight",
+      "target_muscle_group": "Cool-Down",
+      "movement_pattern": "Static Stretch",
+      "primary_muscle": "Upper Trapezius",
+      "secondary_muscles": ["Neck Muscles", "Shoulders"],
+      "mechanics": "Isolation",
+      "force": "Static",
+      "difficulty": "Beginner",
+      "category": "cooldown",
+      "steps": [
+        "Sit or stand with good posture and shoulders relaxed.",
+        "Gently tilt your ear toward one shoulder, feeling the upper-trap stretch.",
+        "Hold for 10–15 seconds, then repeat on the other side.",
+        "Move slowly and avoid forcing the stretch; perform 2–3 repetitions per side."
+      ]
     }
   ]
 }

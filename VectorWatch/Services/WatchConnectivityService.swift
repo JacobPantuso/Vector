@@ -2,6 +2,7 @@ import Foundation
 import WatchConnectivity
 import Observation
 import WatchKit
+import WidgetKit
 
 @Observable
 final class WatchConnectivityService: NSObject, WCSessionDelegate {
@@ -50,6 +51,10 @@ final class WatchConnectivityService: NSObject, WCSessionDelegate {
 
 	func sendSkipRest() {
 		send(["command": "skipRest"])
+	}
+
+	func sendSkipPhase() {
+		send(["command": "skipPhase"])
 	}
 
 	func sendPause() {
@@ -172,6 +177,38 @@ final class WatchConnectivityService: NSObject, WCSessionDelegate {
 				}
 			}
 		}
+
+		publishWidgetSnapshot()
+	}
+
+	/// The watch's Lock Screen/complication widgets can't read the iPhone's App Group
+	/// container -- they only see the watch-side App Group. So whenever a message from
+	/// the phone updates our scores, mirror the synced values into the watch-side
+	/// VectorWidgetStore so the complication has something current to render.
+	private func publishWidgetSnapshot() {
+		let snapshot = VectorWidgetSnapshot(
+			updated: .now,
+			recovery: recoveryScore?.score,
+			exertion: exertionScore?.score,
+			exertionTargetLow: nil,
+			exertionTargetHigh: nil,
+			sleep: sleepAnalysis?.qualityScore ?? sleepAnalysis.map { Int(($0.quality * 100).rounded()) },
+			sleepAsleepSeconds: sleepAnalysis?.asleepDuration,
+			stress: stressScore?.score,
+			hrv: recoveryScore?.hrvValue,
+			restingHR: recoveryScore?.restingHeartRate,
+			steps: nil,
+			recoveryHistory: [],
+			name: nil,
+			sleepDeepSeconds: sleepAnalysis?.deepDuration,
+			sleepRemSeconds: sleepAnalysis?.remDuration,
+			sleepCoreSeconds: nil,
+			sleepAwakeSeconds: sleepAnalysis?.awakeDuration
+		)
+
+		guard !snapshot.isEmpty else { return }
+
+		VectorWidgetStore.save(snapshot)
 	}
 
 	func requestUpdate() {

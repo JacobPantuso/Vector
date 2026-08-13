@@ -56,14 +56,14 @@ struct StressDetailView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingSafari) {
+        .vectorSheet(isPresented: $showingSafari) {
             SafariView(url: safariURL)
                 .ignoresSafeArea()
         }
-        .sheet(isPresented: $showingHelp) {
+        .vectorSheet(isPresented: $showingHelp, style: .half) {
             CardInfoSheet(cardID: "stress")
         }
-        .sheet(item: $selectedStressFactor) { factor in
+        .vectorSheet(item: $selectedStressFactor, style: .half) { factor in
             MetricDetailSheet(
                 title: factor.name,
                 icon: factor.icon,
@@ -81,7 +81,7 @@ struct StressDetailView: View {
                 actionItem: factor.actionItem
             )
         }
-        .sheet(isPresented: $showingStressHistory) {
+        .vectorSheet(isPresented: $showingStressHistory, style: .half) {
             NavigationStack {
                 ScrollView {
                     VStack(spacing: 20) {

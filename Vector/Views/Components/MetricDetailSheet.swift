@@ -17,7 +17,7 @@ struct MetricDetailSheet: View {
     let tint: Color
     let value: String
     let statusLabel: String
-    let isPositive: Bool
+    let isPositive: Bool?
     var series: [MetricTrendPoint] = []
     var baseline: Double? = nil
     var valueFormat: (Double) -> String = { String(Int($0)) }
@@ -34,7 +34,13 @@ struct MetricDetailSheet: View {
     @State private var aiExplanation: String?
     @State private var isGeneratingExplanation = false
 
-    private var statusColor: Color { isPositive ? .green : .orange }
+    private var statusColor: Color {
+        switch isPositive {
+        case .some(true): .green
+        case .some(false): .orange
+        case .none: .secondary
+        }
+    }
 
     private var trendDelta: (icon: String, text: String)? {
         guard series.count >= 4, let last = series.last?.value else { return nil }
@@ -92,9 +98,11 @@ struct MetricDetailSheet: View {
         defer { isGeneratingExplanation = false }
 
         let baselineContext = baseline.map { "Baseline for this metric: \(valueFormat($0))." } ?? ""
-        let direction = isPositive
-            ? "This reading is currently a POSITIVE signal relative to baseline (status: \(statusLabel))."
-            : "This reading is currently a NEGATIVE signal relative to baseline (status: \(statusLabel))."
+        let direction = switch isPositive {
+        case .some(true): "This reading is currently a POSITIVE signal relative to baseline (status: \(statusLabel))."
+        case .some(false): "This reading is currently a NEGATIVE signal relative to baseline (status: \(statusLabel))."
+        case .none: "This reading is informational (status: \(statusLabel)); it is not being judged good or bad."
+        }
 
         let session = LanguageModelSession(
             model: SystemLanguageModel.default,
@@ -136,7 +144,7 @@ struct MetricDetailSheet: View {
                 Text(title)
                     .font(.title3.bold())
                 HStack(spacing: 5) {
-                    Image(systemName: isPositive ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                    Image(systemName: isPositive == nil ? "info.circle.fill" : (isPositive == true ? "checkmark.circle.fill" : "exclamationmark.circle.fill"))
                         .font(.caption2)
                     Text(statusLabel)
                         .font(.caption.weight(.semibold))

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct OnboardingView: View {
     @Binding var hasCompletedOnboarding: Bool
+    @Binding var hasCompletedEquipmentSetup: Bool
     @State private var currentPage = 0
     @State private var navigatingForward = true
     @State private var walkthroughCardIndex = 0
@@ -80,24 +81,26 @@ struct OnboardingView: View {
             Group {
                 switch currentPage {
                 case 0:
-                    WelcomePage(onContinue: { })
+                    WelcomePage(onContinue: goForward)
                 case 1:
-                    ProfileSetupPage(onContinue: { })
+                    ProfileSetupPage(onContinue: goForward)
                 case 2:
-                    HealthPermissionPage(onContinue: { })
+                    EquipmentSetupPage(onContinue: goForward)
                 case 3:
-                    CardWalkthroughPage(selectedIndex: $walkthroughCardIndex, onContinue: { })
+                    HealthPermissionPage(onContinue: goForward)
                 case 4:
-                    AISetupPage(onComplete: { })
+                    CardWalkthroughPage(selectedIndex: $walkthroughCardIndex, onContinue: goForward)
                 case 5:
+                    AISetupPage(onComplete: goForward)
+                case 6:
                     SetupCompletePage()
                 default:
-                    WelcomePage(onContinue: { })
+                    WelcomePage(onContinue: goForward)
                 }
             }
             .transition(pageTransition)
             .safeAreaBar(edge: .top) {
-                if currentPage > 0 && currentPage < 5 {
+                if currentPage > 0 && currentPage < 6 {
                     HStack {
                         HStack(spacing: 8) {
                             Image("VectorIcon")
@@ -127,7 +130,7 @@ struct OnboardingView: View {
     }
 
     private func goForward() {
-        if currentPage == 3 && walkthroughCardIndex < DashboardCardInfo.allCards.count - 1 {
+        if currentPage == 4 && walkthroughCardIndex < DashboardCardInfo.allCards.count - 1 {
             withAnimation(.easeInOut(duration: 0.3)) {
                 walkthroughCardIndex += 1
             }
@@ -140,7 +143,7 @@ struct OnboardingView: View {
     }
 
     private func goBack() {
-        if currentPage == 3 && walkthroughCardIndex > 0 {
+        if currentPage == 4 && walkthroughCardIndex > 0 {
             withAnimation(.easeInOut(duration: 0.3)) {
                 walkthroughCardIndex -= 1
             }
@@ -161,7 +164,7 @@ struct OnboardingView: View {
                     .ignoresSafeArea(edges: .bottom)
 
                 VStack(spacing: 12) {
-                    if currentPage == 3 {
+                    if currentPage == 4 {
                         HStack(spacing: 8) {
                             ForEach(0..<DashboardCardInfo.allCards.count, id: \.self) { index in
                                 Capsule()
@@ -194,16 +197,17 @@ struct OnboardingView: View {
                                 withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
                                     currentPage = 1
                                 }
-                            } else if currentPage < 5 {
+                            } else if currentPage < 6 {
                                 goForward()
                             } else {
                                 withAnimation(.spring(response: 0.5, dampingFraction: 0.85)) {
                                     hasCompletedOnboarding = true
+                                    hasCompletedEquipmentSetup = true
                                 }
                             }
                         } label: {
                             Group {
-                                if currentPage == 0 || currentPage == 5 {
+                                if currentPage == 0 || currentPage == 6 {
                                     Text(currentPage == 0 ? "Get Started" : "Let's Go")
                                         .font(.body.weight(.semibold))
                                         .padding(.horizontal, 12)

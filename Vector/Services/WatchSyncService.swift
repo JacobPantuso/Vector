@@ -26,6 +26,8 @@ struct WorkoutSyncState: Codable, Sendable {
     var currentWeight: Double
     var currentReps: Int
     var isPaused: Bool = false
+    var phase: String = "main"
+    var phaseSecondsRemaining: Int = 0
 }
 
 @Observable
@@ -181,6 +183,8 @@ final class WatchSyncService: NSObject, WCSessionDelegate {
                     NotificationCenter.default.post(name: .watchCommandCompleteSet, object: nil, userInfo: info.isEmpty ? nil : info)
                 case "skipRest":
                     NotificationCenter.default.post(name: .watchCommandSkipRest, object: nil)
+                case "skipPhase":
+                    NotificationCenter.default.post(name: .watchCommandSkipPhase, object: nil)
                 case "pause":
                     NotificationCenter.default.post(name: .watchCommandPause, object: nil)
                 case "endWorkout":
@@ -216,6 +220,7 @@ extension Notification.Name {
     static let watchRequestedSync = Notification.Name("com.vector.watchRequestedSync")
     static let watchCommandCompleteSet = Notification.Name("com.vector.watchCommandCompleteSet")
     static let watchCommandSkipRest = Notification.Name("com.vector.watchCommandSkipRest")
+    static let watchCommandSkipPhase = Notification.Name("com.vector.watchCommandSkipPhase")
     static let watchCommandPause = Notification.Name("com.vector.watchCommandPause")
     static let watchCommandEndWorkout = Notification.Name("com.vector.watchCommandEndWorkout")
     static let watchCommandSelectExercise = Notification.Name("com.vector.watchCommandSelectExercise")

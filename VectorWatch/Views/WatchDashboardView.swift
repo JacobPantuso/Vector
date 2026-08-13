@@ -18,7 +18,7 @@ struct WatchDashboardView: View {
                         score: "\(exertion.score)",
                         label: "Exertion",
                         color: exertion.color,
-                        overflowColor: Color(red: 0.35, green: 0.0, blue: 0.0)
+                        overflowColor: Color(hue: 0.0, saturation: 0.95, brightness: 0.5)
                     )
                     DashCircle(
                         progress: sleep.progress,
@@ -61,7 +61,8 @@ struct WatchDashboardView: View {
 
     private var exertion: (progress: Double, score: Int, color: Color) {
         guard let e = connectivity.exertionScore else { return (0, 0, .orange) }
-        return (Double(e.score) / 100, e.score, e.exertionLevelColor)
+        let progress = Double(e.score) / 100
+        return (progress, e.score, e.exertionLevelColor)
     }
 
     private var sleep: (progress: Double, label: String) {

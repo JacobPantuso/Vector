@@ -127,7 +127,17 @@ final class WorkoutCompletionStore {
             let topSetIndex = resolved.firstIndex { $0.weightKg == topWeight } ?? 0
             let topReps = resolved[topSetIndex].reps
             let targetReps = resolved[topSetIndex].reps
-            ExerciseProgressionStore.shared.record(entry: ex, weightKg: topWeight, reps: topReps, targetReps: targetReps)
+
+            // Build per-set detail from resolved set details
+            let sets: [SetPerformance] = resolved.map { detail in
+                SetPerformance(
+                    weightKg: detail.weightKg ?? 0,
+                    reps: detail.reps,
+                    targetReps: detail.reps
+                )
+            }
+
+            ExerciseProgressionStore.shared.record(entry: ex, weightKg: topWeight, reps: topReps, targetReps: targetReps, sets: sets)
         }
     }
 

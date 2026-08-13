@@ -8,6 +8,22 @@ struct WorkoutLoad: Sendable {
     let zoneSeconds: [TimeInterval]   // 5 elements: Z1...Z5
 }
 
+/// Yesterday's total training load relative to a typical training day, used to decide whether
+/// tonight's elevated resting HR / suppressed HRV is expected post-exercise physiology.
+struct PriorDayStrain: Sendable {
+    let trimp: Double
+    let typicalTrimp: Double
+    var ratio: Double { typicalTrimp > 0 ? trimp / typicalTrimp : 0 }
+    /// A clearly harder-than-usual day: either a big absolute session or well above the personal norm.
+    var isHard: Bool { trimp >= 250 || (trimp >= 120 && ratio >= 1.5) }
+    /// One-word descriptor of yesterday's load, used in user-facing copy.
+    var descriptor: String {
+        if trimp >= 450 || ratio >= 2.5 { return "extreme" }
+        if trimp >= 250 || ratio >= 1.5 { return "high" }
+        return "elevated"
+    }
+}
+
 struct TrainingLoadEngine {
     static func computeExertion(loads: [WorkoutLoad], zoneLoads: [WorkoutLoad]? = nil, fitnessTargetMultiplier: Double = 1.0, now: Date = Date()) -> ExertionScore {
         let calendar = Calendar.current
@@ -23,22 +39,32 @@ struct TrainingLoadEngine {
         let acuteLoad = acute.reduce(0) { $0 + $1.trimp }
         let chronicTotal = chronic.reduce(0) { $0 + $1.trimp }
 
-        // Chronic load as a weekly-equivalent EWMA of daily TRIMP (more responsive than a flat mean,
-        // and robust to days with no samples). Falls back to the simple 28-day mean.
-        let chronicDaily = chronic.sorted { $0.date < $1.date }.map { $0.trimp }
+        // Chronic load as a weekly-equivalent EWMA of daily TRIMP (one entry per calendar day,
+        // zero-filled for days with no loads). More responsive than a flat mean, robust to days
+        // with no samples, and handles multiple loads per day (e.g., HR + strength top-up).
+        var chronicDaily: [Double] = []
+        if !chronic.isEmpty {
+            // Group loads by calendar day and sum trimp per day
+            let grouped = Dictionary(grouping: chronic) { calendar.startOfDay(for: $0.date) }
+            // Build zero-filled series from 28 days ago through today (inclusive)
+            var current = calendar.startOfDay(for: twentyEightDaysAgo)
+            while current <= startOfToday {
+                chronicDaily.append(grouped[current]?.reduce(0, { $0 + $1.trimp }) ?? 0)
+                current = calendar.date(byAdding: .day, value: 1, to: current) ?? current
+            }
+        }
         let chronicLoad = chronicDaily.isEmpty
             ? 0
             : (BaselineStatistics.ewma(chronicDaily, alpha: 2.0 / 29.0) ?? (chronicTotal / 28)) * 7
 
         // Personal daily target derived from chronic load, scaled by fitness level; fallback when no history.
-        let baseTarget = chronicLoad > 0 ? max(30, (chronicLoad / 7) * 1.5) : 80
-        let dailyTarget = baseTarget * max(0.5, fitnessTargetMultiplier)
-        let score = max(0, min(100, Int((todayStrain / dailyTarget) * 100)))
+        let dailyTarget = Self.dailyTarget(chronicLoad: chronicLoad, fitnessTargetMultiplier: fitnessTargetMultiplier)
+        let score = max(0, Int((todayStrain / dailyTarget) * 100))
 
         // Zone splits come from actual workouts only (not all-day HR), so "time in zone" reflects training.
         let zoneSplits = aggregateZones(zoneLoads ?? acute)
 
-        return ExertionScore(
+        var result = ExertionScore(
             score: score,
             acuteLoad: acuteLoad,
             chronicLoad: chronicLoad,
@@ -46,6 +72,43 @@ struct TrainingLoadEngine {
             date: now,
             zoneSplits: zoneSplits
         )
+        result.fitnessTargetMultiplier = fitnessTargetMultiplier
+        return result
+    }
+
+    /// Personal daily strain target derived from chronic load, scaled by fitness level.
+    static func dailyTarget(chronicLoad: Double, fitnessTargetMultiplier: Double = 1.0) -> Double {
+        let baseTarget = chronicLoad > 0 ? max(30, (chronicLoad / 7) * 1.5) : 80
+        return baseTarget * max(0.5, fitnessTargetMultiplier)
+    }
+
+    /// Total TRIMP accumulated on the calendar day before `now`, plus the median of non-zero daily
+    /// totals over the prior 28 days as the personal "typical day" reference.
+    static func priorDayStrain(loads: [WorkoutLoad], now: Date = Date(), calendar: Calendar = .current) -> PriorDayStrain? {
+        guard !loads.isEmpty else { return nil }
+        let startOfToday = calendar.startOfDay(for: now)
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: startOfToday) ?? startOfToday
+        let twentyEightDaysAgo = calendar.date(byAdding: .day, value: -28, to: now) ?? now
+
+        // Group all loads by calendar day and sum trimp per day
+        let allGrouped = Dictionary(grouping: loads) { calendar.startOfDay(for: $0.date) }
+        let yesterdayTrimp = allGrouped[yesterday]?.reduce(0) { $0 + $1.trimp } ?? 0
+
+        // Build 28-day daily totals (inclusive of yesterday) and compute median of non-zero days
+        var dailyTotals: [Double] = []
+        var current = calendar.startOfDay(for: twentyEightDaysAgo)
+        while current <= yesterday {
+            if let total = allGrouped[current] {
+                let daySum = total.reduce(0) { $0 + $1.trimp }
+                if daySum > 0 {
+                    dailyTotals.append(daySum)
+                }
+            }
+            current = calendar.date(byAdding: .day, value: 1, to: current) ?? current
+        }
+
+        let typicalTrimp = dailyTotals.isEmpty ? 0 : (BaselineStatistics.median(dailyTotals) ?? 0)
+        return PriorDayStrain(trimp: yesterdayTrimp, typicalTrimp: typicalTrimp)
     }
 
     private static func aggregateZones(_ loads: [WorkoutLoad]) -> [ZoneTime] {

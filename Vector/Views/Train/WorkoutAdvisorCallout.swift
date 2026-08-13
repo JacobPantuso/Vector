@@ -36,7 +36,7 @@ struct WorkoutAdvisorCallout: View {
                     )
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(applied ? "Overload applied" : "Apply progressive overload")
+                    Text(applied ? "Weight applied" : (insight.deltaKg < 0 ? "Apply suggested deload" : "Apply progressive overload"))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.primary)
                     Text(applied ? "\(lbs(suggested)) across all sets" : "\(lbs(current)) → \(lbs(suggested)) · all sets")
@@ -47,9 +47,9 @@ struct WorkoutAdvisorCallout: View {
                 Spacer(minLength: 0)
 
                 if !applied {
-                    Image(systemName: "arrow.up.forward")
+                    Image(systemName: insight.deltaKg < 0 ? "arrow.down.forward" : "arrow.up.forward")
                         .font(.footnote.weight(.bold))
-                        .foregroundStyle(.purple)
+                        .foregroundStyle(.indigo)
                 }
             }
             .padding(.horizontal, 16)
@@ -58,10 +58,10 @@ struct WorkoutAdvisorCallout: View {
             .glassEffect(.regular, in: .rect(cornerRadius: 16))
             .overlay {
                 RoundedRectangle(cornerRadius: 16)
-                    .strokeBorder(Color.purple.opacity(0.22), lineWidth: 1)
+                    .strokeBorder(Color.indigo.opacity(0.16), lineWidth: 1)
                     .opacity(applied ? 0.4 : 1)
             }
-            .shadow(color: .purple.opacity(applied ? 0 : (glow ? 0.55 : 0.3)), radius: glow ? 16 : 10)
+            .shadow(color: .indigo.opacity(applied ? 0 : 0.18), radius: 10)
         }
         .buttonStyle(.plain)
         .disabled(applied)
@@ -97,6 +97,10 @@ struct WorkoutAdvisorCallout: View {
         )
         WorkoutAdvisorCallout(
             insight: ProgressionInsight(kind: .plateau, detail: "", suggestedWeightKg: 55, deltaKg: 5),
+            onApply: {}
+        )
+        WorkoutAdvisorCallout(
+            insight: ProgressionInsight(kind: .deload, detail: "", suggestedWeightKg: 135, deltaKg: -15),
             onApply: {}
         )
     }

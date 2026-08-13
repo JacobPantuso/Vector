@@ -99,6 +99,21 @@ enum PrimaryActivity: String, CaseIterable, Codable, Sendable, Equatable {
     case mixed = "Mixed"
 }
 
+enum WeightUnit: String, CaseIterable, Codable, Sendable, Equatable {
+    case kilograms = "kg"
+    case pounds = "lbs"
+
+    static let kgPerPound = 0.45359237
+
+    func fromKilograms(_ kg: Double) -> Double {
+        self == .kilograms ? kg : kg / Self.kgPerPound
+    }
+
+    func toKilograms(_ value: Double) -> Double {
+        self == .kilograms ? value : value * Self.kgPerPound
+    }
+}
+
 struct UserProfile: Codable, Sendable {
     let goal: FitnessGoal
     let ageRange: AgeRange
@@ -141,6 +156,8 @@ struct UserProfile: Codable, Sendable {
     static let defaultBiologicalSex = BiologicalSex.unspecified
     static let defaultFitnessLevel = FitnessLevel.recreational
     static let defaultPrimaryActivity = PrimaryActivity.mixed
+    static let defaultWarmupMinutes = 5
+    static let defaultCooldownMinutes = 5
 }
 
 enum UserProfileStorage {
@@ -155,8 +172,11 @@ enum UserProfileStorage {
     static let biologicalSex = "profileBiologicalSex"
     static let fitnessLevel = "profileFitnessLevel"
     static let primaryActivity = "profilePrimaryActivity"
+    static let weightUnit = "profileWeightUnit"
+    static let warmupMinutes = "warmupDurationMinutes"
+    static let cooldownMinutes = "cooldownDurationMinutes"
 
-    static let allKeys: [String] = [goal, ageRange, trainingDays, sleepTargetHours, firstName, lastName, weightKg, heightCm, biologicalSex, fitnessLevel, primaryActivity]
+    static let allKeys: [String] = [goal, ageRange, trainingDays, sleepTargetHours, firstName, lastName, weightKg, heightCm, biologicalSex, fitnessLevel, primaryActivity, weightUnit, warmupMinutes, cooldownMinutes]
 }
 
 @Observable
