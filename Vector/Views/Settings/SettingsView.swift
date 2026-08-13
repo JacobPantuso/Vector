@@ -783,6 +783,7 @@ private struct HealthDevicesSettingsView: View {
 private struct AISettingsView: View {
     @State private var insightEngine = InsightEngine()
     @AppStorage(AdvisorPersona.storageKey) private var advisorPersonaRaw = AdvisorPersona.trainer.rawValue
+    @State private var memoryStore = AdvisorMemoryStore.shared
 
     var body: some View {
         List {
@@ -804,6 +805,19 @@ private struct AISettingsView: View {
                     }
                 }
                 Text("Shapes how Vector communicates: like a coach, a friend, encouraging, or direct.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                NavigationLink {
+                    AdvisorMemoryView()
+                } label: {
+                    HStack {
+                        Label("What Vector Remembers", systemImage: "brain")
+                        Spacer()
+                        Text("\(memoryStore.memories.count)")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Text("Lasting details Vector picked up from your chats — equipment, injuries, schedule. Delete anything you'd rather it forget.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

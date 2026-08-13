@@ -5,6 +5,7 @@ struct AdvisorSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var advisor = VectorAdvisor.shared
     @State private var history = ConversationHistoryStore.shared
+    @State private var memory = AdvisorMemoryStore.shared
     @State private var persona: AdvisorPersona = AdvisorPersona.current
     @State private var showClearConfirm = false
 
@@ -19,6 +20,19 @@ struct AdvisorSettingsView: View {
                     }
                     .onChange(of: persona) { _, newValue in
                         UserDefaults.standard.set(newValue.rawValue, forKey: AdvisorPersona.storageKey)
+                    }
+                }
+
+                Section("Memory") {
+                    NavigationLink {
+                        AdvisorMemoryView()
+                    } label: {
+                        HStack {
+                            Label("What Vector Remembers", systemImage: "brain")
+                            Spacer()
+                            Text("\(memory.memories.count)")
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
 
@@ -114,6 +128,66 @@ struct ConversationHistoryView: View {
         }
         .navigationTitle("Chat History")
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// Browse and manage persisted advisor memories (durable facts about the user).
+struct AdvisorMemoryView: View {
+    @State private var memory = AdvisorMemoryStore.shared
+    @State private var showClearConfirm = false
+
+    var body: some View {
+        Group {
+            if memory.memories.isEmpty {
+                ContentUnavailableView(
+                    "Nothing Remembered Yet",
+                    systemImage: "brain",
+                    description: Text("As you chat, Vector saves lasting details like your equipment, injuries, and schedule.")
+                )
+            } else {
+                List {
+                    ForEach(memory.memories) { item in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(item.text)
+                                .font(.body)
+                                .foregroundStyle(.primary)
+                            Text(item.date.formatted(.relative(presentation: .named)))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .swipeActions(edge: .trailing) {
+                            Button(role: .destructive) {
+                                memory.delete(item.id)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle("Memory")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                if !memory.memories.isEmpty {
+                    Button(role: .destructive) {
+                        showClearConfirm = true
+                    } label: {
+                        Text("Forget All")
+                    }
+                }
+            }
+        }
+        .confirmationDialog(
+            "Forget everything? This can't be undone.",
+            isPresented: $showClearConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Forget All", role: .destructive) {
+                memory.clearAll()
+            }
+        }
     }
 }
 

@@ -622,3 +622,64 @@ struct SetFitnessProfileTool: Tool {
             : "Updated fitness profile: " + changes.joined(separator: ", ") + "."
     }
 }
+
+/// Save a durable fact about the user (an injury, equipment constraint, schedule, or preference)
+/// so it is remembered in future conversations.
+struct RememberPreferenceTool: Tool {
+    typealias Output = String
+
+    let name = "rememberPreference"
+    let description = "Save a durable fact about the user so it is remembered in future conversations — an injury or limitation, available equipment, gym or home training, schedule constraints, exercises they like or refuse, dietary preferences, or a coaching style they asked for. Call this whenever the user states a lasting preference or constraint about themselves, even if they did not explicitly ask you to remember it. Do not use it for one-off questions or for numbers the app already tracks."
+
+    @Generable
+    struct Arguments {
+        @Guide(description: "The fact to remember, written as a short third-person statement about the user, e.g. 'Trains at home with dumbbells only' or 'Recovering from a left shoulder impingement'")
+        var fact: String
+    }
+
+    func call(arguments args: Arguments) async throws -> String {
+        let result: String = await MainActor.run {
+            let stepID = AdvisorActivity.shared.beginStep("Remembering that…")
+            let changed = AdvisorMemoryStore.shared.remember(args.fact)
+            if changed {
+                AdvisorActivity.shared.finishStep(stepID, result: "Remembered: \(args.fact)")
+                AdvisorActivity.shared.recordAction("Remembered: \(args.fact)") {
+                    AdvisorMemoryStore.shared.forget(matching: args.fact)
+                }
+                return "Saved to memory: \(args.fact)"
+            } else {
+                AdvisorActivity.shared.finishStep(stepID, result: "Already known")
+                return "Already remembered."
+            }
+        }
+        return result
+    }
+}
+
+/// Remove something previously saved about the user when it is no longer true or user asks to forget it.
+struct ForgetPreferenceTool: Tool {
+    typealias Output = String
+
+    let name = "forgetPreference"
+    let description = "Remove something previously saved about the user. Call this when the user says a saved fact is no longer true or asks you to forget it."
+
+    @Generable
+    struct Arguments {
+        @Guide(description: "Words identifying the memory to remove, e.g. 'shoulder injury'")
+        var about: String
+    }
+
+    func call(arguments args: Arguments) async throws -> String {
+        let result: String = await MainActor.run {
+            let stepID = AdvisorActivity.shared.beginStep("Updating what I remember…")
+            if let removed = AdvisorMemoryStore.shared.forget(matching: args.about) {
+                AdvisorActivity.shared.finishStep(stepID, result: "Removed: \(removed)")
+                return "Forgot: \(removed)"
+            } else {
+                AdvisorActivity.shared.finishStep(stepID, result: "Nothing found")
+                return "Nothing matching that is saved."
+            }
+        }
+        return result
+    }
+}
