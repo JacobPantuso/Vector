@@ -79,22 +79,24 @@ enum AdvisorContext {
         if health.todaySteps > 0 { lines.append("Steps today: \(String(format: "%.0f", health.todaySteps))") }
 
         // MARK: Nutrition
-        let food = FoodLogService.shared
         let defaults = UserDefaults.standard
-        let calTarget = defaults.double(forKey: "nutritionTargetCalories")
-        let proTarget = defaults.double(forKey: "nutritionTargetProtein")
-        let carbTarget = defaults.double(forKey: "nutritionTargetCarbs")
-        let fatTarget = defaults.double(forKey: "nutritionTargetFat")
-        lines.append("\n--- Nutrition today ---")
-        lines.append("Calories: \(Int(food.todayCalories))\(calTarget > 0 ? " / \(Int(calTarget)) target" : "")")
-        lines.append("Protein: \(Int(food.todayProtein))g\(proTarget > 0 ? " / \(Int(proTarget))g" : "") · Carbs: \(Int(food.todayCarbs))g\(carbTarget > 0 ? " / \(Int(carbTarget))g" : "") · Fat: \(Int(food.todayFat))g\(fatTarget > 0 ? " / \(Int(fatTarget))g" : "")")
-        if food.todayEntries.isEmpty {
-            lines.append("No meals logged yet today.")
-        } else {
-            lines.append("Logged: " + food.todayEntries.map { "\($0.name) (\(Int($0.calories)) kcal)" }.joined(separator: ", "))
+        if FeatureFlags.nutritionEnabled {
+            let food = FoodLogService.shared
+            let calTarget = defaults.double(forKey: "nutritionTargetCalories")
+            let proTarget = defaults.double(forKey: "nutritionTargetProtein")
+            let carbTarget = defaults.double(forKey: "nutritionTargetCarbs")
+            let fatTarget = defaults.double(forKey: "nutritionTargetFat")
+            lines.append("\n--- Nutrition today ---")
+            lines.append("Calories: \(Int(food.todayCalories))\(calTarget > 0 ? " / \(Int(calTarget)) target" : "")")
+            lines.append("Protein: \(Int(food.todayProtein))g\(proTarget > 0 ? " / \(Int(proTarget))g" : "") · Carbs: \(Int(food.todayCarbs))g\(carbTarget > 0 ? " / \(Int(carbTarget))g" : "") · Fat: \(Int(food.todayFat))g\(fatTarget > 0 ? " / \(Int(fatTarget))g" : "")")
+            if food.todayEntries.isEmpty {
+                lines.append("No meals logged yet today.")
+            } else {
+                lines.append("Logged: " + food.todayEntries.map { "\($0.name) (\(Int($0.calories)) kcal)" }.joined(separator: ", "))
+            }
+            let bf = food.breakfastSchedule
+            lines.append("Auto-breakfast: \(bf.isEnabled ? "on at \(String(format: "%02d:%02d", bf.scheduledHour, bf.scheduledMinute))" : "off")")
         }
-        let bf = food.breakfastSchedule
-        lines.append("Auto-breakfast: \(bf.isEnabled ? "on at \(String(format: "%02d:%02d", bf.scheduledHour, bf.scheduledMinute))" : "off")")
 
         // MARK: Training
         let templates = WorkoutStorageService.shared.savedWorkouts
@@ -108,7 +110,7 @@ enum AdvisorContext {
         var highlights: [String] = []
         for t in templates {
             for ex in t.exercises {
-                if let insight = ProgressionAdvisor.insight(for: ex),
+                if let insight = ProgressionAdvisor.insight(for: ex, recoveryScore: health.recoveryScore?.score),
                    insight.kind == .readyToProgress || insight.kind == .plateau {
                     highlights.append("\(ex.name): \(insight.headline)")
                 }

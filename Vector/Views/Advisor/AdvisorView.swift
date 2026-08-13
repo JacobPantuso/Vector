@@ -9,69 +9,110 @@ struct AdvisorView: View {
     @State private var advisor = VectorAdvisor.shared
     @State private var messageText = ""
     @State private var editingMeal: EditingMeal?
+    @FocusState private var inputFocused: Bool
 
     private struct EditingMeal: Identifiable { let id: UUID }
-    @State private var showingResetConfirmation = false
+    @State private var showHistory = false
+
+    /// Height of the compose field / send button. Deliberately compact so the
+    /// conversation gets the vertical space.
+    private let barControlHeight: CGFloat = 42
 
     private var accent: LinearGradient {
-        LinearGradient(colors: [.indigo, .cyan], startPoint: .topLeading, endPoint: .bottomTrailing)
+        VectorTheme.brandForeground
     }
 
     private var canSend: Bool {
         !messageText.trimmingCharacters(in: .whitespaces).isEmpty && !advisor.isStreaming
     }
 
-    // MARK: - Suggestion Chips
+    // MARK: - Suggestions
 
-    private var suggestionChips: [String] {
-        var chips: [String] = []
+    /// Prebuilt openers for the empty state. Context-aware ones come first,
+    /// then generic fallbacks. Titles stay short — the full question goes in
+    /// `prompt`, not on screen.
+    private var suggestions: [AdvisorSuggestion] {
+        var items: [AdvisorSuggestion] = []
 
-        // recovery < 50 → rest or train
         if let recovery = healthService.recoveryScore, recovery.score < 50 {
-            chips.append("Should I rest or train today?")
+            items.append(AdvisorSuggestion(
+                icon: "heart.fill",
+                tint: .green,
+                title: "Rest or train today?",
+                subtitle: "Recovery is \(Int(recovery.score))",
+                prompt: "My recovery is \(Int(recovery.score)) today — should I rest or train?"
+            ))
         }
 
-        // sleep debt check
         if let sleep = healthService.sleepAnalysis {
-            if sleep.qualityLevel == .poor || (sleep.sleepDebt ?? 0) > 3600 {
-                chips.append("How do I pay down my sleep debt?")
+            let debtHours = (sleep.sleepDebt ?? 0) / 3600
+            if sleep.qualityLevel == .poor || debtHours > 1 {
+                items.append(AdvisorSuggestion(
+                    icon: "moon.stars.fill",
+                    tint: .blue,
+                    title: "Pay down sleep debt",
+                    subtitle: debtHours >= 1 ? String(format: "%.1f h behind", debtHours) : "Last night scored low",
+                    prompt: "How do I pay down my sleep debt?"
+                ))
             }
         }
 
-        // check for plateaus in exercises
-        var plateaudExercise: String?
-        for template in WorkoutStorageService.shared.savedWorkouts {
+        var plateaued: String?
+        outer: for template in WorkoutStorageService.shared.savedWorkouts {
             for exercise in template.exercises {
-                if let insight = ProgressionAdvisor.insight(for: exercise),
+                if let insight = ProgressionAdvisor.insight(for: exercise, recoveryScore: healthService.recoveryScore?.score),
                    insight.kind == .plateau {
-                    plateaudExercise = exercise.name
-                    break
+                    plateaued = exercise.name
+                    break outer
                 }
             }
-            if plateaudExercise != nil { break }
         }
-        if let exerciseName = plateaudExercise {
-            chips.append("How do I break my \(exerciseName) plateau?")
+        if let name = plateaued {
+            items.append(AdvisorSuggestion(
+                icon: "chart.line.flattrend.xyaxis",
+                tint: .orange,
+                title: "Break a plateau",
+                subtitle: name,
+                prompt: "How do I break my \(name) plateau?"
+            ))
         }
 
-        // exertion load status check (overtraining or overreaching)
         if let exertion = healthService.exertionScore {
             let status = exertion.loadStatus.label.lowercased()
             if status.contains("overtraining") || status.contains("overreaching") {
-                chips.append("Am I overtraining this week?")
+                items.append(AdvisorSuggestion(
+                    icon: "exclamationmark.triangle.fill",
+                    tint: .red,
+                    title: "Am I overtraining?",
+                    subtitle: exertion.loadStatus.label,
+                    prompt: "Am I overtraining this week?"
+                ))
             }
         }
 
-        // fill remaining with defaults
-        let defaults = ["Build me a 45-min push day", "What should I focus on today?"]
-        for def in defaults {
-            if chips.count >= 4 { break }
-            if !chips.contains(def) {
-                chips.append(def)
+        let fallbacks = [
+            AdvisorSuggestion(
+                icon: "dumbbell.fill",
+                tint: .indigo,
+                title: "Build today's workout",
+                subtitle: "Matched to your recovery",
+                prompt: "Build me a workout for today based on my recovery."
+            ),
+            AdvisorSuggestion(
+                icon: "target",
+                tint: .cyan,
+                title: "What should I focus on?",
+                subtitle: "Today's priority",
+                prompt: "What should I focus on today?"
+            )
+        ]
+        for fallback in fallbacks where items.count < 3 {
+            if !items.contains(where: { $0.prompt == fallback.prompt }) {
+                items.append(fallback)
             }
         }
 
-        return Array(chips.prefix(4))
+        return Array(items.prefix(3))
     }
 
     // MARK: - Body
@@ -79,9 +120,6 @@ struct AdvisorView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                readinessStrip
-                    .animation(.easeInOut(duration: 0.2), value: isMinimized)
-
                 ScrollViewReader { proxy in
                     ScrollView {
                         VStack(spacing: 12) {
@@ -89,13 +127,14 @@ struct AdvisorView: View {
                                 EmptyStateHero()
 
                                 VStack(spacing: 8) {
-                                    ForEach(suggestionChips, id: \.self) { chip in
-                                        SuggestionChip(text: chip) {
-                                            Task { await sendMessage(chip) }
+                                    ForEach(suggestions) { suggestion in
+                                        SuggestionCard(suggestion: suggestion) {
+                                            Task { await sendMessage(suggestion.prompt) }
                                         }
                                     }
                                 }
-                                .padding(.horizontal, 16)
+                                .padding(.horizontal, 4)
+                                .transition(.opacity)
                             } else {
                                 messageList(proxy)
 
@@ -136,31 +175,44 @@ struct AdvisorView: View {
                             }
                         }
                     }
+                    .scrollEdgeEffectStyle(.soft, for: .all)
+                    .safeAreaBar(edge: .bottom) {
+                        inputBar
+                    }
                 }
-
-                inputBar
             }
-            .navigationTitle("Vector Intelligence")
+            .navigationTitle("")
+            .toolbarTitleDisplayMode(.inline)
             .containerBackground(isMinimized ? AnyShapeStyle(.clear) : AnyShapeStyle(.background), for: .navigation)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showHistory = true
+                    } label: {
+                        Image(systemName: "clock.arrow.circlepath")
+                    }
+                }
+                ToolbarItem(placement: .principal) {
+                    Text("Vector Intelligence")
+                        .font(.headline)
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        showingResetConfirmation = true
+                        advisor.startNewChat()
                     } label: {
                         Image(systemName: "square.and.pencil")
                     }
                     .disabled(advisor.messages.isEmpty)
-                    .confirmationDialog(
-                        "Start a new conversation?",
-                        isPresented: $showingResetConfirmation
-                    ) {
-                        Button("Start New", role: .destructive) {
-                            advisor.resetConversation()
-                        }
-                    }
                 }
             }
-            .sheet(item: $editingMeal) { item in
+            .vectorSheet(isPresented: $showHistory) {
+                AdvisorHistorySheet { conversation in
+                    advisor.restore(conversation)
+                } onConfigure: {
+                    presenter?.openProfile()
+                }
+            }
+            .vectorSheet(item: $editingMeal) { item in
                 MealEditSheet(mealID: item.id)
             }
             .task {
@@ -188,35 +240,6 @@ struct AdvisorView: View {
         }
     }
 
-    // MARK: - Readiness Strip
-
-    private var readinessStrip: some View {
-        HStack(spacing: 10) {
-            ReadinessPill(
-                label: "Recovery",
-                value: healthService.recoveryScore.map { "\($0.score)" } ?? "--",
-                icon: "heart.fill",
-                tintColor: .green
-            )
-
-            ReadinessPill(
-                label: "Load",
-                value: healthService.exertionScore?.loadStatus.label ?? "--",
-                icon: "bolt.fill",
-                tintColor: .orange
-            )
-
-            ReadinessPill(
-                label: "Sleep",
-                value: healthService.sleepAnalysis?.qualityLevel.label ?? "--",
-                icon: "moon.stars.fill",
-                tintColor: .blue
-            )
-        }
-        .padding(12)
-        .background(isMinimized ? AnyShapeStyle(.clear) : AnyShapeStyle(.bar))
-    }
-
     // MARK: - Message List
 
     @ViewBuilder
@@ -225,6 +248,7 @@ struct AdvisorView: View {
             Group {
                 // Day separator
                 if index > 0,
+                   advisor.messages.indices.contains(index - 1),
                    !Calendar.current.isDate(advisor.messages[index - 1].timestamp, inSameDayAs: message.timestamp) {
                     DaySeparator(date: message.timestamp)
                         .id("separator-\(message.id)")
@@ -243,7 +267,7 @@ struct AdvisorView: View {
                         Text(message.content)
                             .font(.body)
                             .padding()
-                            .glassEffect(.regular.tint(.cyan.opacity(0.18)), in: .rect(cornerRadius: 16))
+                            .glassEffect(.regular.tint(.cyan.opacity(0.18)), in: ChatBubble(side: .trailing))
                     }
                     .id(message.id)
                 } else {
@@ -254,7 +278,7 @@ struct AdvisorView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         // Live activity while streaming
                         if isStreaming {
-                            LiveActivityView(
+                            ThinkingTrailView(
                                 steps: AdvisorActivity.shared.steps,
                                 liveReasoning: AdvisorActivity.shared.liveReasoning
                             )
@@ -266,18 +290,7 @@ struct AdvisorView: View {
                         if !message.content.isEmpty {
                             MarkdownText(content: message.content)
                                 .padding()
-                                .glassEffect(.regular, in: .rect(cornerRadius: 16))
-                        } else if isStreaming {
-                            HStack {
-                                ThinkingDots()
-                                Text("Thinking…")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                            }
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 12)
-                            .glassEffect(.regular, in: .rect(cornerRadius: 16))
+                                .glassEffect(.regular, in: ChatBubble(side: .leading))
                         }
 
                         // Action rows (undo-able or plain)
@@ -301,6 +314,20 @@ struct AdvisorView: View {
                                 .glassEffect(.regular.tint(.green.opacity(0.10)), in: .rect(cornerRadius: 12))
                             }
                         }
+
+                        // Workout recommendation cards (Add / Dismiss)
+                        if let recommendations = advisor.liveRecommendations[message.id] {
+                            ForEach(recommendations) { recommendation in
+                                RecommendationCardView(recommendation: recommendation)
+                            }
+                        }
+
+                        // Existing-workout progressive-overload cards (select & Update)
+                        if let updates = advisor.liveExerciseUpdates[message.id] {
+                            ForEach(updates) { update in
+                                ExerciseUpdateCardView(update: update)
+                            }
+                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .id(message.id)
@@ -312,8 +339,10 @@ struct AdvisorView: View {
     // MARK: - Input Bar
 
     private var inputBar: some View {
-        VStack(spacing: 10) {
-            if !advisor.isStreaming {
+        VStack(spacing: 8) {
+            // Skill shortcuts are only useful once a conversation exists — in the
+            // empty state the suggestion cards already cover the same ground.
+            if !advisor.messages.isEmpty, !advisor.isStreaming {
                 SkillRow { skill in
                     if skill.prefillsOnly {
                         messageText = skill.prompt
@@ -321,12 +350,18 @@ struct AdvisorView: View {
                         Task { await sendMessage(skill.prompt) }
                     }
                 }
+                .transition(.opacity)
             }
 
-            HStack(spacing: 12) {
-                TextField("Ask Vector anything…", text: $messageText)
-                    .padding(12)
-                    .glassEffect(.regular, in: .rect(cornerRadius: 14))
+            HStack(alignment: .bottom, spacing: 8) {
+                TextField("Ask Vector anything…", text: $messageText, axis: .vertical)
+                    .focused($inputFocused)
+                    .font(.subheadline)
+                    .lineLimit(1...5)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 11)
+                    .frame(minHeight: barControlHeight)
+                    .glassEffect(.regular, in: .capsule)
                     .textInputAutocapitalization(.sentences)
                     .onSubmit {
                         let text = messageText.trimmingCharacters(in: .whitespaces)
@@ -342,25 +377,27 @@ struct AdvisorView: View {
                 } label: {
                     if advisor.isStreaming {
                         ProgressView()
-                            .scaleEffect(0.7)
-                            .frame(width: 42, height: 42)
+                            .controlSize(.small)
+                            .frame(width: barControlHeight, height: barControlHeight)
+                            .glassEffect(.regular, in: .circle)
                     } else {
                         Image(systemName: "arrow.up")
-                            .font(.system(size: 18, weight: .bold))
+                            .font(.system(size: 16, weight: .bold))
                             .foregroundStyle(.white)
-                            .frame(width: 42, height: 42)
+                            .frame(width: barControlHeight, height: barControlHeight)
                             .background(Circle().fill(accent))
-                            .opacity(canSend ? 1 : 0.4)
+                            .opacity(canSend ? 1 : 0.35)
                     }
                 }
                 .buttonStyle(.plain)
                 .disabled(!canSend)
+                .animation(.spring(response: 0.3, dampingFraction: 0.8), value: canSend)
             }
-            .padding(.horizontal)
+            .padding(.horizontal, 16)
         }
-        .padding(.top, 12)
-        .padding(.bottom, 20)
-        .background(isMinimized ? AnyShapeStyle(.clear) : AnyShapeStyle(.bar))
+        .padding(.top, 8)
+        .padding(.bottom, 6)
+        .animation(.easeInOut(duration: 0.2), value: advisor.messages.isEmpty)
     }
 
     // MARK: - Send Message
@@ -368,6 +405,7 @@ struct AdvisorView: View {
     private func sendMessage(_ text: String, topic: AdvisorTopic? = nil) async {
         let trimmed = text.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
+        inputFocused = false
         messageText = ""
 
         await advisor.send(trimmed, topic: topic, healthService: healthService)

@@ -9,6 +9,11 @@ final class AdvisorPresenter {
 
     func open() { isPresented = true }
 
+    /// Set when something asks to jump to the Profile tab; the root TabView observes this.
+    var wantsProfileTab = false
+
+    func openProfile() { wantsProfileTab = true }
+
     func ask(_ topic: AdvisorTopic) {
         pendingTopic = topic
         // Advisor already open — AdvisorView's onChange picks up pendingTopic.
