@@ -53,6 +53,15 @@ struct SleepDisruptionFlag: Codable, Sendable, Equatable {
         if isTrainingExplained { return "Recovering from yesterday's training" }
         return likelyAlcohol ? "Possible alcohol or late-night disruption" : "Disrupted night detected"
     }
+
+    /// Prompt-safe wording. Apple's on-device guardrail rejects prompts containing
+    /// substance and illness vocabulary, so model-facing text describes the signal
+    /// pattern instead of the suspected cause.
+    var modelSafeHeadline: String {
+        guard isFlagged else { return "No unusual disruption detected" }
+        if isTrainingExplained { return "Recovering from yesterday's training" }
+        return "Overnight readings away from baseline"
+    }
 }
 
 enum SleepDisruptionDetector {

@@ -44,6 +44,7 @@ struct DashboardSnapshot: Codable, Sendable {
     let overviewHeadline: String?
     let overviewBody: String?
     let overviewStatus: String?
+    let overviewContext: String?
 }
 
 struct DashboardSnapshotStore {

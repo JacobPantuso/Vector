@@ -106,7 +106,7 @@ enum AdvisorContext {
         if let s = health.sleepAnalysis {
             lines.append("Sleep: \(s.formattedDuration), \(s.qualityLevel.label) quality (\(String(format: "%.0f", s.efficiency * 100))% efficiency)")
             if let need = s.sleepNeed { lines.append("Sleep need: \(String(format: "%.1f", need / 3600))h, debt \(String(format: "%.1f", (s.sleepDebt ?? 0) / 3600))h") }
-            if let flag = s.disruption, flag.isFlagged { lines.append("Sleep disruption: \(flag.headline) [\(flag.signals.joined(separator: "; "))]") }
+            if let flag = s.disruption, flag.isFlagged { lines.append("Sleep disruption: \(flag.modelSafeHeadline) [\(flag.signals.joined(separator: "; "))]") }
         }
         if let st = health.stressScore {
             lines.append("Stress: \(st.score)/100 (\(st.level.label))")

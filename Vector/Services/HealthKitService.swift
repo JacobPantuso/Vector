@@ -31,6 +31,11 @@ class HealthKitService {
     /// re-triggering the skeleton every time Home reappears. Pull-to-refresh
     /// forces a regeneration regardless.
     var lastOverviewAttemptDay: Date?
+    /// Time-of-day bucket the current overview was generated for ("morning",
+    /// "afternoon", "evening", …). Scoping the attempt flag to this bucket means a
+    /// failed generation recovers at the next bucket instead of being stuck all day,
+    /// and a morning overview is refreshed once the day moves on.
+    var lastOverviewContext: String?
     var latestVO2Max: Double?
     var latestWristTempDeviation: Double?  // overnight wrist-temp deviation from baseline (°C)
     var latestSpO2: Double?                // overnight average blood oxygen %
@@ -92,6 +97,7 @@ class HealthKitService {
                         body: body,
                         status: status
                     )
+                    lastOverviewContext = snapshot.overviewContext
                 }
             }
 
@@ -719,14 +725,16 @@ class HealthKitService {
 
     // MARK: - Persistence
 
-    /// True when an overview generation was already attempted today.
-    var hasAttemptedOverviewToday: Bool {
+    /// True when an overview generation was already attempted for this time-of-day
+    /// bucket today. Scoped to the bucket so a failure clears at the next rollover.
+    func hasAttemptedOverview(for context: String) -> Bool {
         guard let day = lastOverviewAttemptDay else { return false }
-        return Calendar.current.isDateInToday(day)
+        return Calendar.current.isDateInToday(day) && lastOverviewContext == context
     }
 
-    func markOverviewAttempted() {
+    func markOverviewAttempted(context: String) {
         lastOverviewAttemptDay = Date()
+        lastOverviewContext = context
     }
 
     /// Persists the current dashboard state to disk so the home cards can render real values
@@ -757,7 +765,8 @@ class HealthKitService {
             physicalEffortSeries: physicalEffortSeries.map { EffortPoint(date: $0.date, value: $0.value) },
             overviewHeadline: generatedOverview?.headline,
             overviewBody: generatedOverview?.body,
-            overviewStatus: generatedOverview?.status
+            overviewStatus: generatedOverview?.status,
+            overviewContext: lastOverviewContext
         )
         DashboardSnapshotStore.save(snapshot)
     }
