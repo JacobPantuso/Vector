@@ -13,17 +13,17 @@ struct VectorWatchEntry: TimelineEntry {
 
 struct VectorWatchTimelineProvider: TimelineProvider {
     func placeholder(in context: Context) -> VectorWatchEntry {
-        VectorWatchEntry(date: .now, snapshot: .placeholder)
+        VectorWatchEntry(date: .now, snapshot: VectorWidgetStore.previewSnapshot())
     }
 
     func getSnapshot(in context: Context, completion: @escaping (VectorWatchEntry) -> Void) {
-        let snapshot = context.isPreview ? .placeholder : (VectorWidgetStore.load() ?? .placeholder)
+        let snapshot = context.isPreview ? VectorWidgetStore.previewSnapshot() : (VectorWidgetStore.load() ?? VectorWidgetStore.previewSnapshot())
         let entry = VectorWatchEntry(date: .now, snapshot: snapshot)
         completion(entry)
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<VectorWatchEntry>) -> Void) {
-        let snapshot = VectorWidgetStore.load() ?? .placeholder
+        let snapshot = VectorWidgetStore.load() ?? VectorWidgetStore.previewSnapshot()
         let entry = VectorWatchEntry(date: .now, snapshot: snapshot)
         let timeline = Timeline(entries: [entry], policy: .after(Date().addingTimeInterval(30 * 60)))
         completion(timeline)

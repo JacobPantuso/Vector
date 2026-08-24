@@ -799,7 +799,7 @@ private struct QuadRingPreviewWidget: Widget {
         sleep: 38,
         stress: 78,
         recoveryHistory: [70, 72, 75, 78],
-        name: "Jacob"
+        name: "Alex"
     )
     VectorEntry(date: .now, snapshot: snapshot)
 }

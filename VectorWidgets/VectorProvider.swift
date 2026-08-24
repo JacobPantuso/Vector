@@ -13,17 +13,17 @@ struct VectorEntry: TimelineEntry {
 
 struct VectorTimelineProvider: TimelineProvider {
     func placeholder(in context: Context) -> VectorEntry {
-        VectorEntry(date: .now, snapshot: .placeholder)
+        VectorEntry(date: .now, snapshot: VectorWidgetStore.previewSnapshot())
     }
 
     func getSnapshot(in context: Context, completion: @escaping (VectorEntry) -> Void) {
-        let snapshot = context.isPreview ? .placeholder : (VectorWidgetStore.load() ?? .placeholder)
+        let snapshot = context.isPreview ? VectorWidgetStore.previewSnapshot() : (VectorWidgetStore.load() ?? VectorWidgetStore.previewSnapshot())
         let entry = VectorEntry(date: .now, snapshot: snapshot)
         completion(entry)
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<VectorEntry>) -> Void) {
-        let snapshot = VectorWidgetStore.load() ?? .placeholder
+        let snapshot = VectorWidgetStore.load() ?? VectorWidgetStore.previewSnapshot()
         let entry = VectorEntry(date: .now, snapshot: snapshot)
         let timeline = Timeline(entries: [entry], policy: .after(Date().addingTimeInterval(30 * 60)))
         completion(timeline)
@@ -34,17 +34,17 @@ struct VectorTimelineProvider: TimelineProvider {
 
 struct VectorAppIntentTimelineProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> VectorEntry {
-        VectorEntry(date: .now, snapshot: .placeholder)
+        VectorEntry(date: .now, snapshot: VectorWidgetStore.previewSnapshot())
     }
 
     func snapshot(for configuration: SelectMetricIntent, in context: Context) -> VectorEntry {
-        let snapshot = context.isPreview ? .placeholder : (VectorWidgetStore.load() ?? .placeholder)
+        let snapshot = context.isPreview ? VectorWidgetStore.previewSnapshot() : (VectorWidgetStore.load() ?? VectorWidgetStore.previewSnapshot())
         let entry = VectorEntry(date: .now, snapshot: snapshot, kind: configuration.metric.kind)
         return entry
     }
 
     func timeline(for configuration: SelectMetricIntent, in context: Context) -> Timeline<VectorEntry> {
-        let snapshot = VectorWidgetStore.load() ?? .placeholder
+        let snapshot = VectorWidgetStore.load() ?? VectorWidgetStore.previewSnapshot()
         let entry = VectorEntry(date: .now, snapshot: snapshot, kind: configuration.metric.kind)
         return Timeline(entries: [entry], policy: .after(Date().addingTimeInterval(30 * 60)))
     }
