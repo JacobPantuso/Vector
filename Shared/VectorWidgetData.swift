@@ -76,7 +76,7 @@ struct VectorWidgetSnapshot: Codable, Equatable, Sendable {
         restingHR: 54,
         steps: 8420,
         recoveryHistory: [64, 71, 69, 80, 75, 72, 78],
-        name: "Jacob",
+        name: nil,
         sleepDeepSeconds: 4320,   // 1h12m
         sleepRemSeconds: 6000,    // 1h40m
         sleepCoreSeconds: 16080,  // 4h28m
@@ -104,5 +104,13 @@ enum VectorWidgetStore {
             return nil
         }
         return try? JSONDecoder().decode(VectorWidgetSnapshot.self, from: data)
+    }
+
+    /// Sample data for the widget gallery, with the real user's first name mixed in
+    /// so the greeting never shows a stranger's name.
+    static func previewSnapshot() -> VectorWidgetSnapshot {
+        var snapshot = VectorWidgetSnapshot.placeholder
+        snapshot.name = load()?.name
+        return snapshot
     }
 }

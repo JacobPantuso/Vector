@@ -2,6 +2,7 @@ import SwiftUI
 import HealthKit
 public import Combine
 import FoundationModels
+import os
 
 struct HomeView: View {
     @Environment(HealthKitService.self) var service
@@ -12,6 +13,7 @@ struct HomeView: View {
     @AppStorage(UserProfileStorage.firstName) private var firstName = ""
     @Environment(AdvisorPresenter.self) private var advisorPresenter
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     @State private var showingCalendar = false
     @State private var selectedHistoricalDate = Date()
     @State private var now = Date()
@@ -26,6 +28,8 @@ struct HomeView: View {
     @State private var promptedKeys: Set<String> = []
     @State private var showingVitalsCustomize = false
     @State private var vitalsContentWidth: CGFloat = 0
+
+    private static let overviewLog = Logger(subsystem: "com.jacobpantuso.Vector", category: "DashboardOverview")
 
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -151,6 +155,18 @@ struct HomeView: View {
                 }
             }
             .onReceive(timer) { now = $0 }
+            .onChange(of: timeOfDayContext) {
+                // The guards in generateOverview() compare against lastOverviewContext,
+                // so this regenerates exactly once per rollover rather than repeatedly.
+                Task { await generateOverview() }
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                guard newPhase == .active else { return }
+                // The timer is suspended in the background, so `now` — and therefore
+                // timeOfDayContext — is stale until it is refreshed here.
+                now = Date()
+                Task { await generateOverview() }
+            }
         }
     }
 
@@ -347,7 +363,9 @@ struct HomeView: View {
 
     private var timeOfDayFocus: String {
         switch timeOfDayContext {
-        case "morning", "late-night":
+        case "late-night":
+            return "It is the middle of the night and the athlete is awake right now. Keep it short and calm. Focus on rest and getting back to sleep. Do not prescribe training, and do not frame this as the start of a new day."
+        case "morning":
             return "Focus on how the athlete recovered overnight and their sleep quality. Frame the day ahead as an opportunity."
         case "afternoon":
             if FeatureFlags.nutritionEnabled {
@@ -355,8 +373,10 @@ struct HomeView: View {
             } else {
                 return "Focus on exertion and training load so far. Encourage smart pacing for the rest of the day."
             }
-        case "evening", "night":
+        case "evening":
             return "Focus on winding down — summarise what was accomplished today, acknowledge the effort, and encourage quality sleep and recovery tonight."
+        case "night":
+            return "It is late in the evening. Focus on closing out the day and protecting tonight's sleep. Acknowledge the day's effort briefly and steer toward getting to bed rather than any further training."
         default:
             return "Provide a balanced overview of recovery, exertion, and readiness."
         }
@@ -364,13 +384,28 @@ struct HomeView: View {
 
     private func generateOverview(force: Bool = false) async {
         guard !service.isGeneratingOverview else { return }
-        guard force || service.generatedOverview == nil else { return }
+        // Regenerate when the time-of-day bucket rolls over: the prompt is explicitly
+        // scoped to morning/afternoon/evening, so a morning overview is stale by night.
+        guard force || service.generatedOverview == nil || service.lastOverviewContext != timeOfDayContext else { return }
         // A tab return re-runs this view's `.task`; without this an attempt that
         // bailed early (no data, model unavailable, error) would re-fire the
-        // skeleton every time Home reappears.
-        guard force || !service.hasAttemptedOverviewToday else { return }
-        guard SystemLanguageModel.default.availability == .available else { return }
-        guard recovery.score > 0 || sleep.totalDuration > 0 || exertion.todayStrain > 0 else { return }
+        // skeleton every time Home reappears. Scoped to the bucket so a failed
+        // attempt recovers at the next rollover instead of being stuck all day.
+        guard force || !service.hasAttemptedOverview(for: timeOfDayContext) else { return }
+        guard SystemLanguageModel.default.availability == .available else {
+            Self.overviewLog.error("Overview skipped: model unavailable (\(String(describing: SystemLanguageModel.default.availability), privacy: .public))")
+            #if DEBUG
+            print("[DashboardOverview] skipped: model unavailable — \(String(describing: SystemLanguageModel.default.availability))")
+            #endif
+            return
+        }
+        guard recovery.score > 0 || sleep.totalDuration > 0 || exertion.todayStrain > 0 else {
+            Self.overviewLog.error("Overview skipped: no data yet (recovery \(recovery.score, privacy: .public), sleep \(sleep.totalDuration, privacy: .public), strain \(exertion.todayStrain, privacy: .public))")
+            #if DEBUG
+            print("[DashboardOverview] skipped: no data yet — recovery \(recovery.score), sleep \(sleep.totalDuration), strain \(exertion.todayStrain)")
+            #endif
+            return
+        }
 
         let nutritionBlock: String
         if FeatureFlags.nutritionEnabled {
@@ -392,7 +427,7 @@ struct HomeView: View {
 
         let nutritionLine = nutritionBlock.isEmpty ? "" : "\n\(nutritionBlock)"
         let prompt = """
-        Time of day: \(timeOfDayContext)
+        Right now: \(timeOfDayContext), \(now.formatted(date: .omitted, time: .shortened)) local time
         Day of week: \(now.formatted(.dateTime.weekday(.wide)))
 
         \(timeOfDayFocus)
@@ -405,26 +440,43 @@ struct HomeView: View {
         Blood oxygen: \(recovery.spo2.map { String(format: "%.0f%%", $0) } ?? "unknown")
         Sleep: \(sleep.totalDuration > 0 ? String(format: "%.1fh asleep (%.1fh in bed), %.1fh deep, %.1fh REM, %@ quality", sleep.asleepDuration / 3600, sleep.totalDuration / 3600, sleep.deepDuration / 3600, sleep.remDuration / 3600, sleep.qualityLevel.label) : "no data")
         Awake in bed: \(sleep.totalDuration > 0 ? String(format: "%.0f min", sleep.awakeDuration / 60) : "unknown")
-        Overnight disruption: \(sleep.disruption.map { $0.isFlagged ? "\($0.headline) — \($0.signals.joined(separator: ", "))" : "none detected" } ?? "unknown")
+        Overnight disruption: \(sleep.disruption.map { $0.isFlagged ? "\($0.modelSafeHeadline) — \($0.signals.joined(separator: ", "))" : "none detected" } ?? "unknown")
         Today's exertion level: \(exertion.todayStrain > 0 ? "\(exertion.exertionLevel.label) (\(exertion.loadStatus.label.lowercased()) weekly load)" : "none yet")
         Weekly training load: \(exertion.acuteLoad > 0 ? String(format: "%.0f load (%@)", exertion.acuteLoad, exertion.loadStatus.label) : "no data")
         Stress level: \(stress.score > 0 ? "\(stress.score)/100 (\(stress.level.label))" : "unknown")\(nutritionLine)
 
-        This overview is about RIGHT NOW — today only. Never reference tomorrow, future days, or upcoming sessions. Every recommendation must be something the athlete can act on immediately. Use your knowledge of exercise science, sleep physiology, and nutrition to add depth. If recovery or sleep quality is low AND overnight signals are off (elevated resting heart rate or wrist temperature, suppressed HRV, elevated breathing rate, or a disruption flag), decide the cause from the training data above. If weekly training load is moderate or high, or there was meaningful exertion today, treat it as accumulated training stress — the body is still absorbing recent workouts — and recommend rest, hydration, and light activity. But if training load is low, absent, or has no data, and the overnight signals are still off — especially an elevated wrist temperature paired with an elevated breathing rate or suppressed HRV — do NOT blame training. Say the body looks like it is working on something other than training, and recommend rest, fluids, and skipping hard sessions today. Never name a diagnosis or a specific illness, never mention alcohol, and never tell the athlete they are sick — describe what the signals show and leave the cause open.
+        This overview is about RIGHT NOW — today only. Never reference tomorrow, future days, or upcoming sessions. Every recommendation must be something the athlete can act on immediately. Use your knowledge of exercise science and sleep physiology to add depth. When recovery or sleep quality is low and the overnight readings sit away from their usual baselines, explain it from the training data above. If weekly training load is moderate or high, or there was meaningful exertion today, treat it as accumulated training stress — the body is still absorbing recent work — and suggest an easy day, fluids, and light movement. If training load is low, absent, or has no data and the overnight readings are still away from baseline, do not attribute it to training; say the readings suggest the body is recovering from something outside of training, and suggest an easy day, fluids, and holding off on hard efforts. Describe what the readings show and leave the cause open.
+        """
+
+        // A guardrail refusal is deterministic, so the retry must not resend the same
+        // text. This trimmed prompt keeps the metrics and the time-of-day focus but
+        // drops the interpretive paragraph that is most likely to trip the filter.
+        let fallbackPrompt = """
+        Right now: \(timeOfDayContext), \(now.formatted(date: .omitted, time: .shortened)) local time
+
+        \(timeOfDayFocus)
+
+        Today's data:
+        Recovery: \(recovery.score > 0 ? recovery.level.label : "no data")
+        Sleep: \(sleep.totalDuration > 0 ? String(format: "%.1fh asleep, %@ quality", sleep.asleepDuration / 3600, sleep.qualityLevel.label) : "no data")
+        Today's exertion level: \(exertion.todayStrain > 0 ? exertion.exertionLevel.label : "none yet")
+        Weekly training load: \(exertion.acuteLoad > 0 ? exertion.loadStatus.label : "no data")
+
+        Write a short, encouraging check-in about today only. Describe the numbers qualitatively, never as raw scores.
         """
 
         // Run in an unstructured Task so switching tabs (which cancels the view's
         // .task) doesn't cancel an in-flight generation and force a restart.
         let generation = Task {
             service.isGeneratingOverview = true
-            service.markOverviewAttempted()
             defer { service.isGeneratingOverview = false }
-            do {
-                let overviewInstructionsHead = "You're a coach who knows this athlete well, checking in like a text from a friend — direct, warm, natural. No jargon, no motivational-poster language, no formal report tone. Second person. Everything you write is about right now, today only. Never mention tomorrow, next session, or anything upcoming. Match your tone and focus to the time of day you're given. "
-                let stepByStepLine = AIModel.supportsReasoning ? "" : "Think step-by-step about what the data means before writing your answer. "
-                let overviewInstructionsTail = "Headline: a short status phrase, 2-4 words. Never a command, never a raw stat. Body: say less. 1-2 sentences, 3 at most. Reference the data naturally as insight, not a report — never cite a raw strain, exertion, or recovery score number, describe it qualitatively instead (e.g. high/moderate/low). The body must obey the time-of-day focus you are given. Never fabricate any number, workout, or event that is not in the provided data. Use your broad knowledge of sports science and circadian rhythm to add context, briefly. When the body shows signs of strain, training load is the default explanation — but only when the training data actually supports it. If the athlete has trained little and overnight signals are still elevated, say the body appears to be handling something other than training rather than forcing a training explanation. Never give a diagnosis or name a specific illness."
 
-                let profile = LanguageModelSession.Profile {
+            let overviewInstructionsHead = "You're a coach who knows this athlete well, checking in like a text from a friend — direct, warm, natural. No jargon, no motivational-poster language, no formal report tone. Second person. Everything you write is about right now, today only. Never mention tomorrow, next session, or anything upcoming. Match your tone and focus to the time of day you're given. "
+            let stepByStepLine = AIModel.supportsReasoning ? "" : "Think step-by-step about what the data means before writing your answer. "
+            let overviewInstructionsTail = "Headline: a short status phrase, 2-4 words. Never a command, never a raw stat. Body: say less. 1-2 sentences, 3 at most. Reference the data naturally as insight, not a report — never cite a raw strain, exertion, or recovery score number, describe it qualitatively instead (e.g. high/moderate/low). The body must obey the time-of-day focus you are given. Never fabricate any number, workout, or event that is not in the provided data. Use your broad knowledge of sports science and circadian rhythm to add context, briefly. When the readings show strain, training load is the default explanation — but only when the training data actually supports it. If the athlete has trained little and the overnight readings are still away from baseline, say the body appears to be recovering from something outside of training rather than forcing a training explanation. Keep every suggestion within training, sleep, hydration, and rest, and describe what the readings show rather than why."
+
+            let buildProfile = {
+                LanguageModelSession.Profile {
                     Instructions(overviewInstructionsHead + stepByStepLine + overviewInstructionsTail)
                     if !FeatureFlags.nutritionEnabled {
                         Instructions("Nutrition tracking is not active in this app. Never mention food, meals, calories, macros, or nutrition tracking. If the data is sparse, never suggest nutrition as a factor.")
@@ -432,12 +484,49 @@ struct HomeView: View {
                     Instructions("Tone: \(AdvisorPersona.current.instruction)")
                 }
                 .reasoningLevel(AIModel.supportsReasoning ? .moderate : nil)
+            }
+
+            let startTime = Date()
+
+            do {
+                let profile = buildProfile()
                 let session = LanguageModelSession(profile: profile)
                 let result = try await session.respond(to: prompt, generating: GeneratedOverview.self)
                 service.generatedOverview = result.content
+                service.markOverviewAttempted(context: timeOfDayContext)
                 service.persistDashboardSnapshot()
+                let elapsed = Date().timeIntervalSince(startTime)
+                Self.overviewLog.info("Overview generated in \(String(format: "%.1f", elapsed))s")
+                #if DEBUG
+                print("[DashboardOverview] generated in \(String(format: "%.1f", elapsed))s")
+                #endif
             } catch {
-                // Fall through to static fallback
+                Self.overviewLog.error("Overview generation failed (first attempt): \(String(describing: error), privacy: .public) — \(error.localizedDescription, privacy: .public)")
+                #if DEBUG
+                print("[DashboardOverview] generation failed (first attempt): \(String(describing: error)) — \(error.localizedDescription)")
+                #endif
+
+                // Retry once with a fresh session
+                do {
+                    let profile = buildProfile()
+                    let session = LanguageModelSession(profile: profile)
+                    let result = try await session.respond(to: fallbackPrompt, generating: GeneratedOverview.self)
+                    service.generatedOverview = result.content
+                    service.markOverviewAttempted(context: timeOfDayContext)
+                    service.persistDashboardSnapshot()
+                    let elapsed = Date().timeIntervalSince(startTime)
+                    Self.overviewLog.info("Overview generated (retry) in \(String(format: "%.1f", elapsed))s")
+                    #if DEBUG
+                    print("[DashboardOverview] generated (retry) in \(String(format: "%.1f", elapsed))s")
+                    #endif
+                } catch {
+                    Self.overviewLog.error("Overview generation failed (retry attempt): \(String(describing: error), privacy: .public) — \(error.localizedDescription, privacy: .public)")
+                    #if DEBUG
+                    print("[DashboardOverview] generation failed (retry attempt): \(String(describing: error)) — \(error.localizedDescription)")
+                    #endif
+                    service.markOverviewAttempted(context: timeOfDayContext)
+                    // Fall through to static fallback
+                }
             }
         }
         await generation.value
